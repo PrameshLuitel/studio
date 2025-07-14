@@ -113,7 +113,7 @@ export class ExcelDataProcessor {
 
     const requiredSheets = [
       'Portfolio',
-      'sector',
+      'Sector Holding Summary',
       'EPS',
     ];
 
@@ -177,14 +177,23 @@ export class ExcelDataProcessor {
    * Process Sector Holding Summary worksheet
    */
   private processSectorHoldingSheet(): SectorHoldingData[] {
-    const jsonData = this.getSheetData('sector');
-    return jsonData.slice(1).map((row: any) => {
-       if (!row || row.length === 0) return null;
-       return {
-         sector: row[0],
-         allocation: this.parseNumber(row[2]), // Column C
-       };
-    }).filter(Boolean) as SectorHoldingData[];
+    const sheetData = this.getSheetData('Sector Holding Summary');
+    if (sheetData.length < 2) return [];
+
+    const headers = sheetData[0];
+    const lastRow = sheetData[sheetData.length - 1];
+    const sectorData: SectorHoldingData[] = [];
+
+    // Columns C to P correspond to indices 2 to 15
+    for (let i = 2; i <= 15; i++) {
+      const sector = headers[i];
+      const allocation = this.parseNumber(lastRow[i]);
+      if (sector) {
+        sectorData.push({ sector, allocation });
+      }
+    }
+    
+    return sectorData;
   }
 
   /**
@@ -254,7 +263,6 @@ export class ExcelDataProcessor {
   } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
     
-    // 1. Calculate the future date by adding 56 years, 8 months, 17 days to today
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 56);
     futureDate.setMonth(futureDate.getMonth() + 8);
@@ -262,17 +270,14 @@ export class ExcelDataProcessor {
     futureDate.setHours(0, 0, 0, 0);
 
     summaryData.forEach(item => {
-      // 2. Use date from Column E of Portfolio sheet
       if (!item.expiryDate || !(item.expiryDate instanceof Date)) return;
       
       const sheetDate = item.expiryDate;
       sheetDate.setHours(0, 0, 0, 0);
 
-      // 3. Subtract sheet date from the calculated future date
       const diffTime = futureDate.getTime() - sheetDate.getTime();
 
       if (diffTime > 0) {
-        // 4. Convert to years and categorize
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const years = diffDays / 365.25;
         
