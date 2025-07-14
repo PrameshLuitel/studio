@@ -34,17 +34,21 @@ export interface InvestmentReturnData {
 }
 
 export interface EPSData {
-  company: string;
-  eps: number;
-  sector: string;
+  Date: Date | string;
+  EPS: number;
   [key: string]: any;
 }
+
+export interface ClientData {
+    headers: string[];
+    data: (string | number | Date)[][];
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
   totalPMSClients: number;
   totalAUM: number;
-  profitRate: number;
   clientGainLoss: {
     gain: number;
     loss: number;
@@ -60,28 +64,13 @@ export interface ProcessedData {
     sector: string;
     allocation: number;
   }>;
-  assetAllocation: {
-    profit: Array<{
-      sector: string;
-      allocation: number;
-    }>;
-    loss: Array<{
-      sector: string;
-      allocation: number;
-    }>;
-  };
-  rawData: {
-    summary: SummaryData[];
-    sectorHolding: SectorHoldingData[];
-    holdingStatement: HoldingStatementData[];
-    investmentReturn: InvestmentReturnData[];
-    eps: EPSData[];
-  };
+  epsData: EPSData[];
+  clientData: ClientData | null;
 }
 
 // Error types
 export class ExcelProcessingError extends Error {
-  constructor(message: string, public code: string) {
+  constructor(message: string) {
     super(message);
     this.name = 'ExcelProcessingError';
   }
@@ -108,8 +97,7 @@ export class ExcelDataProcessor {
         throw error;
       }
       throw new ExcelProcessingError(
-        `Failed to load Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'LOAD_ERROR'
+        `Failed to load Excel file: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
     }
   }
@@ -119,15 +107,14 @@ export class ExcelDataProcessor {
    */
   private validateWorkbook(): void {
     if (!this.workbook) {
-      throw new ExcelProcessingError('No workbook loaded', 'NO_WORKBOOK');
+      throw new ExcelProcessingError('No workbook loaded');
     }
 
     const requiredSheets = [
       'Portfolio',
       'Sector Holding Summary',
-      'Holding Statement',
-      'Investment Return Report',
-      'EPS'
+      'EPS',
+      'Investment Return Report'
     ];
 
     const availableSheets = this.workbook.SheetNames;
@@ -135,8 +122,7 @@ export class ExcelDataProcessor {
 
     if (missingSheets.length > 0) {
       throw new ExcelProcessingError(
-        `Missing required worksheets: ${missingSheets.join(', ')}`,
-        'MISSING_SHEETS'
+        `Missing required worksheets: ${missingSheets.join(', ')}`
       );
     }
   }
@@ -146,44 +132,43 @@ export class ExcelDataProcessor {
    */
   private processWorkbook(): ProcessedData {
     if (!this.workbook) {
-      throw new ExcelProcessingError('No workbook loaded', 'NO_WORKBOOK');
+      throw new ExcelProcessingError('No workbook loaded');
     }
 
-    const rawData = {
-      summary: this.processSummarySheet(),
-      sectorHolding: this.processSectorHoldingSheet(),
-      holdingStatement: this.processHoldingStatementSheet(),
-      investmentReturn: this.processInvestmentReturnSheet(),
-      eps: this.processEPSSheet()
-    };
+    const summaryData = this.processSummarySheet();
+    const sectorData = this.processSectorHoldingSheet();
+    const investmentReturnData = this.processInvestmentReturnSheet();
+    const epsData = this.processEPSSheet();
+    const clientData = this.processClientDataSheet();
 
     return {
-      totalPMSClients: this.calculateTotalPMSClients(rawData.summary),
-      totalAUM: this.calculateTotalAUM(rawData.summary),
-      profitRate: this.calculateProfitRate(rawData.summary),
-      clientGainLoss: this.calculateClientGainLoss(rawData.summary),
-      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(rawData.investmentReturn),
-      sectorAllocation: this.calculateSectorAllocation(rawData.sectorHolding),
-      assetAllocation: this.calculateAssetAllocation(rawData.summary, rawData.sectorHolding),
-      rawData
+      totalPMSClients: this.calculateTotalPMSClients(summaryData),
+      totalAUM: this.calculateTotalAUM(summaryData),
+      clientGainLoss: this.calculateClientGainLoss(summaryData),
+      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(investmentReturnData),
+      sectorAllocation: this.calculateSectorAllocation(sectorData),
+      epsData,
+      clientData
     };
+  }
+  
+  private getSheetData(sheetName: string): any[][] {
+      const sheet = this.workbook!.Sheets[sheetName];
+      if (!sheet) return [];
+      return XLSX.utils.sheet_to_json(sheet, { header: 1 });
   }
 
   /**
    * Process Portfolio worksheet
    */
   private processSummarySheet(): SummaryData[] {
-    const sheet = this.workbook!.Sheets['Portfolio'];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    return jsonData.slice(1).map((row: any, index) => {
+    const jsonData = this.getSheetData('Portfolio');
+    return jsonData.slice(1).map((row: any) => {
       if (!row || row.length === 0) return null;
-      
       return {
-        clientId: row[0] || `Client_${index + 1}`,
-        totalValue: this.parseNumber(row[16]) || 0, // Column Q (index 16)
-        gainLoss: this.parseNumber(row[17]) || 0, // Column R (index 17)
-        ...this.createRowObject(row, index)
+        clientId: row[0],
+        totalValue: this.parseNumber(row[16]), // Column Q
+        gainLoss: this.parseNumber(row[17]),   // Column R
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -192,66 +177,39 @@ export class ExcelDataProcessor {
    * Process Sector Holding Summary worksheet
    */
   private processSectorHoldingSheet(): SectorHoldingData[] {
-    const sheet = this.workbook!.Sheets['Sector Holding Summary'];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    return jsonData.slice(1).map((row: any, index) => {
-      if (!row || row.length === 0) return null;
-      
-      return {
-        sector: row[0] || `Sector_${index + 1}`,
-        allocation: this.parseNumber(row[2]) || 0, // Column C (index 2)
-        ...this.createRowObject(row, index)
-      };
+    const jsonData = this.getSheetData('Sector Holding Summary');
+    return jsonData.slice(1).map((row: any) => {
+       if (!row || row.length === 0) return null;
+       return {
+         sector: row[0],
+         allocation: this.parseNumber(row[2]), // Column C
+       };
     }).filter(Boolean) as SectorHoldingData[];
-  }
-
-  /**
-   * Process Holding Statement worksheet
-   */
-  private processHoldingStatementSheet(): HoldingStatementData[] {
-    const sheet = this.workbook!.Sheets['Holding Statement'];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    return jsonData.slice(1).map((row: any, index) => {
-      if (!row || row.length === 0) return null;
-      
-      return {
-        security: row[0] || `Security_${index + 1}`,
-        quantity: this.parseNumber(row[1]) || 0,
-        marketValue: this.parseNumber(row[2]) || 0,
-        sector: row[3] || 'Unknown',
-        ...this.createRowObject(row, index)
-      };
-    }).filter(Boolean) as HoldingStatementData[];
   }
 
   /**
    * Process Investment Return Report worksheet
    */
   private processInvestmentReturnSheet(): InvestmentReturnData[] {
-    const sheet = this.workbook!.Sheets['Investment Return Report'];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    return jsonData.slice(1).map((row: any, index) => {
+    const jsonData = this.getSheetData('Investment Return Report');
+    return jsonData.slice(1).map((row: any) => {
       if (!row || row.length === 0) return null;
-
+      
       const dateD = row[3] instanceof Date ? row[3] : null;
       const dateE = row[4] instanceof Date ? row[4] : null;
-
+      
       let yearsToExpiry = 0;
       if (dateD && dateE) {
-        const diffTime = Math.abs(dateE.getTime() - dateD.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        yearsToExpiry = diffDays / 365.25;
+          const diffTime = dateE.getTime() - dateD.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          yearsToExpiry = diffDays / 365.25;
       }
-      
+
       return {
-        security: row[0] || `Security_${index + 1}`,
-        maturityDate: row[10] || '', // Column K (index 10)
+        security: row[0],
+        maturityDate: row[10],
         yearsToExpiry: yearsToExpiry,
-        returnRate: this.parseNumber(row[12]) || 0,
-        ...this.createRowObject(row, index)
+        returnRate: this.parseNumber(row[12]),
       };
     }).filter(Boolean) as InvestmentReturnData[];
   }
@@ -260,26 +218,32 @@ export class ExcelDataProcessor {
    * Process EPS worksheet
    */
   private processEPSSheet(): EPSData[] {
-    const sheet = this.workbook!.Sheets['EPS'];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    return jsonData.slice(1).map((row: any, index) => {
+    const jsonData = this.getSheetData('EPS');
+    return jsonData.slice(1).map((row: any) => {
       if (!row || row.length === 0) return null;
-      
       return {
-        company: row[0] || `Company_${index + 1}`,
-        eps: this.parseNumber(row[1]) || 0,
-        sector: row[2] || 'Unknown',
-        ...this.createRowObject(row, index)
+        Date: row[0],
+        EPS: this.parseNumber(row[1]),
       };
-    }).filter(Boolean) as EPSData[];
+    }).filter(d => d && d.Date && !isNaN(d.EPS)) as EPSData[];
+  }
+  
+  private processClientDataSheet(): ClientData | null {
+      const sheet = this.workbook!.Sheets['Portfolio'];
+      if (!sheet) return null;
+      const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      if (data.length < 2) return null;
+      return {
+          headers: data[0] as string[],
+          data: data.slice(1) as (string | number | Date)[][],
+      };
   }
 
   /**
    * Calculate total PMS clients
    */
   private calculateTotalPMSClients(summaryData: SummaryData[]): number {
-    return summaryData.filter(client => client.clientId && client.clientId.trim() !== '').length;
+    return summaryData.filter(client => client.clientId && String(client.clientId).trim() !== '').length;
   }
 
   /**
@@ -297,20 +261,13 @@ export class ExcelDataProcessor {
     loss: number;
     neutral: number;
   } {
-    const result = { gain: 0, loss: 0, neutral: 0 };
-    
-    summaryData.forEach(client => {
+    return summaryData.reduce((acc, client) => {
       const gainLoss = client.gainLoss || 0;
-      if (gainLoss > 0) {
-        result.gain += 1;
-      } else if (gainLoss < 0) {
-        result.loss += 1;
-      } else {
-        result.neutral += 1;
-      }
-    });
-    
-    return result;
+      if (gainLoss > 0) acc.gain++;
+      else if (gainLoss < 0) acc.loss++;
+      else acc.neutral++;
+      return acc;
+    }, { gain: 0, loss: 0, neutral: 0 });
   }
 
   /**
@@ -323,20 +280,13 @@ export class ExcelDataProcessor {
     '5+': number;
   } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
-    
     investmentData.forEach(investment => {
       const years = investment.yearsToExpiry || 0;
-      if (years <= 1) {
-        buckets['0-1'] += 1;
-      } else if (years <= 3) {
-        buckets['1-3'] += 1;
-      } else if (years <= 5) {
-        buckets['3-5'] += 1;
-      } else {
-        buckets['5+'] += 1;
-      }
+      if (years <= 1) buckets['0-1']++;
+      else if (years <= 3) buckets['1-3']++;
+      else if (years <= 5) buckets['3-5']++;
+      else buckets['5+']++;
     });
-    
     return buckets;
   }
 
@@ -351,58 +301,7 @@ export class ExcelDataProcessor {
       .filter(sector => sector.allocation > 0)
       .sort((a, b) => b.allocation - a.allocation);
   }
-
-  /**
-   * Calculate asset allocation for profit/loss clients
-   */
-  private calculateAssetAllocation(
-    summaryData: SummaryData[],
-    sectorData: SectorHoldingData[]
-  ): {
-    profit: Array<{ sector: string; allocation: number; }>;
-    loss: Array<{ sector: string; allocation: number; }>;
-  } {
-    const profitClients = summaryData.filter(client => (client.gainLoss || 0) > 0);
-    const lossClients = summaryData.filter(client => (client.gainLoss || 0) < 0);
-    
-    // This is a simplified calculation - in a real scenario, you'd need to map
-    // clients to their specific sector allocations
-    const profitAllocation = sectorData.map(sector => ({
-      sector: sector.sector,
-      allocation: sector.allocation * (profitClients.length / summaryData.length)
-    }));
-    
-    const lossAllocation = sectorData.map(sector => ({
-      sector: sector.sector,
-      allocation: sector.allocation * (lossClients.length / summaryData.length)
-    }));
-    
-    return {
-      profit: profitAllocation.filter(item => item.allocation > 0),
-      loss: lossAllocation.filter(item => item.allocation > 0)
-    };
-  }
-
-  /**
-   * Calculate profit rate from last row (total) of column R
-   */
-  private calculateProfitRate(summaryData: SummaryData[]): number {
-    const sheet = this.workbook!.Sheets['Portfolio'];
-    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    
-    // Find the last row that contains data
-    const lastRowIndex = jsonData.length - 1;
-    const lastRow = jsonData[lastRowIndex] as any[];
-    
-    if (lastRow && lastRow.length > 17) {
-      // Column R is index 17 (0-based)
-      const profitRateValue = this.parseNumber(lastRow[17]) || 0;
-      return profitRateValue;
-    }
-    
-    return 0;
-  }
-
+  
   /**
    * Utility function to parse numbers safely
    */
@@ -414,146 +313,27 @@ export class ExcelDataProcessor {
     }
     return 0;
   }
-
-  /**
-   * Create a generic row object with indexed properties
-   */
-  private createRowObject(row: any[], index: number): Record<string, any> {
-    const obj: Record<string, any> = {};
-    row.forEach((cell, cellIndex) => {
-      obj[`col_${cellIndex}`] = cell;
-    });
-    obj.rowIndex = index;
-    return obj;
-  }
-
-  /**
-   * Get processed data
-   */
+  
   getProcessedData(): ProcessedData | null {
     return this.processedData;
   }
 
-  /**
-   * Get summary statistics
-   */
-  getSummaryStats(): {
-    totalClients: number;
-    totalAUM: number;
-    averageAUM: number;
-    clientGainLoss: { gain: number; loss: number; neutral: number; };
-  } | null {
-    if (!this.processedData) return null;
-    
-    return {
-      totalClients: this.processedData.totalPMSClients,
-      totalAUM: this.processedData.totalAUM,
-      averageAUM: this.processedData.totalAUM / this.processedData.totalPMSClients,
-      clientGainLoss: this.processedData.clientGainLoss
-    };
-  }
-
-  /**
-   * Get sector data for charts
-   */
-  getSectorChartData(): Array<{ name: string; value: number; }> | null {
-    if (!this.processedData) return null;
-    
-    return this.processedData.sectorAllocation.map(sector => ({
-      name: sector.sector,
-      value: sector.allocation
-    }));
-  }
-
-  /**
-   * Get years to expiry chart data
-   */
-  getYearsToExpiryChartData(): Array<{ name: string; value: number; }> | null {
-    if (!this.processedData) return null;
-    
-    const buckets = this.processedData.yearsToExpiryBuckets;
-    return Object.entries(buckets).map(([range, count]) => ({
-      name: `${range} years`,
-      value: count
-    }));
-  }
-
-  /**
-   * Get client distribution data
-   */
-  getClientDistributionData(): Array<{ name: string; value: number; color: string; }> | null {
-    if (!this.processedData) return null;
-    
-    const { gain, loss, neutral } = this.processedData.clientGainLoss;
-    return [
-      { name: 'Profit', value: gain, color: '#22c55e' },
-      { name: 'Loss', value: loss, color: '#ef4444' },
-      { name: 'Neutral', value: neutral, color: '#6b7280' }
-    ];
-  }
-
-  /**
-   * Get raw data for specific worksheet
-   */
-  getRawData(worksheet: 'summary' | 'sectorHolding' | 'holdingStatement' | 'investmentReturn' | 'eps'): any[] | null {
-    if (!this.processedData) return null;
-    return this.processedData.rawData[worksheet];
-  }
-
-    /**
-   * Get raw data for all sheets as JSON string for AI context
-   */
   getAllSheetsRawData(): string {
-    if (!this.processedData) return "{}";
+    if (!this.workbook) return "{}";
     
     const rawForAI: {[key: string]: any} = {};
 
-    (Object.keys(this.processedData.rawData) as Array<keyof typeof this.processedData.rawData>).forEach(sheetName => {
-        rawForAI[sheetName] = this.getRawData(sheetName);
+    this.workbook.SheetNames.forEach(sheetName => {
+        rawForAI[sheetName] = this.getSheetData(sheetName);
     });
 
     return JSON.stringify(rawForAI, null, 2);
   }
 
-  /**
-   * Export processed data as JSON
-   */
-  exportToJSON(): string | null {
-    if (!this.processedData) return null;
-    return JSON.stringify(this.processedData, null, 2);
-  }
-
-  /**
-   * Check if data is loaded
-   */
   isDataLoaded(): boolean {
     return this.processedData !== null;
   }
-
-  /**
-   * Clear loaded data
-   */
-  clearData(): void {
-    this.workbook = null;
-    this.processedData = null;
-  }
 }
-
-// Export a singleton instance
-export const excelProcessor = new ExcelDataProcessor();
-
-// Export utility functions
-export const createExcelProcessor = () => new ExcelDataProcessor();
-
-export const validateExcelFile = (file: File): boolean => {
-  const validTypes = [
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'application/vnd.ms-excel',
-    'application/vnd.ms-excel.sheet.macroEnabled.12'
-  ];
-  
-  return validTypes.includes(file.type) || file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
-};
 
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-IN', {
@@ -563,13 +343,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
-
-export const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat('en-IN').format(num);
-};
-
-export const formatPercentage = (num: number): string => {
-  return `${num.toFixed(2)}%`;
-};
-
-    
