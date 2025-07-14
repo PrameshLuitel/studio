@@ -19,6 +19,7 @@ export interface SectorHoldingData {
 }
 
 export interface HoldingStatementData {
+  clientId: string;
   security: string;
   quantity: number;
   marketValue: number;
@@ -45,6 +46,11 @@ export interface ClientData {
     data: (string | number | Date)[][];
 }
 
+export interface SectorAllocation {
+    sector: string;
+    allocation: number;
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -61,10 +67,9 @@ export interface ProcessedData {
     '3-5': number;
     '5+': number;
   };
-  sectorAllocation: Array<{
-    sector: string;
-    allocation: number;
-  }>;
+  sectorAllocation: SectorAllocation[];
+  sectorAllocationGain: SectorAllocation[];
+  sectorAllocationLoss: SectorAllocation[];
   epsData: EPSData[];
   clientData: ClientData | null;
 }
@@ -114,6 +119,7 @@ export class ExcelDataProcessor {
     const requiredSheets = [
       'Portfolio',
       'Sector Holding Summary',
+      'Holding Statement',
       'EPS',
     ];
 
@@ -137,8 +143,11 @@ export class ExcelDataProcessor {
 
     const summaryData = this.processSummarySheet();
     const sectorData = this.processSectorHoldingSheet();
+    const holdingData = this.processHoldingStatementSheet();
     const epsData = this.processEPSSheet();
     const clientData = this.processClientDataSheet();
+
+    const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss(summaryData, holdingData);
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -146,6 +155,8 @@ export class ExcelDataProcessor {
       clientGainLoss: this.calculateClientGainLoss(summaryData),
       yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
       sectorAllocation: this.calculateSectorAllocation(sectorData),
+      sectorAllocationGain,
+      sectorAllocationLoss,
       epsData,
       clientData
     };
@@ -194,6 +205,23 @@ export class ExcelDataProcessor {
     }
     
     return sectorData;
+  }
+
+  /**
+   * Process Holding Statement worksheet
+   */
+  private processHoldingStatementSheet(): HoldingStatementData[] {
+    const jsonData = this.getSheetData('Holding Statement');
+    return jsonData.slice(1).map((row: any) => {
+      if (!row || row.length < 7) return null;
+      return {
+        clientId: row[0],
+        security: row[1],
+        quantity: this.parseNumber(row[3]),
+        marketValue: this.parseNumber(row[6]),
+        sector: row[7],
+      };
+    }).filter(d => d && d.clientId && d.sector && d.marketValue > 0) as HoldingStatementData[];
   }
 
   /**
@@ -265,8 +293,8 @@ export class ExcelDataProcessor {
     
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 56);
-    futureDate.setMonth(futureDate.getMonth() + 8);
-    futureDate.setDate(futureDate.getDate() + 17);
+    futureDate.setMonth(futureDate.getMonth() - 8);
+    futureDate.setDate(futureDate.getDate() - 17);
     futureDate.setHours(0, 0, 0, 0);
 
     summaryData.forEach(item => {
@@ -293,13 +321,45 @@ export class ExcelDataProcessor {
   /**
    * Calculate sector allocation
    */
-  private calculateSectorAllocation(sectorData: SectorHoldingData[]): Array<{
-    sector: string;
-    allocation: number;
-  }> {
+  private calculateSectorAllocation(sectorData: SectorHoldingData[]): SectorAllocation[] {
     return sectorData
       .filter(sector => sector.allocation > 0)
       .sort((a, b) => b.allocation - a.allocation);
+  }
+
+  private calculateSectorAllocationsByGainLoss(summaryData: SummaryData[], holdingData: HoldingStatementData[]): {
+    sectorAllocationGain: SectorAllocation[],
+    sectorAllocationLoss: SectorAllocation[]
+  } {
+      const clientGainLossMap = new Map<string, number>();
+      summaryData.forEach(client => {
+          clientGainLossMap.set(client.clientId, client.gainLoss);
+      });
+
+      const gainAllocation: { [sector: string]: number } = {};
+      const lossAllocation: { [sector: string]: number } = {};
+
+      holdingData.forEach(holding => {
+          const gainLoss = clientGainLossMap.get(holding.clientId);
+          if (gainLoss === undefined) return;
+
+          if (gainLoss > 0) {
+              gainAllocation[holding.sector] = (gainAllocation[holding.sector] || 0) + holding.marketValue;
+          } else if (gainLoss < 0) {
+              lossAllocation[holding.sector] = (lossAllocation[holding.sector] || 0) + holding.marketValue;
+          }
+      });
+      
+      const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
+          return Object.entries(allocation)
+              .map(([sector, value]) => ({ sector, allocation: value }))
+              .sort((a, b) => b.allocation - a.allocation);
+      };
+
+      return {
+          sectorAllocationGain: formatAndSort(gainAllocation),
+          sectorAllocationLoss: formatAndSort(lossAllocation)
+      };
   }
   
   /**

@@ -4,11 +4,11 @@
 import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
-import { formatCurrency } from '@/lib/data-processor';
+import { formatCurrency, SectorAllocation } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
 
 const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
@@ -49,6 +49,72 @@ const ErrorDisplay = () => (
     </div>
 );
 
+const SectorPieChart = ({ title, data, icon: Icon }: { title: string, data: SectorAllocation[], icon: React.ElementType }) => {
+    const chartData = useMemo(() => {
+        if (!data) return [];
+        const totalAllocation = data.reduce((acc, curr) => acc + curr.allocation, 0);
+        return data.map(s => ({ name: s.sector, value: s.allocation, percentage: totalAllocation > 0 ? (s.allocation / totalAllocation) * 100 : 0 }));
+    }, [data]);
+
+    const topSectors = useMemo(() => {
+        return [...chartData].sort((a, b) => b.value - a.value).slice(0, 5);
+    }, [chartData]);
+    
+    if (chartData.length === 0) {
+        return (
+            <Card className="glassmorphic col-span-1">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex items-center justify-center h-48 text-muted-foreground">No data available for this category.</div>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    return (
+        <Card className="glassmorphic col-span-1">
+            <CardHeader>
+                <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                    <ChartContainer config={{}} className="h-80 w-full">
+                        <ResponsiveContainer>
+                            <RechartsPieChart>
+                                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${Number(value).toLocaleString()}`} />} />
+                                <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                                        return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">{`${(percent * 100).toFixed(0)}%`}</text> : null;
+                                    }}>
+                                    {chartData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                            </RechartsPieChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                    <div>
+                        <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Sectors</h4>
+                        <ul className="space-y-3">
+                            {topSectors.map((sector) => (
+                                <li key={sector.name} className="flex items-center text-sm">
+                                    <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === sector.name) % COLORS.length] }} />
+                                    <span className="font-medium text-foreground/90 flex-1">{sector.name}</span>
+                                    <span className="font-mono text-muted-foreground">{sector.percentage.toFixed(2)}%</span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
@@ -56,26 +122,7 @@ export const DashboardView = () => {
   const dashboardData = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
     try {
-        const data = excelProcessor.getProcessedData();
-        if (!data) return null;
-        
-        const sectorChartData = Array.isArray(data.sectorAllocation) 
-            ? data.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) 
-            : [];
-        
-        const totalAllocation = sectorChartData.reduce((acc, curr) => acc + curr.value, 0);
-
-        return {
-            summaryStats: {
-                totalAUM: data.totalAUM,
-                clientGainLoss: data.clientGainLoss,
-                totalClients: data.totalPMSClients
-            },
-            sectorChartData: sectorChartData.map(s => ({ ...s, percentage: totalAllocation > 0 ? (s.value / totalAllocation) * 100 : 0 })),
-            yearsToExpiryChartData: data.yearsToExpiryBuckets 
-                ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
-                : []
-        };
+        return excelProcessor.getProcessedData();
     } catch (error) {
         console.error("Error processing dashboard metrics:", error);
         return null;
@@ -90,8 +137,23 @@ export const DashboardView = () => {
     return <ErrorDisplay />;
   }
   
-  const { summaryStats, sectorChartData, yearsToExpiryChartData } = dashboardData;
-  const topSectors = [...sectorChartData].sort((a, b) => b.value - a.value).slice(0, 5);
+  const { summaryStats, sectorAllocation, sectorAllocationGain, sectorAllocationLoss, yearsToExpiryChartData } = useMemo(() => {
+    const data = dashboardData;
+    const yearsToExpiryChartData = data.yearsToExpiryBuckets 
+        ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
+        : [];
+    return {
+        summaryStats: {
+            totalAUM: data.totalAUM,
+            clientGainLoss: data.clientGainLoss,
+            totalClients: data.totalPMSClients
+        },
+        sectorAllocation: data.sectorAllocation || [],
+        sectorAllocationGain: data.sectorAllocationGain || [],
+        sectorAllocationLoss: data.sectorAllocationLoss || [],
+        yearsToExpiryChartData
+    };
+  }, [dashboardData]);
 
   const gainLoss = summaryStats.clientGainLoss || { gain: 0, loss: 0, neutral: 0 };
 
@@ -104,45 +166,10 @@ export const DashboardView = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <Card className="glassmorphic col-span-1">
-          <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector-wise Allocation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <ChartContainer config={{}} className="h-80 w-full">
-                  <ResponsiveContainer>
-                    <RechartsPieChart>
-                      <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${Number(value).toLocaleString()}`} />} />
-                      <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                            const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                            const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                            const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                            return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">{`${(percent * 100).toFixed(0)}%`}</text> : null;
-                        }}>
-                        {sectorChartData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                    </RechartsPieChart>
-                  </ResponsiveContainer>
-                </ChartContainer>
-                <div>
-                    <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Sectors</h4>
-                    <ul className="space-y-3">
-                        {topSectors.map((sector, index) => (
-                            <li key={sector.name} className="flex items-center text-sm">
-                                <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[sectorChartData.findIndex(s => s.name === sector.name) % COLORS.length] }} />
-                                <span className="font-medium text-foreground/90 flex-1">{sector.name}</span>
-                                <span className="font-mono text-muted-foreground">{sector.percentage.toFixed(2)}%</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-          </CardContent>
-        </Card>
-
+        <SectorPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <SectorPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
+        <SectorPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        
         <Card className="glassmorphic col-span-1">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><BarChart className="text-accent"/> Years to Expiry</CardTitle>
