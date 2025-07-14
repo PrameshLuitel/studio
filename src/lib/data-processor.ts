@@ -191,7 +191,7 @@ export class ExcelDataProcessor {
     const sheetData = this.getSheetData('Sector Holding Summary');
     if (sheetData.length < 2) return [];
 
-    const headers = sheetData[1]; // Headers from Row 2
+    const headers = sheetData[1] as string[]; // Headers from Row 2
     const lastRow = sheetData[sheetData.length - 1];
     const sectorData: SectorHoldingData[] = [];
 
@@ -213,7 +213,7 @@ export class ExcelDataProcessor {
   private processHoldingStatementSheet(): HoldingStatementData[] {
     const jsonData = this.getSheetData('Holding Statement');
     return jsonData.slice(1).map((row: any) => {
-      if (!row || row.length < 7) return null;
+      if (!row || row.length < 8) return null;
       return {
         clientId: row[0],
         security: row[1],
@@ -221,7 +221,7 @@ export class ExcelDataProcessor {
         marketValue: this.parseNumber(row[6]),
         sector: row[7],
       };
-    }).filter(d => d && d.clientId && d.sector && d.marketValue > 0) as HoldingStatementData[];
+    }).filter(d => d && d.clientId && d.sector && !isNaN(d.marketValue)) as HoldingStatementData[];
   }
 
   /**
@@ -293,8 +293,8 @@ export class ExcelDataProcessor {
     
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 56);
-    futureDate.setMonth(futureDate.getMonth() - 8);
-    futureDate.setDate(futureDate.getDate() - 17);
+    futureDate.setMonth(futureDate.getMonth() + 8); // JS months are 0-indexed, so +8 is correct.
+    futureDate.setDate(futureDate.getDate() + 17);
     futureDate.setHours(0, 0, 0, 0);
 
     summaryData.forEach(item => {
@@ -341,7 +341,7 @@ export class ExcelDataProcessor {
 
       holdingData.forEach(holding => {
           const gainLoss = clientGainLossMap.get(holding.clientId);
-          if (gainLoss === undefined) return;
+          if (gainLoss === undefined || !holding.sector) return;
 
           if (gainLoss > 0) {
               gainAllocation[holding.sector] = (gainAllocation[holding.sector] || 0) + holding.marketValue;
@@ -353,6 +353,7 @@ export class ExcelDataProcessor {
       const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
           return Object.entries(allocation)
               .map(([sector, value]) => ({ sector, allocation: value }))
+              .filter(item => item.allocation > 0) // Ensure only sectors with allocation are returned
               .sort((a, b) => b.allocation - a.allocation);
       };
 
