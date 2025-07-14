@@ -5,7 +5,7 @@ import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart } from 'lucide-react';
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { formatCurrency } from '@/lib/data-processor';
@@ -107,7 +107,7 @@ export const DashboardView = () => {
               <ResponsiveContainer>
                 <RechartsPieChart>
                   <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel />} />
-                  <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                  <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                         const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
                         const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
@@ -117,6 +117,7 @@ export const DashboardView = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
+                  <Legend verticalAlign="bottom" height={36} iconSize={10} />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </ChartContainer>
