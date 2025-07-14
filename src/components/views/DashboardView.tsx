@@ -5,7 +5,7 @@ import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart } from 'lucide-react';
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 
@@ -65,12 +65,15 @@ export const DashboardView = () => {
     return <LoadingSkeleton />;
   }
   
-  if (!metrics || !metrics.summaryStats || !metrics.sectorChartData || !metrics.yearsToExpiryChartData) {
+  if (!metrics) {
     return <ErrorDisplay />;
   }
   
-  const { summaryStats, sectorChartData, yearsToExpiryChartData } = metrics;
-  
+  const { totalAUM, clientGainLoss, totalPMSClients } = metrics;
+  const summaryStats = { totalAUM, clientGainLoss, totalClients: totalPMSClients };
+  const sectorChartData = metrics.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation }));
+  const yearsToExpiryChartData = Object.entries(metrics.yearsToExpiryBuckets).map(([name, value]) => ({ name, value }));
+
   return (
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -99,7 +102,6 @@ export const DashboardView = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Legend />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </ChartContainer>
