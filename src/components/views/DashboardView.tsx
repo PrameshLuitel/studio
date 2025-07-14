@@ -51,10 +51,21 @@ const ErrorDisplay = () => (
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
 
-  const metrics = useMemo(() => {
+  const dashboardData = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
     try {
-        return excelProcessor.getProcessedData();
+        const data = excelProcessor.getProcessedData();
+        if (!data) return null;
+        
+        return {
+            summaryStats: {
+                totalAUM: data.totalAUM,
+                clientGainLoss: data.clientGainLoss,
+                totalClients: data.totalPMSClients
+            },
+            sectorChartData: data.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })),
+            yearsToExpiryChartData: Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value }))
+        };
     } catch (error) {
         console.error("Error processing dashboard metrics:", error);
         return null;
@@ -65,25 +76,18 @@ export const DashboardView = () => {
     return <LoadingSkeleton />;
   }
   
-  if (!metrics) {
+  if (!dashboardData) {
     return <ErrorDisplay />;
   }
   
-  const { totalAUM, clientGainLoss, totalPMSClients } = metrics;
-  const summaryStats = {
-    totalAUM: totalAUM || 0,
-    clientGainLoss: clientGainLoss || { gain: 0, loss: 0, neutral: 0 },
-    totalClients: totalPMSClients || 0
-  };
-  const sectorChartData = Array.isArray(metrics.sectorAllocation) ? metrics.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) : [];
-  const yearsToExpiryChartData = metrics.yearsToExpiryBuckets ? Object.entries(metrics.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) : [];
+  const { summaryStats, sectorChartData, yearsToExpiryChartData } = dashboardData;
 
   return (
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <DataCard title="Total AUM" value={`${summaryStats.totalAUM.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} icon={DollarSign} description="Total Assets Under Management" />
-        <DataCard title="Client Gain/Loss" value={`${summaryStats.clientGainLoss.gain} Gained / ${summaryStats.clientGainLoss.loss} Lost`} icon={TrendingUp} description={`${summaryStats.clientGainLoss.neutral} Neutral`} />
-        <DataCard title="Active Clients" value={summaryStats.totalClients.toString()} icon={Users} description="Total number of clients" />
+        <DataCard title="Total AUM" value={`${(summaryStats.totalAUM || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} icon={DollarSign} description="Total Assets Under Management" />
+        <DataCard title="Client Gain/Loss" value={`${summaryStats.clientGainLoss?.gain || 0} Gained / ${summaryStats.clientGainLoss?.loss || 0} Lost`} icon={TrendingUp} description={`${summaryStats.clientGainLoss?.neutral || 0} Neutral`} />
+        <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
