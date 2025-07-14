@@ -113,7 +113,7 @@ export class ExcelDataProcessor {
 
     const requiredSheets = [
       'Portfolio',
-      'Sector Holding Summary',
+      'sector',
       'EPS',
     ];
 
@@ -177,7 +177,7 @@ export class ExcelDataProcessor {
    * Process Sector Holding Summary worksheet
    */
   private processSectorHoldingSheet(): SectorHoldingData[] {
-    const jsonData = this.getSheetData('Sector Holding Summary');
+    const jsonData = this.getSheetData('sector');
     return jsonData.slice(1).map((row: any) => {
        if (!row || row.length === 0) return null;
        return {
