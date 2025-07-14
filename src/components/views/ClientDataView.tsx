@@ -9,18 +9,17 @@ import { Card } from '@/components/ui/card';
 
 export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
-  const portfolioSheet = 'Portfolio';
 
   const { data, headers } = useMemo(() => {
-    if (!excelProcessor) return { data: [], headers: [] };
-    
-    const allSheets = excelProcessor.getAllSheetsRawData();
-    const sheetData = allSheets ? allSheets[portfolioSheet] : [];
-
-    if (!sheetData || sheetData.length === 0) return { data: [], headers: [] };
-    
-    const tableHeaders = Object.keys(sheetData[0]);
-    return { data: sheetData, headers: tableHeaders };
+    if (!excelProcessor || !excelProcessor.isDataLoaded()) {
+      return { data: [], headers: [] };
+    }
+    const processedData = excelProcessor.getProcessedData();
+    if (!processedData || !processedData.clientData) {
+      return { data: [], headers: [] };
+    }
+    const { headers: tableHeaders, data: tableData } = processedData.clientData;
+    return { data: tableData, headers: tableHeaders };
   }, [excelProcessor]);
 
   if (data.length === 0) {
@@ -43,7 +42,7 @@ export const ClientDataView = () => {
               <TableRow key={rowIndex}>
                 {headers.map((header, cellIndex) => (
                   <TableCell key={cellIndex}>
-                    {row[header] instanceof Date ? row[header].toLocaleDateString() : row[header]}
+                    {row[cellIndex] instanceof Date ? row[cellIndex].toLocaleDateString() : row[cellIndex]}
                   </TableCell>
                 ))}
               </TableRow>

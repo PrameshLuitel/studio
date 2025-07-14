@@ -6,24 +6,31 @@ import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
 
 export const EpsView = () => {
   const { excelProcessor } = useContext(AppContext);
-  const epsSheetName = 'EPS';
 
   const chartData = useMemo(() => {
-    if (!excelProcessor) return [];
+    if (!excelProcessor || !excelProcessor.isDataLoaded()) return [];
     
-    const allSheets = excelProcessor.getAllSheetsRawData();
-    const epsSheetData = allSheets ? allSheets[epsSheetName] : [];
+    const processed = excelProcessor.getProcessedData();
+    const epsData = processed ? processed.epsData : [];
 
-    if (!epsSheetData) return [];
+    if (!epsData) return [];
     
-    return epsSheetData
+    return epsData
       .map(row => {
-        const date = new Date(row.Date);
+        let date;
+        if (row.Date instanceof Date) {
+            date = row.Date;
+        } else if (typeof row.Date === 'string') {
+            date = parseISO(row.Date);
+        } else {
+            return null;
+        }
+        
         const eps = Number(row.EPS);
         if (isNaN(date.getTime()) || isNaN(eps)) return null;
         return { date, eps };

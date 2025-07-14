@@ -54,11 +54,7 @@ export const DashboardView = () => {
   const metrics = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
     try {
-        return {
-            summaryStats: excelProcessor.getSummaryStats(),
-            sectorChartData: excelProcessor.getSectorChartData(),
-            yearsToExpiryChartData: excelProcessor.getYearsToExpiryChartData(),
-        };
+        return excelProcessor.getProcessedData();
     } catch (error) {
         console.error("Error processing dashboard metrics:", error);
         return null;
