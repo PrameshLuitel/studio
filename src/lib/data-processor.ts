@@ -241,7 +241,8 @@ export class ExcelDataProcessor {
    * Calculate total AUM
    */
   private calculateTotalAUM(summaryData: SummaryData[]): number {
-    return summaryData.reduce((total, client) => total + (client.totalValue || 0), 0);
+    const totalAUM = summaryData.reduce((total, client) => total + (client.totalValue || 0), 0);
+    return totalAUM / 2;
   }
 
   /**
