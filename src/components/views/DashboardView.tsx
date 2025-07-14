@@ -71,7 +71,7 @@ export const DashboardView = () => {
   
   const { totalAUM, clientGainLoss, totalPMSClients } = metrics;
   const summaryStats = { totalAUM, clientGainLoss, totalClients: totalPMSClients };
-  const sectorChartData = metrics.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation }));
+  const sectorChartData = Array.isArray(metrics.sectorAllocation) ? metrics.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) : [];
   const yearsToExpiryChartData = Object.entries(metrics.yearsToExpiryBuckets).map(([name, value]) => ({ name, value }));
 
   return (
