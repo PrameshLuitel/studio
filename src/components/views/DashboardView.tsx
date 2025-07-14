@@ -32,8 +32,8 @@ const LoadingSkeleton = () => (
             <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
             <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
-            <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+        <div className="grid gap-6">
+            <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
             <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
         </div>
   </div>
@@ -97,17 +97,17 @@ export const DashboardView = () => {
         <DataCard title="Active Clients" value={((summaryStats.totalClients || 0) - 4).toString()} icon={Users} description="Total number of clients" />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6">
         <Card className="glassmorphic">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector-wise Allocation</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-64 w-full">
+            <ChartContainer config={{}} className="h-80 w-full">
               <ResponsiveContainer>
                 <RechartsPieChart>
                   <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel />} />
-                  <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                  <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                         const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
                         const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
@@ -117,7 +117,7 @@ export const DashboardView = () => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Legend verticalAlign="bottom" height={36} iconSize={10} />
+                  <Legend verticalAlign="bottom" height={40} iconSize={10} wrapperStyle={{paddingTop: '20px'}} />
                 </RechartsPieChart>
               </ResponsiveContainer>
             </ChartContainer>
