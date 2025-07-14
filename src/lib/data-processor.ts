@@ -410,7 +410,7 @@ export class ExcelDataProcessor {
 
     const sectorSheet = this.getSheetData('Sector Holding Summary');
     const sectorHeaders = sectorSheet[1] as string[];
-    const clientRowSector = sectorSheet.find(row => row[0] === clientRowPortfolio[0]); // Match by client code
+    const clientRowSector = sectorSheet.find(row => row[1] === clientName); // Match by client name in Column B
     
     let sectorAllocations: { sector: string; value: number }[] = [];
     if (clientRowSector) {
