@@ -160,9 +160,9 @@ export const DashboardView = () => {
   return (
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <DataCard title="Total AUM" value={formatCurrency((summaryStats.totalAUM || 0) / 2)} icon={DollarSign} description="Total Assets Under Management" />
+        <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
         <DataCard title="Client Gain/Loss" value={`${gainLoss.gain} Gained / ${gainLoss.loss} Lost`} icon={TrendingUp} description={`${gainLoss.neutral} Neutral`} />
-        <DataCard title="Active Clients" value={((summaryStats.totalClients || 0) - 4).toString()} icon={Users} description="Total number of clients" />
+        <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
 
       <div className="grid grid-cols-1 gap-6">

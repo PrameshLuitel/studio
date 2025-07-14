@@ -119,7 +119,6 @@ export class ExcelDataProcessor {
     const requiredSheets = [
       'Portfolio',
       'Sector Holding Summary',
-      'Holding Statement',
       'EPS',
     ];
 
@@ -143,11 +142,10 @@ export class ExcelDataProcessor {
 
     const summaryData = this.processSummarySheet();
     const sectorData = this.processSectorHoldingSheet();
-    const holdingData = this.processHoldingStatementSheet();
     const epsData = this.processEPSSheet();
     const clientData = this.processClientDataSheet();
 
-    const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss(summaryData, holdingData);
+    const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -205,23 +203,6 @@ export class ExcelDataProcessor {
     }
     
     return sectorData;
-  }
-
-  /**
-   * Process Holding Statement worksheet
-   */
-  private processHoldingStatementSheet(): HoldingStatementData[] {
-    const jsonData = this.getSheetData('Holding Statement');
-    return jsonData.slice(1).map((row: any) => {
-      if (!row || row.length < 8) return null;
-      return {
-        clientId: row[0],
-        security: row[1],
-        quantity: this.parseNumber(row[3]),
-        marketValue: this.parseNumber(row[6]),
-        sector: row[7],
-      };
-    }).filter(d => d && d.clientId && d.sector && !isNaN(d.marketValue)) as HoldingStatementData[];
   }
 
   /**
@@ -327,33 +308,56 @@ export class ExcelDataProcessor {
       .sort((a, b) => b.allocation - a.allocation);
   }
 
-  private calculateSectorAllocationsByGainLoss(summaryData: SummaryData[], holdingData: HoldingStatementData[]): {
+  private calculateSectorAllocationsByGainLoss(): {
     sectorAllocationGain: SectorAllocation[],
     sectorAllocationLoss: SectorAllocation[]
   } {
-      const clientGainLossMap = new Map<string, number>();
-      summaryData.forEach(client => {
-          clientGainLossMap.set(client.clientId, client.gainLoss);
-      });
+      const sheetData = this.getSheetData('Sector Holding Summary');
+      if (sheetData.length < 3) {
+          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+      }
 
+      const headers = sheetData[1] as string[]; // Headers from Row 2
       const gainAllocation: { [sector: string]: number } = {};
       const lossAllocation: { [sector: string]: number } = {};
 
-      holdingData.forEach(holding => {
-          const gainLoss = clientGainLossMap.get(holding.clientId);
-          if (gainLoss === undefined || !holding.sector) return;
+      // Initialize allocations from headers (C to P, indices 2 to 15)
+      for (let i = 2; i <= 15; i++) {
+        const sector = headers[i];
+        if (sector) {
+          gainAllocation[sector] = 0;
+          lossAllocation[sector] = 0;
+        }
+      }
+      
+      // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
+      for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
+        const row = sheetData[rowIndex] as any[];
+        if (!row || row.length === 0) continue;
 
-          if (gainLoss > 0) {
-              gainAllocation[holding.sector] = (gainAllocation[holding.sector] || 0) + holding.marketValue;
-          } else if (gainLoss < 0) {
-              lossAllocation[holding.sector] = (lossAllocation[holding.sector] || 0) + holding.marketValue;
-          }
-      });
+        const gainLossValue = this.parseNumber(row[17]); // Column R
+
+        let targetAllocation: { [sector: string]: number } | null = null;
+        if (gainLossValue > 0) {
+            targetAllocation = gainAllocation;
+        } else if (gainLossValue < 0) {
+            targetAllocation = lossAllocation;
+        }
+
+        if (targetAllocation) {
+            for (let colIndex = 2; colIndex <= 15; colIndex++) { // Columns C to P
+                const sector = headers[colIndex];
+                if (sector) {
+                    targetAllocation[sector] += this.parseNumber(row[colIndex]);
+                }
+            }
+        }
+      }
       
       const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
           return Object.entries(allocation)
               .map(([sector, value]) => ({ sector, allocation: value }))
-              .filter(item => item.allocation > 0) // Ensure only sectors with allocation are returned
+              .filter(item => item.allocation > 0)
               .sort((a, b) => b.allocation - a.allocation);
       };
 
