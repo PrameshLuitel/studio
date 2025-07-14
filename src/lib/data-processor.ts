@@ -57,6 +57,7 @@ export interface ClientDetails {
     gainLoss: number;
     expiryDate?: Date;
     sectorAllocations: { sector: string; value: number }[];
+    portfolioData: { header: string; value: any }[];
 }
 
 
@@ -398,6 +399,7 @@ export class ExcelDataProcessor {
     if (!this.workbook) return null;
 
     const portfolioSheet = this.getSheetData('Portfolio');
+    const portfolioHeaders = portfolioSheet[0] as string[];
     const clientRowPortfolio = portfolioSheet.find(row => row[2] === clientName);
 
     if (!clientRowPortfolio) return null;
@@ -420,6 +422,11 @@ export class ExcelDataProcessor {
             }
         }
     }
+    
+    const portfolioData = portfolioHeaders.map((header, index) => ({
+        header,
+        value: clientRowPortfolio[index],
+    }));
 
     return {
         name: clientName,
@@ -427,6 +434,7 @@ export class ExcelDataProcessor {
         gainLoss,
         expiryDate,
         sectorAllocations,
+        portfolioData,
     };
   }
   
