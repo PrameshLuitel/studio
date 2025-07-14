@@ -9,8 +9,9 @@ import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, R
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { formatCurrency } from '@/lib/data-processor';
+import { cn } from '@/lib/utils';
 
-const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
 
 const DataCard = ({ title, value, icon: Icon, description }: { title: string; value: string; icon: React.ElementType; description: string; }) => (
     <Card className="glassmorphic">
@@ -58,15 +59,19 @@ export const DashboardView = () => {
         const data = excelProcessor.getProcessedData();
         if (!data) return null;
         
+        const sectorChartData = Array.isArray(data.sectorAllocation) 
+            ? data.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) 
+            : [];
+        
+        const totalAllocation = sectorChartData.reduce((acc, curr) => acc + curr.value, 0);
+
         return {
             summaryStats: {
                 totalAUM: data.totalAUM,
                 clientGainLoss: data.clientGainLoss,
                 totalClients: data.totalPMSClients
             },
-            sectorChartData: Array.isArray(data.sectorAllocation) 
-                ? data.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) 
-                : [],
+            sectorChartData: sectorChartData.map(s => ({ ...s, percentage: totalAllocation > 0 ? (s.value / totalAllocation) * 100 : 0 })),
             yearsToExpiryChartData: data.yearsToExpiryBuckets 
                 ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
                 : []
@@ -86,6 +91,7 @@ export const DashboardView = () => {
   }
   
   const { summaryStats, sectorChartData, yearsToExpiryChartData } = dashboardData;
+  const topSectors = [...sectorChartData].sort((a, b) => b.value - a.value).slice(0, 5);
 
   const gainLoss = summaryStats.clientGainLoss || { gain: 0, loss: 0, neutral: 0 };
 
@@ -97,34 +103,47 @@ export const DashboardView = () => {
         <DataCard title="Active Clients" value={((summaryStats.totalClients || 0) - 4).toString()} icon={Users} description="Total number of clients" />
       </div>
 
-      <div className="grid gap-6">
-        <Card className="glassmorphic">
+      <div className="grid grid-cols-1 gap-6">
+        <Card className="glassmorphic col-span-1">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector-wise Allocation</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={{}} className="h-80 w-full">
-              <ResponsiveContainer>
-                <RechartsPieChart>
-                  <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel />} />
-                  <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                        return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">{`${(percent * 100).toFixed(0)}%`}</text> : null;
-                    }}>
-                    {sectorChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend verticalAlign="bottom" height={40} iconSize={10} wrapperStyle={{paddingTop: '20px'}} />
-                </RechartsPieChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <ChartContainer config={{}} className="h-80 w-full">
+                  <ResponsiveContainer>
+                    <RechartsPieChart>
+                      <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${Number(value).toLocaleString()}`} />} />
+                      <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                            const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                            const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                            const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                            return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">{`${(percent * 100).toFixed(0)}%`}</text> : null;
+                        }}>
+                        {sectorChartData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+                <div>
+                    <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Sectors</h4>
+                    <ul className="space-y-3">
+                        {topSectors.map((sector, index) => (
+                            <li key={sector.name} className="flex items-center text-sm">
+                                <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[sectorChartData.findIndex(s => s.name === sector.name) % COLORS.length] }} />
+                                <span className="font-medium text-foreground/90 flex-1">{sector.name}</span>
+                                <span className="font-mono text-muted-foreground">{sector.percentage.toFixed(2)}%</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="glassmorphic">
+        <Card className="glassmorphic col-span-1">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><BarChart className="text-accent"/> Years to Expiry</CardTitle>
           </CardHeader>
