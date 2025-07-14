@@ -188,41 +188,6 @@ export class ExcelDataProcessor {
   }
 
   /**
-   * Process Investment Return Report worksheet
-   */
-  private processInvestmentReturnSheet(): InvestmentReturnData[] {
-    // This sheet is no longer used for expiry calculation but kept for potential other uses
-    const sheetName = 'Investment Return Report';
-    if (!this.workbook?.SheetNames.includes(sheetName)) return [];
-
-    const jsonData = this.getSheetData(sheetName);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return jsonData.slice(1).map((row: any) => {
-      if (!row || row.length === 0) return null;
-      
-      const maturityDate = row[4] instanceof Date ? row[4] : null; 
-      
-      let yearsToExpiry = 0;
-      if (maturityDate) {
-          const diffTime = maturityDate.getTime() - today.getTime();
-          if (diffTime > 0) {
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            yearsToExpiry = diffDays / 365.25;
-          }
-      }
-
-      return {
-        security: row[0],
-        maturityDate: maturityDate ? maturityDate.toISOString() : '',
-        yearsToExpiry: yearsToExpiry,
-        returnRate: this.parseNumber(row[12]),
-      };
-    }).filter(Boolean) as InvestmentReturnData[];
-  }
-
-  /**
    * Process EPS worksheet
    */
   private processEPSSheet(): EPSData[] {
@@ -288,16 +253,26 @@ export class ExcelDataProcessor {
     '5+': number;
   } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    
+    // 1. Calculate the future date by adding 56 years, 8 months, 17 days to today
+    const futureDate = new Date();
+    futureDate.setFullYear(futureDate.getFullYear() + 56);
+    futureDate.setMonth(futureDate.getMonth() + 8);
+    futureDate.setDate(futureDate.getDate() + 17);
+    futureDate.setHours(0, 0, 0, 0);
 
     summaryData.forEach(item => {
-      if (!item.expiryDate) return;
+      // 2. Use date from Column E of Portfolio sheet
+      if (!item.expiryDate || !(item.expiryDate instanceof Date)) return;
       
-      const expiryDate = item.expiryDate;
-      const diffTime = expiryDate.getTime() - today.getTime();
+      const sheetDate = item.expiryDate;
+      sheetDate.setHours(0, 0, 0, 0);
+
+      // 3. Subtract sheet date from the calculated future date
+      const diffTime = futureDate.getTime() - sheetDate.getTime();
 
       if (diffTime > 0) {
+        // 4. Convert to years and categorize
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const years = diffDays / 365.25;
         
