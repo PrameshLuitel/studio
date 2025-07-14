@@ -72,7 +72,7 @@ export const DashboardView = () => {
   const { totalAUM, clientGainLoss, totalPMSClients } = metrics;
   const summaryStats = { totalAUM, clientGainLoss, totalClients: totalPMSClients };
   const sectorChartData = Array.isArray(metrics.sectorAllocation) ? metrics.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) : [];
-  const yearsToExpiryChartData = Object.entries(metrics.yearsToExpiryBuckets).map(([name, value]) => ({ name, value }));
+  const yearsToExpiryChartData = metrics.yearsToExpiryBuckets ? Object.entries(metrics.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) : [];
 
   return (
     <div className="grid gap-6 animate-in fade-in-50">
