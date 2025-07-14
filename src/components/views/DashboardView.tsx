@@ -8,6 +8,7 @@ import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart } fro
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
+import { formatCurrency } from '@/lib/data-processor';
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
@@ -63,8 +64,12 @@ export const DashboardView = () => {
                 clientGainLoss: data.clientGainLoss,
                 totalClients: data.totalPMSClients
             },
-            sectorChartData: data.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })),
-            yearsToExpiryChartData: Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value }))
+            sectorChartData: Array.isArray(data.sectorAllocation) 
+                ? data.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) 
+                : [],
+            yearsToExpiryChartData: data.yearsToExpiryBuckets 
+                ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
+                : []
         };
     } catch (error) {
         console.error("Error processing dashboard metrics:", error);
@@ -82,11 +87,13 @@ export const DashboardView = () => {
   
   const { summaryStats, sectorChartData, yearsToExpiryChartData } = dashboardData;
 
+  const gainLoss = summaryStats.clientGainLoss || { gain: 0, loss: 0, neutral: 0 };
+
   return (
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <DataCard title="Total AUM" value={`${(summaryStats.totalAUM || 0).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })}`} icon={DollarSign} description="Total Assets Under Management" />
-        <DataCard title="Client Gain/Loss" value={`${summaryStats.clientGainLoss?.gain || 0} Gained / ${summaryStats.clientGainLoss?.loss || 0} Lost`} icon={TrendingUp} description={`${summaryStats.clientGainLoss?.neutral || 0} Neutral`} />
+        <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
+        <DataCard title="Client Gain/Loss" value={`${gainLoss.gain} Gained / ${gainLoss.loss} Lost`} icon={TrendingUp} description={`${gainLoss.neutral} Neutral`} />
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
 

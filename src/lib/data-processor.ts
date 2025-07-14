@@ -46,16 +46,20 @@ export class ExcelDataProcessor {
   
   private processWorkbook(): void {
     if (!this.allSheets['Portfolio']) {
-      throw new ExcelProcessingError('Portfolio sheet data is missing', 'MISSING_DATA');
+      // In a real app, you might want to check for all required sheets
+      this.processedData = null; // Set to null if required data is missing
+      return;
     }
 
     const portfolioData = this.allSheets['Portfolio'].slice(1); // Skip header row
     const epsData = this.allSheets['EPS'] ? this.allSheets['EPS'].slice(1) : [];
 
     this.processedData = {
-      summaryStats: this.calculateSummaryStats(portfolioData),
-      sectorChartData: this.calculateSectorChartData(portfolioData),
-      yearsToExpiryChartData: this.calculateYearsToExpiryChartData(portfolioData),
+      totalAUM: this.calculateTotalAUM(portfolioData),
+      clientGainLoss: this.calculateClientGainLoss(portfolioData),
+      totalPMSClients: portfolioData.length,
+      sectorAllocation: this.calculateSectorChartData(portfolioData),
+      yearsToExpiryBuckets: this.calculateYearsToExpiryChartData(portfolioData),
       clientData: this.getClientData(),
       epsData: this.getEpsData(epsData),
       allSheetsRawData: this.getAllSheetsRawData()
@@ -71,44 +75,41 @@ export class ExcelDataProcessor {
     return 0;
   }
   
-  private calculateSummaryStats(data: any[][]): any {
-    const totalAUM = data.reduce((sum, row) => sum + this.parseNumber(row[16]), 0); // Column Q is index 16
-    const clientGainLoss = data.reduce((acc, row) => {
+  private calculateTotalAUM(data: any[][]): number {
+    return data.reduce((sum, row) => sum + this.parseNumber(row[16]), 0); // Column Q is index 16 for AUM
+  }
+
+  private calculateClientGainLoss(data: any[][]): any {
+    return data.reduce((acc, row) => {
         const gainLoss = this.parseNumber(row[17]); // Column R is index 17
         if (gainLoss > 0) acc.gain++;
         else if (gainLoss < 0) acc.loss++;
         else acc.neutral++;
         return acc;
     }, { gain: 0, loss: 0, neutral: 0 });
-
-    return {
-      totalAUM,
-      clientGainLoss,
-      totalClients: data.length,
-    }
   }
 
-  private calculateSectorChartData(data: any[][]): Array<{ name: string, value: number }> {
+  private calculateSectorChartData(data: any[][]): Array<{ sector: string, allocation: number }> {
     const allocation: { [key: string]: number } = {};
-    const totalAUM = data.reduce((sum, row) => sum + this.parseNumber(row[16]), 0);
+    const totalAUM = this.calculateTotalAUM(data);
+
+    if (totalAUM === 0) return [];
 
     data.forEach(row => {
-      const sector = row[8]; // Column I is index 8
-      const aum = this.parseNumber(row[16]); // Column Q
+      const sector = row[8]; // Column I is index 8 for Sector
+      const aum = this.parseNumber(row[16]); // Column Q for AUM
       if (sector && typeof sector === 'string') {
         allocation[sector] = (allocation[sector] || 0) + aum;
       }
     });
-
-    if (totalAUM === 0) return [];
     
     return Object.entries(allocation).map(([sector, aum]) => ({
-      name: sector,
-      value: (aum / totalAUM) * 100,
-    })).sort((a,b) => b.value - a.value);
+      sector: sector,
+      allocation: (aum / totalAUM) * 100,
+    })).sort((a,b) => b.allocation - a.allocation);
   }
 
-  private calculateYearsToExpiryChartData(data: any[][]): Array<{ name: string, value: number }> {
+  private calculateYearsToExpiryChartData(data: any[][]): { [key: string]: number } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
       data.forEach(row => {
           const years = this.parseNumber(row[12]); // Assuming Column M is 'Years to Expiry' (index 12)
@@ -117,7 +118,7 @@ export class ExcelDataProcessor {
           else if (years <= 5) buckets['3-5']++;
           else buckets['5+']++;
       });
-      return Object.entries(buckets).map(([name, value]) => ({ name, value }));
+      return buckets;
   }
 
   private getClientData(): { headers: string[], data: any[][] } {
@@ -166,3 +167,12 @@ export class ExcelDataProcessor {
     return this.processedData !== null;
   }
 }
+
+export const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
