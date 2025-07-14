@@ -180,7 +180,7 @@ export class ExcelDataProcessor {
     const sheetData = this.getSheetData('Sector Holding Summary');
     if (sheetData.length < 2) return [];
 
-    const headers = sheetData[0];
+    const headers = sheetData[1]; // Headers from Row 2
     const lastRow = sheetData[sheetData.length - 1];
     const sectorData: SectorHoldingData[] = [];
 
