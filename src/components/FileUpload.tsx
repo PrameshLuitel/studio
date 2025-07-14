@@ -37,6 +37,9 @@ export const FileUpload = () => {
       const parsedData = await processFile(uploadedFile);
       setSheets(parsedData);
       setFileName(uploadedFile.name);
+      // No need to set isLoading to false here, as the view will change.
+      // But we can add it for robustness, in case the view change logic is altered.
+      // setIsLoading(false);
     } catch (error) {
       console.error(error);
       toast({
@@ -44,6 +47,8 @@ export const FileUpload = () => {
         title: 'Processing Error',
         description: 'Failed to process the Excel file. Please check the file format and try again.',
       });
+    } finally {
+      // Ensure loading is always stopped
       setIsLoading(false);
     }
   };
