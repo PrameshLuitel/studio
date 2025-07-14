@@ -192,22 +192,27 @@ export class ExcelDataProcessor {
    */
   private processInvestmentReturnSheet(): InvestmentReturnData[] {
     const jsonData = this.getSheetData('Investment Return Report');
+    const today = new Date();
+    // Set time to 0 to compare dates only
+    today.setHours(0, 0, 0, 0);
+
     return jsonData.slice(1).map((row: any) => {
       if (!row || row.length === 0) return null;
       
-      const dateD = row[3] instanceof Date ? row[3] : null;
-      const dateE = row[4] instanceof Date ? row[4] : null;
+      const maturityDate = row[4] instanceof Date ? row[4] : null; // Column E
       
       let yearsToExpiry = 0;
-      if (dateD && dateE) {
-          const diffTime = dateE.getTime() - dateD.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          yearsToExpiry = diffDays / 365.25;
+      if (maturityDate) {
+          const diffTime = maturityDate.getTime() - today.getTime();
+          if (diffTime > 0) {
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            yearsToExpiry = diffDays / 365.25;
+          }
       }
 
       return {
         security: row[0],
-        maturityDate: row[10],
+        maturityDate: maturityDate ? maturityDate.toISOString() : '',
         yearsToExpiry: yearsToExpiry,
         returnRate: this.parseNumber(row[12]),
       };
@@ -282,10 +287,10 @@ export class ExcelDataProcessor {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
     investmentData.forEach(investment => {
       const years = investment.yearsToExpiry || 0;
-      if (years <= 1) buckets['0-1']++;
+      if (years > 0 && years <= 1) buckets['0-1']++;
       else if (years <= 3) buckets['1-3']++;
       else if (years <= 5) buckets['3-5']++;
-      else buckets['5+']++;
+      else if (years > 5) buckets['5+']++;
     });
     return buckets;
   }
