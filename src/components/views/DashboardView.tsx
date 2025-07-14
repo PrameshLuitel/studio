@@ -5,7 +5,7 @@ import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart } from 'lucide-react';
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 
@@ -38,16 +38,31 @@ const LoadingSkeleton = () => (
   </div>
 );
 
+const ErrorDisplay = () => (
+    <div className="flex items-center justify-center h-full">
+        <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
+            <h3 className="font-headline text-lg text-foreground">Could not process dashboard data.</h3>
+            <p className="mt-2 text-sm">Please ensure your uploaded file contains the required sheets and columns.</p>
+        </div>
+    </div>
+);
+
+
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
 
   const metrics = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
-    return {
-      summaryStats: excelProcessor.getSummaryStats(),
-      sectorChartData: excelProcessor.getSectorChartData(),
-      yearsToExpiryChartData: excelProcessor.getYearsToExpiryChartData(),
-    };
+    try {
+        return {
+            summaryStats: excelProcessor.getSummaryStats(),
+            sectorChartData: excelProcessor.getSectorChartData(),
+            yearsToExpiryChartData: excelProcessor.getYearsToExpiryChartData(),
+        };
+    } catch (error) {
+        console.error("Error processing dashboard metrics:", error);
+        return null;
+    }
   }, [excelProcessor]);
 
   if (isLoading) {
@@ -55,14 +70,7 @@ export const DashboardView = () => {
   }
   
   if (!metrics || !metrics.summaryStats || !metrics.sectorChartData || !metrics.yearsToExpiryChartData) {
-    return (
-        <div className="flex items-center justify-center h-full">
-            <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
-                <h3 className="font-headline text-lg text-foreground">Could not process dashboard data.</h3>
-                <p className="mt-2 text-sm">Please ensure your uploaded file contains the required sheets and columns.</p>
-            </div>
-        </div>
-    );
+    return <ErrorDisplay />;
   }
   
   const { summaryStats, sectorChartData, yearsToExpiryChartData } = metrics;
@@ -83,7 +91,7 @@ export const DashboardView = () => {
           <CardContent>
             <ChartContainer config={{}} className="h-64 w-full">
               <ResponsiveContainer>
-                <PieChart>
+                <RechartsPieChart>
                   <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel />} />
                   <Pie data={sectorChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
@@ -96,7 +104,7 @@ export const DashboardView = () => {
                     ))}
                   </Pie>
                   <Legend />
-                </PieChart>
+                </RechartsPieChart>
               </ResponsiveContainer>
             </ChartContainer>
           </CardContent>
@@ -105,7 +113,7 @@ export const DashboardView = () => {
         <Card className="glassmorphic">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><BarChart className="text-accent"/> Years to Expiry</CardTitle>
-          </Header>
+          </CardHeader>
           <CardContent>
           <ChartContainer config={{}} className="h-64 w-full">
               <ResponsiveContainer>
