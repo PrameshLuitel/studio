@@ -8,6 +8,7 @@ export interface SummaryData {
   clientId: string;
   totalValue: number;
   gainLoss: number;
+  expiryDate?: Date; // Added for expiry calculation
   [key: string]: any;
 }
 
@@ -114,7 +115,6 @@ export class ExcelDataProcessor {
       'Portfolio',
       'Sector Holding Summary',
       'EPS',
-      'Investment Return Report'
     ];
 
     const availableSheets = this.workbook.SheetNames;
@@ -137,7 +137,6 @@ export class ExcelDataProcessor {
 
     const summaryData = this.processSummarySheet();
     const sectorData = this.processSectorHoldingSheet();
-    const investmentReturnData = this.processInvestmentReturnSheet();
     const epsData = this.processEPSSheet();
     const clientData = this.processClientDataSheet();
 
@@ -145,7 +144,7 @@ export class ExcelDataProcessor {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
       totalAUM: this.calculateTotalAUM(summaryData),
       clientGainLoss: this.calculateClientGainLoss(summaryData),
-      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(investmentReturnData),
+      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
       sectorAllocation: this.calculateSectorAllocation(sectorData),
       epsData,
       clientData
@@ -169,6 +168,7 @@ export class ExcelDataProcessor {
         clientId: row[0],
         totalValue: this.parseNumber(row[16]), // Column Q
         gainLoss: this.parseNumber(row[17]),   // Column R
+        expiryDate: row[4] instanceof Date ? row[4] : undefined, // Column E
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -191,15 +191,18 @@ export class ExcelDataProcessor {
    * Process Investment Return Report worksheet
    */
   private processInvestmentReturnSheet(): InvestmentReturnData[] {
-    const jsonData = this.getSheetData('Investment Return Report');
+    // This sheet is no longer used for expiry calculation but kept for potential other uses
+    const sheetName = 'Investment Return Report';
+    if (!this.workbook?.SheetNames.includes(sheetName)) return [];
+
+    const jsonData = this.getSheetData(sheetName);
     const today = new Date();
-    // Set time to 0 to compare dates only
     today.setHours(0, 0, 0, 0);
 
     return jsonData.slice(1).map((row: any) => {
       if (!row || row.length === 0) return null;
       
-      const maturityDate = row[4] instanceof Date ? row[4] : null; // Column E
+      const maturityDate = row[4] instanceof Date ? row[4] : null; 
       
       let yearsToExpiry = 0;
       if (maturityDate) {
@@ -276,21 +279,33 @@ export class ExcelDataProcessor {
   }
 
   /**
-   * Calculate years to expiry buckets
+   * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(investmentData: InvestmentReturnData[]): {
+  private calculateYearsToExpiryBuckets(summaryData: SummaryData[]): {
     '0-1': number;
     '1-3': number;
     '3-5': number;
     '5+': number;
   } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
-    investmentData.forEach(investment => {
-      const years = investment.yearsToExpiry || 0;
-      if (years > 0 && years <= 1) buckets['0-1']++;
-      else if (years <= 3) buckets['1-3']++;
-      else if (years <= 5) buckets['3-5']++;
-      else if (years > 5) buckets['5+']++;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    summaryData.forEach(item => {
+      if (!item.expiryDate) return;
+      
+      const expiryDate = item.expiryDate;
+      const diffTime = expiryDate.getTime() - today.getTime();
+
+      if (diffTime > 0) {
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const years = diffDays / 365.25;
+        
+        if (years <= 1) buckets['0-1']++;
+        else if (years <= 3) buckets['1-3']++;
+        else if (years <= 5) buckets['3-5']++;
+        else if (years > 5) buckets['5+']++;
+      }
     });
     return buckets;
   }
