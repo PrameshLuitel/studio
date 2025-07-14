@@ -9,65 +9,51 @@ import { Bar, BarChart as RechartsBarChart, Pie, PieChart, ResponsiveContainer, 
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 
-const COLORS = ['#4B0082', '#8F00FF', '#9370DB', '#BA55D3', '#C71585'];
+const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
 
-const DataCard = ({ title, value, icon: Icon, description, isLoading }: { title: string; value: string; icon: React.ElementType; description: string; isLoading?: boolean }) => {
-    if (isLoading) {
-        return (
-            <Card className="glassmorphic">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <Skeleton className="h-5 w-2/5" />
-                    <Skeleton className="h-4 w-4" />
-                </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-7 w-3/5 mb-2" />
-                    <Skeleton className="h-3 w-full" />
-                </CardContent>
-            </Card>
-        )
-    }
-    return (
-        <Card className="glassmorphic">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium font-body text-foreground/80">{title}</CardTitle>
-                <Icon className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className="text-2xl font-bold font-headline text-primary">{value}</div>
-                <p className="text-xs text-muted-foreground">{description}</p>
-            </CardContent>
-        </Card>
-    );
-}
+const DataCard = ({ title, value, icon: Icon, description }: { title: string; value: string; icon: React.ElementType; description: string; }) => (
+    <Card className="glassmorphic">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium font-body text-foreground/80">{title}</CardTitle>
+            <Icon className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+            <div className="text-2xl font-bold font-headline text-primary">{value}</div>
+            <p className="text-xs text-muted-foreground">{description}</p>
+        </CardContent>
+    </Card>
+);
+
+const LoadingSkeleton = () => (
+    <div className="grid gap-6">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
+            <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
+            <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
+        </div>
+        <div className="grid gap-6 md:grid-cols-2">
+            <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+            <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
+        </div>
+  </div>
+);
 
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
 
   const metrics = useMemo(() => {
-    if (isLoading || !excelProcessor || !excelProcessor.isDataLoaded()) return null;
+    if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
     return {
       summaryStats: excelProcessor.getSummaryStats(),
       sectorChartData: excelProcessor.getSectorChartData(),
       yearsToExpiryChartData: excelProcessor.getYearsToExpiryChartData(),
     };
-  }, [excelProcessor, isLoading]);
+  }, [excelProcessor]);
 
   if (isLoading) {
-    return (
-        <div className="grid gap-6">
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <DataCard isLoading title="" value="" icon={Users} description="" />
-                <DataCard isLoading title="" value="" icon={TrendingUp} description="" />
-                <DataCard isLoading title="" value="" icon={DollarSign} description="" />
-            </div>
-            <div className="grid gap-6 md:grid-cols-2">
-                <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
-                <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-64 w-full" /></CardContent></Card>
-            </div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
-
+  
   if (!metrics || !metrics.summaryStats || !metrics.sectorChartData || !metrics.yearsToExpiryChartData) {
     return (
         <div className="flex items-center justify-center h-full">
