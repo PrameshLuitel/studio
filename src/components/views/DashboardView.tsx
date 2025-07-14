@@ -1,12 +1,12 @@
+
 'use client';
 
 import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, CalendarClock, PieChart as PieChartIcon, BarChart } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, Cell } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { format } from 'date-fns';
 
 const COLORS = ['#4B0082', '#8F00FF', '#9370DB', '#BA55D3', '#C71585'];
 
@@ -28,10 +28,15 @@ export const DashboardView = () => {
   const portfolioSheet = 'Portfolio';
 
   const metrics = useMemo(() => {
-    if (!sheets || !sheets[portfolioSheet]) return null;
+    if (!sheets || !sheets[portfolioSheet]) {
+      return null;
+    }
 
-    const data = sheets[portfolioSheet];
-    if(!Array.isArray(data) || data.length === 0) return null;
+    const data = sheets[portfolioSheet].filter(row => row && typeof row['Client Name'] !== 'undefined' && row['Client Name'] !== null && String(row['Client Name']).trim() !== '');
+
+    if (!Array.isArray(data) || data.length === 0) {
+        return null;
+    }
 
     const totalAUM = data.reduce((acc, row) => acc + (Number(row['AUM (USD)']) || 0), 0);
     const totalGainLoss = data.reduce((acc, row) => acc + (Number(row['Gain/Loss (USD)']) || 0), 0);
@@ -40,17 +45,21 @@ export const DashboardView = () => {
     const sectorAllocation = data.reduce((acc, row) => {
         const sector = row['Sector'] || 'Uncategorized';
         const aum = Number(row['AUM (USD)']) || 0;
-        if (!acc[sector]) {
-            acc[sector] = 0;
-        }
-        acc[sector] += aum;
+        acc[sector] = (acc[sector] || 0) + aum;
         return acc;
     }, {} as { [key: string]: number });
     
     const sectorChartData = Object.entries(sectorAllocation).map(([name, value]) => ({ name, value }));
 
     const expiryBuckets = data.reduce((acc, row) => {
-      const expiryDate = row['Expiry'] ? new Date(row['Expiry']) : null;
+      const expiryCell = row['Expiry'];
+      let expiryDate: Date | null = null;
+      if (expiryCell instanceof Date) {
+        expiryDate = expiryCell;
+      } else if (typeof expiryCell === 'number') {
+        expiryDate = new Date(Date.UTC(1899, 11, 30 + expiryCell));
+      }
+      
       if (expiryDate && !isNaN(expiryDate.getTime())) {
           const years = (expiryDate.getTime() - new Date().getTime()) / (1000 * 3600 * 24 * 365);
           let bucket = '5+ Years';
@@ -60,12 +69,12 @@ export const DashboardView = () => {
           acc[bucket] = (acc[bucket] || 0) + 1;
       }
       return acc;
-    }, { '< 1 Year': 0, '1-3 Years': 0, '3-5 Years': 0, '5+ Years': 0 });
+    }, { '< 1 Year': 0, '1-3 Years': 0, '3-5 Years': 0, '5+ Years': 0 } as { [key: string]: number });
     
-    const expiryChartData = Object.entries(expiryBuckets).map(([name, value]) => ({ name, count: value }));
+    const expiryChartData = Object.entries(expiryBuckets).map(([name, count]) => ({ name, count }));
 
     return { totalAUM, totalGainLoss, clientCount, sectorChartData, expiryChartData };
-}, [sheets]);
+  }, [sheets]);
 
 
   if (!sheets || !sheets[portfolioSheet]) {
@@ -73,7 +82,7 @@ export const DashboardView = () => {
   }
   
   if (!metrics) {
-    return <div className="text-center text-muted-foreground">Could not compute metrics. Check column names: 'AUM (USD)', 'Gain/Loss (USD)', 'Sector', and 'Expiry'.</div>
+    return <div className="text-center text-muted-foreground">Could not compute metrics. Check column names: 'Client Name', 'AUM (USD)', 'Gain/Loss (USD)', 'Sector', and 'Expiry'.</div>;
   }
 
   return (
@@ -114,7 +123,7 @@ export const DashboardView = () => {
         <Card className="glassmorphic">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><BarChart className="text-accent"/> Years to Expiry</CardTitle>
-          </CardHeader>
+          </Header>
           <CardContent>
           <ChartContainer config={{}} className="h-64 w-full">
               <ResponsiveContainer>
