@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useContext, useState, useRef, useEffect } from 'react';
@@ -17,7 +18,7 @@ interface Message {
 }
 
 export const ChatbotView = () => {
-  const { sheets } = useContext(AppContext);
+  const { excelProcessor } = useContext(AppContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,7 +44,10 @@ export const ChatbotView = () => {
     setIsLoading(true);
 
     try {
-      const portfolioData = JSON.stringify(sheets, null, 2);
+      if (!excelProcessor) {
+          throw new Error("Excel data not processed yet.");
+      }
+      const portfolioData = JSON.stringify(excelProcessor.getAllSheetsRawData(), null, 2);
       const result = await portfolioQuery({ portfolioData, query: input });
       setMessages([...newMessages, { role: 'model', content: result.answer }]);
     } catch (error) {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useContext, useMemo } from 'react';
@@ -9,13 +10,18 @@ import { format } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
 
 export const EpsView = () => {
-  const { sheets } = useContext(AppContext);
+  const { excelProcessor } = useContext(AppContext);
   const epsSheetName = 'EPS';
 
   const chartData = useMemo(() => {
-    if (!sheets || !sheets[epsSheetName]) return [];
+    if (!excelProcessor) return [];
     
-    return sheets[epsSheetName]
+    const allSheets = excelProcessor.getAllSheetsRawData();
+    const epsSheetData = allSheets ? allSheets[epsSheetName] : [];
+
+    if (!epsSheetData) return [];
+    
+    return epsSheetData
       .map(row => {
         const date = new Date(row.Date);
         const eps = Number(row.EPS);
@@ -24,7 +30,7 @@ export const EpsView = () => {
       })
       .filter(Boolean)
       .sort((a, b) => a!.date.getTime() - b!.date.getTime());
-  }, [sheets]);
+  }, [excelProcessor]);
 
   if (chartData.length === 0) {
     return <div className="text-center text-muted-foreground">EPS data not found or is invalid. Please ensure your file has a sheet named 'EPS' with 'Date' and 'EPS' columns.</div>;

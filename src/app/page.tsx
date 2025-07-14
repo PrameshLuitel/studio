@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useContext } from 'react';
@@ -7,7 +8,7 @@ import { MainLayout } from '@/components/MainLayout';
 import { Loader2 } from 'lucide-react';
 
 export default function Home() {
-  const { sheets, isLoading } = useContext(AppContext);
+  const { excelProcessor, isLoading } = useContext(AppContext);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -16,7 +17,7 @@ export default function Home() {
           <Loader2 className="h-12 w-12 animate-spin" />
           <p className="text-lg font-headline">Processing your portfolio...</p>
         </div>
-      ) : sheets ? (
+      ) : excelProcessor ? (
         <MainLayout />
       ) : (
         <FileUpload />

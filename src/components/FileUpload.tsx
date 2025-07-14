@@ -1,15 +1,16 @@
+
 'use client';
 
 import React, { useContext, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { processFile } from '@/lib/data-processor';
+import { ExcelDataProcessor, ExcelProcessingError } from '@/lib/data-processor';
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
 export const FileUpload = () => {
-  const { setSheets, setFileName, setIsLoading } = useContext(AppContext);
+  const { setExcelProcessor, setFileName, setIsLoading } = useContext(AppContext);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { toast } = useToast();
@@ -34,15 +35,19 @@ export const FileUpload = () => {
     if (!uploadedFile) return;
     setIsLoading(true);
     try {
-      const parsedData = await processFile(uploadedFile);
-      setSheets(parsedData);
+      const processor = new ExcelDataProcessor();
+      await processor.loadExcelFile(uploadedFile);
+      setExcelProcessor(processor);
       setFileName(uploadedFile.name);
     } catch (error) {
       console.error(error);
+      const description = error instanceof ExcelProcessingError 
+        ? error.message 
+        : 'Failed to process the Excel file. Please check the format and try again.';
       toast({
         variant: 'destructive',
         title: 'Processing Error',
-        description: 'Failed to process the Excel file. Please check the file format and try again.',
+        description,
       });
     } finally {
       setIsLoading(false);
