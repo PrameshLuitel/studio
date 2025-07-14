@@ -70,7 +70,11 @@ export const DashboardView = () => {
   }
   
   const { totalAUM, clientGainLoss, totalPMSClients } = metrics;
-  const summaryStats = { totalAUM, clientGainLoss, totalClients: totalPMSClients };
+  const summaryStats = {
+    totalAUM: totalAUM || 0,
+    clientGainLoss: clientGainLoss || { gain: 0, loss: 0, neutral: 0 },
+    totalClients: totalPMSClients || 0
+  };
   const sectorChartData = Array.isArray(metrics.sectorAllocation) ? metrics.sectorAllocation.map(s => ({ name: s.sector, value: s.allocation })) : [];
   const yearsToExpiryChartData = metrics.yearsToExpiryBuckets ? Object.entries(metrics.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) : [];
 
