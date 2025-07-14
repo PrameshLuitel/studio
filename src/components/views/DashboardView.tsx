@@ -28,14 +28,14 @@ export const DashboardView = () => {
   const portfolioSheet = 'Portfolio';
 
   const metrics = useMemo(() => {
-    if (!sheets || !sheets[portfolioSheet]) {
+    if (!sheets || !sheets[portfolioSheet] || !Array.isArray(sheets[portfolioSheet])) {
       return null;
     }
 
     const data = sheets[portfolioSheet].filter(row => row && typeof row['Client Name'] !== 'undefined' && row['Client Name'] !== null && String(row['Client Name']).trim() !== '');
-
-    if (!Array.isArray(data) || data.length === 0) {
-        return null;
+    
+    if (data.length === 0) {
+        return { empty: true };
     }
 
     const totalAUM = data.reduce((acc, row) => acc + (Number(row['AUM (USD)']) || 0), 0);
@@ -57,7 +57,8 @@ export const DashboardView = () => {
       if (expiryCell instanceof Date) {
         expiryDate = expiryCell;
       } else if (typeof expiryCell === 'number') {
-        expiryDate = new Date(Date.UTC(1899, 11, 30 + expiryCell));
+        // Excel date serial number
+        expiryDate = new Date(Math.round((expiryCell - 25569) * 86400 * 1000));
       }
       
       if (expiryDate && !isNaN(expiryDate.getTime())) {
@@ -76,12 +77,11 @@ export const DashboardView = () => {
     return { totalAUM, totalGainLoss, clientCount, sectorChartData, expiryChartData };
   }, [sheets]);
 
-
-  if (!sheets || !sheets[portfolioSheet]) {
-    return <div className="text-center text-muted-foreground">Portfolio data not found or is empty. Please ensure your file has a sheet named 'Portfolio' with relevant data.</div>;
+  if (!metrics) {
+    return <div className="text-center text-muted-foreground">Portfolio data not found. Please ensure your file has a sheet named 'Portfolio'.</div>;
   }
   
-  if (!metrics) {
+  if ('empty' in metrics) {
     return <div className="text-center text-muted-foreground">Could not compute metrics. Check column names: 'Client Name', 'AUM (USD)', 'Gain/Loss (USD)', 'Sector', and 'Expiry'.</div>;
   }
 
