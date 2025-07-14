@@ -15,7 +15,7 @@ export interface SummaryData {
 export interface SectorHoldingData {
   sector: string;
   allocation: number;
-  [key: string]: any;
+  [key:string]: any;
 }
 
 export interface HoldingStatementData {
@@ -49,6 +49,14 @@ export interface ClientData {
 export interface SectorAllocation {
     sector: string;
     allocation: number;
+}
+
+export interface ClientDetails {
+    name: string;
+    totalValue: number;
+    gainLoss: number;
+    expiryDate?: Date;
+    sectorAllocations: { sector: string; value: number }[];
 }
 
 
@@ -174,7 +182,7 @@ export class ExcelDataProcessor {
     return jsonData.slice(1).map((row: any) => {
       if (!row || row.length === 0) return null;
       return {
-        clientId: row[0],
+        clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
         gainLoss: this.parseNumber(row[17]),   // Column R
         expiryDate: row[4] instanceof Date ? row[4] : undefined, // Column E
@@ -366,6 +374,60 @@ export class ExcelDataProcessor {
           sectorAllocationGain: formatAndSort(gainAllocation),
           sectorAllocationLoss: formatAndSort(lossAllocation)
       };
+  }
+
+   /**
+   * Get all client names from Portfolio sheet, column C.
+   */
+  public getClientNames(): string[] {
+    const sheetData = this.getSheetData('Portfolio');
+    if (sheetData.length < 2) return [];
+    
+    const clientNames = sheetData
+      .slice(1) // Skip header row
+      .map(row => row[2]) // Column C
+      .filter(name => typeof name === 'string' && name.trim() !== '');
+      
+    return [...new Set(clientNames)].sort(); // Return unique, sorted names
+  }
+
+  /**
+   * Get all data for a specific client.
+   */
+  public getDataForClient(clientName: string): ClientDetails | null {
+    if (!this.workbook) return null;
+
+    const portfolioSheet = this.getSheetData('Portfolio');
+    const clientRowPortfolio = portfolioSheet.find(row => row[2] === clientName);
+
+    if (!clientRowPortfolio) return null;
+
+    const totalValue = this.parseNumber(clientRowPortfolio[16]); // Col Q
+    const gainLoss = this.parseNumber(clientRowPortfolio[17]); // Col R
+    const expiryDate = clientRowPortfolio[4] instanceof Date ? clientRowPortfolio[4] : undefined; // Col E
+
+    const sectorSheet = this.getSheetData('Sector Holding Summary');
+    const sectorHeaders = sectorSheet[1] as string[];
+    const clientRowSector = sectorSheet.find(row => row[0] === clientRowPortfolio[0]); // Match by client code
+    
+    let sectorAllocations: { sector: string; value: number }[] = [];
+    if (clientRowSector) {
+        for (let i = 2; i <= 15; i++) { // Columns C to P
+            const sector = sectorHeaders[i];
+            const value = this.parseNumber(clientRowSector[i]);
+            if (sector && value > 0) {
+                sectorAllocations.push({ sector, value });
+            }
+        }
+    }
+
+    return {
+        name: clientName,
+        totalValue,
+        gainLoss,
+        expiryDate,
+        sectorAllocations,
+    };
   }
   
   /**
