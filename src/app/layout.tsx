@@ -24,7 +24,7 @@ export default function RootLayout({
         <AppProvider>
           {children}
         </AppProvider>
-        <div className="fixed bottom-4 right-4 text-xs text-muted-foreground/80 font-headline z-50 pointer-events-none">
+        <div className="fixed bottom-2 right-3 text-[7px] text-muted-foreground/60 font-headline z-50 pointer-events-none">
           created by Pramesh Luitel
         </div>
         <Toaster />
