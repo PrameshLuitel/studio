@@ -91,12 +91,13 @@ const ActiveShape = (props: any) => {
 };
 
 
-const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: SectorAllocation[], icon: React.ElementType }) => {
+const AllocationPieChart = ({ title, data, icon: Icon, onPieEnter }: { title: string, data: SectorAllocation[], icon: React.ElementType, onPieEnter: (_: any, index: number) => void }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-    const onPieEnter = useCallback((_: any, index: number) => {
+    const handlePieEnter = useCallback((_: any, index: number) => {
         setActiveIndex(index);
-    }, [setActiveIndex]);
+        onPieEnter(_, index);
+    }, [setActiveIndex, onPieEnter]);
 
     const onPieLeave = useCallback(() => {
         setActiveIndex(null);
@@ -126,7 +127,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
     }
 
     return (
-        <Card className="glassmorphic col-span-1">
+        <Card className="glassmorphic col-span-1 transition-transform duration-300 ease-in-out">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
             </CardHeader>
@@ -147,7 +148,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
-                                    onMouseEnter={onPieEnter}
+                                    onMouseEnter={handlePieEnter}
                                     onMouseLeave={onPieLeave}
                                     label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
                                         if (index === activeIndex) return null; // Hide label for active slice
@@ -169,8 +170,8 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
                             {topItems.map((item, index) => (
                                 <li 
                                     key={item.name} 
-                                    className={cn("flex items-center text-sm transition-all duration-200", activeIndex === index ? 'text-primary font-bold' : '')}
-                                    onMouseEnter={() => onPieEnter(null, chartData.findIndex(d => d.name === item.name))}
+                                    className={cn("flex items-center text-sm transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'text-primary font-bold' : '')}
+                                    onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                     onMouseLeave={onPieLeave}
                                 >
                                     <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
@@ -189,6 +190,20 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
 
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
+
+  const hoverSound = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const audio = new Audio('https://cdn.pixabay.com/download/audio/2022/10/14/audio_a1255b2d73.mp3?filename=pop-1-110821.mp3');
+    audio.volume = 0.3;
+    return audio;
+  }, []);
+
+  const playHoverSound = useCallback(() => {
+    if (hoverSound) {
+        hoverSound.currentTime = 0;
+        hoverSound.play().catch(e => console.error("Error playing sound:", e));
+    }
+  }, [hoverSound]);
 
   const dashboardData = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
@@ -251,13 +266,13 @@ export const DashboardView = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AllocationPieChart title="Asset Allocation" data={assetAllocation} icon={Banknote} />
-        <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <AllocationPieChart title="Asset Allocation" data={assetAllocation} icon={Banknote} onPieEnter={playHoverSound} />
+        <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} onPieEnter={playHoverSound} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AllocationPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
-        <AllocationPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <AllocationPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} onPieEnter={playHoverSound} />
+        <AllocationPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} onPieEnter={playHoverSound} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
