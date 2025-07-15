@@ -41,48 +41,50 @@ const renderClientDetails = (details: ClientDetails) => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
-            <Card className="glassmorphic lg:col-span-1">
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <ScrollArea className="h-[460px]">
-                        <ChartContainer config={{}} className="h-full min-h-[460px] w-full">
-                            <ResponsiveContainer>
-                                <BarChart layout="vertical" data={sectorData} margin={{ left: 10 }}>
-                                    <XAxis type="number" hide />
-                                    <YAxis 
-                                        dataKey="name" 
-                                        type="category" 
-                                        width={100}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        className="text-xs truncate"
-                                        />
-                                    <Tooltip 
-                                        cursor={{ fill: 'hsl(var(--muted))' }}
-                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
-                                        />
-                                    <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                       </ChartContainer>
-                   </ScrollArea>
-                </CardContent>
-            </Card>
-            <div className="lg:col-span-2 flex flex-col gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 flex flex-col gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-6">
                     <StatCard title="Total Value" value={formatCurrency(details.totalValue)} icon={DollarSign} />
                     <StatCard title="Gain / Loss" value={formatCurrency(details.gainLoss)} icon={TrendingUp} />
                     <StatCard title="Expiry Date" value={details.expiryDate ? format(details.expiryDate, 'dd MMM yyyy') : 'N/A'} icon={CalendarClock} />
                 </div>
-                <Card className="glassmorphic flex-1">
+                <Card className="glassmorphic">
+                    <CardHeader>
+                        <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                       <ScrollArea className="h-96">
+                            <ChartContainer config={{}} className="h-full min-h-[384px] w-full">
+                                <ResponsiveContainer>
+                                    <BarChart layout="vertical" data={sectorData} margin={{ left: 10 }}>
+                                        <XAxis type="number" hide />
+                                        <YAxis 
+                                            dataKey="name" 
+                                            type="category" 
+                                            width={100}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            className="text-xs truncate"
+                                            />
+                                        <Tooltip 
+                                            cursor={{ fill: 'hsl(var(--muted))' }}
+                                            content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                                            />
+                                        <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                           </ChartContainer>
+                       </ScrollArea>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-2 flex flex-col gap-6">
+                <Card className="glassmorphic flex-1 h-full">
                     <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><Info className="text-accent"/> Other Details</CardTitle>
                         <CardDescription>Additional data from the 'Portfolio' sheet for this client.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <ScrollArea className="h-[340px]">
+                        <ScrollArea className="h-[calc(100vh-25rem)]">
                              <Table>
                                 <TableBody>
                                     {portfolioDataForTable.map((item, index) => (
