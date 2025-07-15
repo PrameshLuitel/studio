@@ -386,7 +386,16 @@ export class ExcelDataProcessor {
     assetAllocationLoss: SectorAllocation[];
   } {
     const sheetData = this.getSheetData('Portfolio');
+    if (sheetData.length < 3) return { assetAllocationGain: [], assetAllocationLoss: [] };
+  
+    const headers = sheetData[1] as string[];
     const clientRows = sheetData.slice(2, -1);
+  
+    const gainLossIndex = 17; // Column R for 'Unrealised gain / (loss) %'
+    const colGIndex = 6;
+    const colHIndex = 7;
+    const colJIndex = 9;
+    const colKIndex = 10;
   
     const gainTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
     const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
@@ -394,7 +403,7 @@ export class ExcelDataProcessor {
     for (const row of clientRows) {
       if (!row || row.length === 0) continue;
   
-      const gainLossValue = this.parseNumber(row[17]); // Column R
+      const gainLossValue = this.parseNumber(row[gainLossIndex]);
       let targetTotals;
   
       if (gainLossValue > 0) {
@@ -405,10 +414,10 @@ export class ExcelDataProcessor {
         continue;
       }
   
-      targetTotals.sumG += this.parseNumber(row[6]);
-      targetTotals.sumH += this.parseNumber(row[7]);
-      targetTotals.sumJ += this.parseNumber(row[9]);
-      targetTotals.sumK += this.parseNumber(row[10]);
+      targetTotals.sumG += this.parseNumber(row[colGIndex]);
+      targetTotals.sumH += this.parseNumber(row[colHIndex]);
+      targetTotals.sumJ += this.parseNumber(row[colJIndex]);
+      targetTotals.sumK += this.parseNumber(row[colKIndex]);
     }
   
     const createAllocation = (totals: typeof gainTotals): SectorAllocation[] => {
