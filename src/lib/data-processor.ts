@@ -170,7 +170,7 @@ export class ExcelDataProcessor {
       totalAUM: this.calculateTotalAUM(summaryData),
       clientGainLoss: this.calculateClientGainLoss(summaryData),
       yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
-      assetAllocation: this.calculateAssetAllocation(sectorData),
+      assetAllocation: this.calculateAssetAllocation(),
       sectorAllocation: this.calculateSectorAllocation(sectorData),
       sectorAllocationGain,
       sectorAllocationLoss,
@@ -350,24 +350,28 @@ export class ExcelDataProcessor {
     return buckets;
   }
   
-  private calculateAssetAllocation(sectorData: SectorHoldingData[]): SectorAllocation[] {
-    const assetClasses = ['Cash', 'FD', 'Equity', 'Debenture'];
-    const assetAllocation: { [key: string]: number } = {
-        'Cash': 0,
-        'FD': 0,
-        'Equity': 0,
-        'Debenture': 0
-    };
+  private calculateAssetAllocation(): SectorAllocation[] {
+    const sheetData = this.getSheetData('Sector Holding Summary');
+    if (sheetData.length < 2) return [];
 
-    sectorData.forEach(item => {
-        if (assetClasses.includes(item.sector)) {
-            assetAllocation[item.sector] += item.allocation;
-        }
-    });
+    const lastRow = sheetData[sheetData.length - 1];
 
-    return Object.entries(assetAllocation)
-        .map(([sector, allocation]) => ({ sector, allocation }))
-        .filter(item => item.allocation > 0);
+    // Column indices: H=7, J=9, K=10, G=6, S=18
+    const bankBalance = this.parseNumber(lastRow[7]);
+    const receivable = this.parseNumber(lastRow[10]);
+    const payable = this.parseNumber(lastRow[9]);
+    const cash = bankBalance + receivable - payable;
+
+    const marketValue = this.parseNumber(lastRow[6]);
+    const fdValue = this.parseNumber(lastRow[18]); // Column S
+
+    const assetAllocation: SectorAllocation[] = [
+        { sector: 'Cash', allocation: cash },
+        { sector: 'Equity', allocation: marketValue },
+        { sector: 'FD', allocation: fdValue },
+    ];
+    
+    return assetAllocation.filter(item => item.allocation > 0);
   }
 
   /**
@@ -451,7 +455,7 @@ export class ExcelDataProcessor {
       .map(row => row[clientNameIndex])
       .filter(name => typeof name === 'string' && name.trim() !== '');
 
-    return [...new Set(clientNames)].sort();
+    return [...new Set(clientNames)].sort() as string[];
   }
 
   /**
