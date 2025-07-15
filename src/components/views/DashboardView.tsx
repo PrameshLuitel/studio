@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle, Banknote } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -135,7 +135,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
                     <ChartContainer config={{}} className="h-80 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
-                                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${Number(value).toLocaleString()}`} />} />
+                                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${formatCurrency(Number(value))}`} />} />
                                 <Pie 
                                     data={chartData} 
                                     dataKey="value" 
@@ -208,7 +208,7 @@ export const DashboardView = () => {
     return <ErrorDisplay />;
   }
   
-  const { summaryStats, assetAllocation, sectorAllocation, sectorAllocationGain, sectorAllocationLoss, yearsToExpiryChartData } = useMemo(() => {
+  const { summaryStats, assetAllocation, assetAllocationGain, assetAllocationLoss, sectorAllocation, sectorAllocationGain, sectorAllocationLoss, yearsToExpiryChartData } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
         ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
@@ -220,6 +220,8 @@ export const DashboardView = () => {
             totalClients: data.totalPMSClients
         },
         assetAllocation: data.assetAllocation || [],
+        assetAllocationGain: data.assetAllocationGain || [],
+        assetAllocationLoss: data.assetAllocationLoss || [],
         sectorAllocation: data.sectorAllocation || [],
         sectorAllocationGain: data.sectorAllocationGain || [],
         sectorAllocationLoss: data.sectorAllocationLoss || [],
@@ -253,6 +255,11 @@ export const DashboardView = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationPieChart title="Asset Allocation" data={assetAllocation} icon={Banknote} />
         <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+      </div>
+
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

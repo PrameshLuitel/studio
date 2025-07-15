@@ -83,6 +83,8 @@ export interface ProcessedData {
     '5+': number;
   };
   assetAllocation: SectorAllocation[];
+  assetAllocationGain: SectorAllocation[];
+  assetAllocationLoss: SectorAllocation[];
   sectorAllocation: SectorAllocation[];
   sectorAllocationGain: SectorAllocation[];
   sectorAllocationLoss: SectorAllocation[];
@@ -164,6 +166,7 @@ export class ExcelDataProcessor {
     const clientData = this.processClientDataSheet();
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
+    const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -171,6 +174,8 @@ export class ExcelDataProcessor {
       clientGainLoss: this.calculateClientGainLoss(summaryData),
       yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
       assetAllocation: this.calculateAssetAllocation(),
+      assetAllocationGain,
+      assetAllocationLoss,
       sectorAllocation: this.calculateSectorAllocation(sectorData),
       sectorAllocationGain,
       sectorAllocationLoss,
@@ -350,7 +355,7 @@ export class ExcelDataProcessor {
     return buckets;
   }
   
-  private calculateAssetAllocation(): SectorAllocation[] {
+ private calculateAssetAllocation(): SectorAllocation[] {
     const sheetData = this.getSheetData('Portfolio');
     // Data starts at row 3 (index 2) and ends before the last (total) row
     const clientRows = sheetData.slice(2, -1);
@@ -382,6 +387,56 @@ export class ExcelDataProcessor {
     }
   
     return assetAllocation;
+  }
+
+  private calculateAssetAllocationByGainLoss(): {
+    assetAllocationGain: SectorAllocation[],
+    assetAllocationLoss: SectorAllocation[],
+  } {
+    const sheetData = this.getSheetData('Portfolio');
+    const clientRows = sheetData.slice(2, -1);
+  
+    const gainTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
+    const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
+  
+    for (const row of clientRows) {
+      if (!row || row.length === 0) continue;
+  
+      const gainLossValue = this.parseNumber(row[17]); // Column R
+      let targetTotals;
+  
+      if (gainLossValue > 0) {
+        targetTotals = gainTotals;
+      } else if (gainLossValue < 0) {
+        targetTotals = lossTotals;
+      } else {
+        continue;
+      }
+  
+      targetTotals.sumG += this.parseNumber(row[6]);  // Equity - G
+      targetTotals.sumH += this.parseNumber(row[7]);  // Bank Balance - H
+      targetTotals.sumJ += this.parseNumber(row[9]);  // Payable - J
+      targetTotals.sumK += this.parseNumber(row[10]); // Receivable - K
+    }
+  
+    const createAllocation = (totals: { sumG: number, sumH: number, sumJ: number, sumK: number }): SectorAllocation[] => {
+      const equity = totals.sumG / 2;
+      const cash = (totals.sumH / 2) + (totals.sumK / 2) - (totals.sumJ / 2);
+  
+      const allocation: SectorAllocation[] = [];
+      if (cash > 0) {
+        allocation.push({ sector: 'Cash', allocation: cash });
+      }
+      if (equity > 0) {
+        allocation.push({ sector: 'Equity', allocation: equity });
+      }
+      return allocation;
+    };
+  
+    return {
+      assetAllocationGain: createAllocation(gainTotals),
+      assetAllocationLoss: createAllocation(lossTotals),
+    };
   }
 
   /**
