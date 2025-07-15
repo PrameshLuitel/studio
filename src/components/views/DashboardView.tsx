@@ -62,7 +62,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
     
     if (chartData.length === 0) {
         return (
-            <Card className="glassmorphic col-span-1">
+            <Card className="glassmorphic col-span-1 transition-transform duration-300 ease-in-out hover:scale-105">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
                 </CardHeader>
@@ -74,7 +74,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
     }
 
     return (
-        <Card className="glassmorphic col-span-1">
+        <Card className="glassmorphic col-span-1 transition-transform duration-300 ease-in-out hover:scale-105">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
             </CardHeader>
