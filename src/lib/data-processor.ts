@@ -175,6 +175,28 @@ export class ExcelDataProcessor {
       return XLSX.utils.sheet_to_json(sheet, { header: 1 });
   }
 
+   /**
+   * Utility to parse dates that might be strings (e.g., "mm/dd/yyyy") or Date objects
+   */
+  private parseDate(value: any): Date | undefined {
+    if (value instanceof Date) {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const parts = value.split('/');
+      if (parts.length === 3) {
+        // Assuming mm/dd/yyyy
+        const month = parseInt(parts[0], 10) - 1;
+        const day = parseInt(parts[1], 10);
+        const year = parseInt(parts[2], 10);
+        if (!isNaN(month) && !isNaN(day) && !isNaN(year)) {
+          return new Date(year, month, day);
+        }
+      }
+    }
+    return undefined;
+  }
+  
   /**
    * Process Portfolio worksheet
    */
@@ -186,7 +208,7 @@ export class ExcelDataProcessor {
         clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
         gainLoss: this.parseNumber(row[17]),   // Column R
-        expiryDate: row[4] instanceof Date ? row[4] : undefined, // Column E
+        expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -406,7 +428,7 @@ export class ExcelDataProcessor {
 
     const totalValue = this.parseNumber(clientRowPortfolio[16]); // Col Q
     const gainLoss = this.parseNumber(clientRowPortfolio[17]); // Col R
-    const expiryDate = clientRowPortfolio[4] instanceof Date ? clientRowPortfolio[4] : undefined; // Col E
+    const expiryDate = this.parseDate(clientRowPortfolio[4]); // Col E
 
     const sectorSheet = this.getSheetData('Sector Holding Summary');
     const sectorHeaders = sectorSheet[1] as string[];
@@ -426,7 +448,7 @@ export class ExcelDataProcessor {
     const portfolioData = portfolioHeaders.map((header, index) => ({
         header,
         value: clientRowPortfolio[index],
-    }));
+    })).filter(item => item.value !== undefined && item.value !== null && item.value !== '');
 
     return {
         name: clientName,
