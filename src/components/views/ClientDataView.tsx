@@ -4,7 +4,6 @@
 import React, { useContext, useMemo, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
@@ -13,6 +12,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Combobox } from '../ui/combobox';
 
 const StatCard = ({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType, className?: string }) => (
     <Card className={cn("glassmorphic", className)}>
@@ -125,9 +125,9 @@ export const ClientDataView = () => {
     return { clientNames: names, clientDetails: details };
   }, [excelProcessor, selectedClient]);
 
-  const handleClientChange = (clientName: string) => {
-    setSelectedClient(clientName);
-  };
+  const clientOptions = useMemo(() => {
+    return clientNames.map(name => ({ label: name, value: name }));
+  }, [clientNames]);
 
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
@@ -135,18 +135,15 @@ export const ClientDataView = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
                 <Briefcase className="text-primary h-6 w-6" />
-                <Select onValueChange={handleClientChange} value={selectedClient || ""}>
-                    <SelectTrigger className="w-full max-w-sm">
-                        <SelectValue placeholder="Select a client to view details" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {clientNames.map((name) => (
-                        <SelectItem key={name} value={name}>
-                            {name}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                <Combobox
+                    options={clientOptions}
+                    value={selectedClient || ''}
+                    onChange={setSelectedClient}
+                    placeholder="Select a client..."
+                    searchPlaceholder="Search for a client..."
+                    emptyPlaceholder="No clients found."
+                    className="w-full max-w-sm"
+                />
             </div>
           </CardContent>
       </Card>
