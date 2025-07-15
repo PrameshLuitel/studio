@@ -355,18 +355,19 @@ export class ExcelDataProcessor {
     return buckets;
   }
   
- private calculateAssetAllocation(): SectorAllocation[] {
+  private calculateAssetAllocation(): SectorAllocation[] {
     const sheetData = this.getSheetData('Portfolio');
     if (sheetData.length < 3) return [];
 
-    const lastRow = sheetData[sheetData.length - 1];
+    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total row
 
-    const equity = this.parseNumber(lastRow[6]); // Column G
-    const bankBalance = this.parseNumber(lastRow[7]); // Column H
-    const payable = this.parseNumber(lastRow[9]); // Column J
-    const receivable = this.parseNumber(lastRow[10]); // Column K
-    
-    const cash = bankBalance + receivable - payable;
+    const sumG = clientRows.reduce((acc, row) => acc + this.parseNumber(row[6]), 0);
+    const sumH = clientRows.reduce((acc, row) => acc + this.parseNumber(row[7]), 0);
+    const sumJ = clientRows.reduce((acc, row) => acc + this.parseNumber(row[9]), 0);
+    const sumK = clientRows.reduce((acc, row) => acc + this.parseNumber(row[10]), 0);
+
+    const equity = sumG / 2;
+    const cash = (sumH / 2) + (sumK / 2) - (sumJ / 2);
   
     const assetAllocation: SectorAllocation[] = [];
   
