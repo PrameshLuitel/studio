@@ -388,11 +388,11 @@ export class ExcelDataProcessor {
     const sheetData = this.getSheetData('Portfolio');
     if (sheetData.length < 3) return { assetAllocationGain: [], assetAllocationLoss: [] };
   
-    const headers = sheetData[1] as string[];
-    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total
+    const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
+    const clientRows = sheetData.slice(2, -1); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Unrealised gain / (loss) %";
-    const gainLossIndex = headers.findIndex(h => h === gainLossHeaderName);
+    const gainLossHeaderName = "Gain/(Loss) in Portfolio";
+    const gainLossIndex = headers.findIndex(h => h && h.trim() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
     const colGIndex = 6;
