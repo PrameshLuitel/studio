@@ -6,6 +6,7 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Portfolio Pulse',
   description: 'Analyze and interact with your portfolio data seamlessly.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
