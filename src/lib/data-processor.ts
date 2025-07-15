@@ -357,25 +357,16 @@ export class ExcelDataProcessor {
   
  private calculateAssetAllocation(): SectorAllocation[] {
     const sheetData = this.getSheetData('Portfolio');
-    // Data starts at row 3 (index 2) and ends before the last (total) row
-    const clientRows = sheetData.slice(2, -1);
-  
-    let sumG = 0; // Equity
-    let sumH = 0; // Bank Balance
-    let sumJ = 0; // Payable
-    let sumK = 0; // Receivable
-  
-    for (const row of clientRows) {
-      if (!row || row.length === 0) continue;
-  
-      sumG += this.parseNumber(row[6]);  // Column G
-      sumH += this.parseNumber(row[7]);  // Column H
-      sumJ += this.parseNumber(row[9]);  // Column J
-      sumK += this.parseNumber(row[10]); // Column K
-    }
-  
-    const equity = sumG / 2;
-    const cash = (sumH / 2) + (sumK / 2) - (sumJ / 2);
+    if (sheetData.length < 3) return [];
+
+    const lastRow = sheetData[sheetData.length - 1];
+
+    const equity = this.parseNumber(lastRow[6]); // Column G
+    const bankBalance = this.parseNumber(lastRow[7]); // Column H
+    const payable = this.parseNumber(lastRow[9]); // Column J
+    const receivable = this.parseNumber(lastRow[10]); // Column K
+    
+    const cash = bankBalance + receivable - payable;
   
     const assetAllocation: SectorAllocation[] = [];
   
