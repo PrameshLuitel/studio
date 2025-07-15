@@ -162,7 +162,20 @@ export const DashboardView = () => {
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
-        <DataCard title="Client Gain/Loss" value={`${gainLoss.gain} Gained / ${gainLoss.loss} Lost`} icon={TrendingUp} description={`${gainLoss.neutral} Neutral`} />
+        
+        <Card className="glassmorphic">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium font-body text-foreground/80">Client Gain/Loss</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className="text-2xl font-bold font-headline text-primary">
+                    <span className="text-green-500">{gainLoss.gain} Gained</span> / <span className="text-red-500">{gainLoss.loss} Lost</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{gainLoss.neutral} Neutral</p>
+            </CardContent>
+        </Card>
+
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
 
