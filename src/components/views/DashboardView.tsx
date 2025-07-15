@@ -259,11 +259,11 @@ export const DashboardView = () => {
 
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} />
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} />
+        <AllocationPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AllocationPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} />
         <AllocationPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
