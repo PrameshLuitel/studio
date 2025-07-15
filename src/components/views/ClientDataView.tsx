@@ -33,7 +33,6 @@ const renderClientDetails = (details: ClientDetails) => {
       .filter(s => s.value > 0)
       .map(s => ({ name: s.sector, value: s.value }));
       
-    // Exclude the most valuable data from the main table as they are now in cards
     const excludedHeaders = ['Client Name', 'Present value', 'Unrealised gain', 'Expiry'];
     const portfolioDataForTable = details.portfolioData.filter(item => 
         !excludedHeaders.includes(item.header) &&
@@ -42,7 +41,36 @@ const renderClientDetails = (details: ClientDetails) => {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
-             <div className="lg:col-span-2 flex flex-col gap-6">
+            <Card className="glassmorphic lg:col-span-1">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                   <ScrollArea className="h-[460px]">
+                        <ChartContainer config={{}} className="h-full min-h-[460px] w-full">
+                            <ResponsiveContainer>
+                                <BarChart layout="vertical" data={sectorData} margin={{ left: 10 }}>
+                                    <XAxis type="number" hide />
+                                    <YAxis 
+                                        dataKey="name" 
+                                        type="category" 
+                                        width={100}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        className="text-xs truncate"
+                                        />
+                                    <Tooltip 
+                                        cursor={{ fill: 'hsl(var(--muted))' }}
+                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                                        />
+                                    <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                       </ChartContainer>
+                   </ScrollArea>
+                </CardContent>
+            </Card>
+            <div className="lg:col-span-2 flex flex-col gap-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <StatCard title="Total Value" value={formatCurrency(details.totalValue)} icon={DollarSign} />
                     <StatCard title="Gain / Loss" value={formatCurrency(details.gainLoss)} icon={TrendingUp} />
@@ -76,36 +104,7 @@ const renderClientDetails = (details: ClientDetails) => {
                         </ScrollArea>
                     </CardContent>
                 </Card>
-             </div>
-             <Card className="glassmorphic lg:col-span-1">
-                <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
-                </CardHeader>
-                <CardContent>
-                   <ScrollArea className="h-[460px]">
-                        <ChartContainer config={{}} className="h-full min-h-[460px] w-full">
-                            <ResponsiveContainer>
-                                <BarChart layout="vertical" data={sectorData} margin={{ left: 10 }}>
-                                    <XAxis type="number" hide />
-                                    <YAxis 
-                                        dataKey="name" 
-                                        type="category" 
-                                        width={100}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        className="text-xs truncate"
-                                        />
-                                    <Tooltip 
-                                        cursor={{ fill: 'hsl(var(--muted))' }}
-                                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
-                                        />
-                                    <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                                </BarChart>
-                            </ResponsiveContainer>
-                       </ChartContainer>
-                   </ScrollArea>
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
   };
