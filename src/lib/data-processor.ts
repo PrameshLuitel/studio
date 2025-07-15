@@ -60,6 +60,11 @@ export interface ClientDetails {
     portfolioData: { header: string; value: any }[];
 }
 
+export interface EPSSheetData {
+    headers: string[];
+    data: any[][];
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -80,6 +85,7 @@ export interface ProcessedData {
   sectorAllocationGain: SectorAllocation[];
   sectorAllocationLoss: SectorAllocation[];
   epsData: EPSData[];
+  epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
 }
 
@@ -152,6 +158,7 @@ export class ExcelDataProcessor {
     const summaryData = this.processSummarySheet();
     const sectorData = this.processSectorHoldingSheet();
     const epsData = this.processEPSSheet();
+    const epsSheetData = this.processEPSSheetRaw();
     const clientData = this.processClientDataSheet();
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
@@ -165,6 +172,7 @@ export class ExcelDataProcessor {
       sectorAllocationGain,
       sectorAllocationLoss,
       epsData,
+      epsSheetData,
       clientData
     };
   }
@@ -260,6 +268,14 @@ export class ExcelDataProcessor {
           headers: data[1] as string[], // Headers are on the 2nd row
           data: data.slice(2) as (string | number | Date)[][],
       };
+  }
+
+  private processEPSSheetRaw(): EPSSheetData | null {
+    const sheetData = this.getSheetData('EPS');
+    if (sheetData.length === 0) return null;
+    const headers = sheetData[0] as string[];
+    const data = sheetData.slice(1);
+    return { headers, data };
   }
 
   /**

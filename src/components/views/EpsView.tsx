@@ -4,88 +4,65 @@
 import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { format, parseISO } from 'date-fns';
-import { TrendingUp } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
+import { LineChart } from 'lucide-react';
 
 export const EpsView = () => {
   const { excelProcessor } = useContext(AppContext);
 
-  const chartData = useMemo(() => {
-    if (!excelProcessor || !excelProcessor.isDataLoaded()) return [];
-    
+  const epsSheetData = useMemo(() => {
+    if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
     const processed = excelProcessor.getProcessedData();
-    const epsData = processed ? processed.epsData : [];
-
-    if (!epsData) return [];
-    
-    return epsData
-      .map(row => {
-        let date;
-        if (row.Date instanceof Date) {
-            date = row.Date;
-        } else if (typeof row.Date === 'string') {
-            date = parseISO(row.Date);
-        } else {
-            return null;
-        }
-        
-        const eps = Number(row.EPS);
-        if (isNaN(date.getTime()) || isNaN(eps)) return null;
-        return { date, eps };
-      })
-      .filter(Boolean)
-      .sort((a, b) => a!.date.getTime() - b!.date.getTime());
+    return processed ? processed.epsSheetData : null;
   }, [excelProcessor]);
 
-  if (chartData.length === 0) {
-    return <div className="text-center text-muted-foreground">EPS data not found or is invalid. Please ensure your file has a sheet named 'EPS' with 'Date' and 'EPS' columns.</div>;
+  if (!epsSheetData || epsSheetData.data.length === 0) {
+    return <div className="text-center text-muted-foreground">EPS data not found or is invalid. Please ensure your file has a sheet named 'EPS'.</div>;
   }
 
-  const chartConfig = {
-    eps: {
-      label: "EPS",
-      color: "hsl(var(--primary))",
-    },
-  };
+  const { headers, data } = epsSheetData;
+
+  const formatCell = (cellData: any) => {
+    if (cellData instanceof Date) {
+      return format(cellData, 'dd-MMM-yyyy');
+    }
+    if (typeof cellData === 'number') {
+      return cellData.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    return String(cellData);
+  }
 
   return (
     <div className="animate-in fade-in-50">
         <Card className="glassmorphic">
             <CardHeader>
-                <CardTitle className="font-headline flex items-center gap-2"><TrendingUp className="text-accent" /> EPS Trend</CardTitle>
+                <CardTitle className="font-headline flex items-center gap-2"><LineChart className="text-accent" /> EPS Data</CardTitle>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={chartConfig} className="h-96 w-full">
-                    <ResponsiveContainer>
-                        <LineChart data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border) / 0.5)" />
-                            <XAxis 
-                                dataKey="date" 
-                                tickFormatter={(tick) => format(tick, 'MMM yy')}
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <YAxis 
-                                tickFormatter={(tick) => `$${tick.toFixed(2)}`}
-                                tickLine={false}
-                                axisLine={false}
-                            />
-                            <Tooltip 
-                                content={<ChartTooltipContent
-                                    formatter={(value, name, item) => (
-                                        <div className="flex flex-col">
-                                            <span>{format(item.payload.date, 'PPP')}</span>
-                                            <span>EPS: ${Number(value).toFixed(2)}</span>
-                                        </div>
-                                    )}
-                                />} 
-                            />
-                            <Line type="monotone" dataKey="eps" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--accent))" }} activeDot={{ r: 8 }} />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </ChartContainer>
+                <ScrollArea className="h-[75vh]">
+                    <Table>
+                        <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                            <TableRow>
+                                {headers.map((header, index) => (
+                                    <TableHead key={index}>{header}</TableHead>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {data.map((row, rowIndex) => (
+                                <TableRow key={rowIndex}>
+                                    {row.map((cell, cellIndex) => (
+                                        <TableCell key={cellIndex}>
+                                            {cell === null ? '' : formatCell(cell)}
+                                        </TableCell>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
             </CardContent>
         </Card>
     </div>
