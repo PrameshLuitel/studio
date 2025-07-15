@@ -172,11 +172,11 @@ export class ExcelDataProcessor {
   private getSheetData(sheetName: string): any[][] {
       const sheet = this.workbook!.Sheets[sheetName];
       if (!sheet) return [];
-      return XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
   }
 
    /**
-   * Utility to parse dates that might be strings (e.g., "mm/dd/yyyy") or Date objects
+   * Utility to parse dates that might be strings (e.g., "dd/mm/yyyy") or Date objects
    */
   private parseDate(value: any): Date | undefined {
     if (value instanceof Date) {
@@ -185,11 +185,11 @@ export class ExcelDataProcessor {
     if (typeof value === 'string') {
       const parts = value.split('/');
       if (parts.length === 3) {
-        // Assuming mm/dd/yyyy
-        const month = parseInt(parts[0], 10) - 1;
-        const day = parseInt(parts[1], 10);
+        // Assuming dd/mm/yyyy
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
         const year = parseInt(parts[2], 10);
-        if (!isNaN(month) && !isNaN(day) && !isNaN(year)) {
+        if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
           return new Date(year, month, day);
         }
       }
@@ -202,8 +202,9 @@ export class ExcelDataProcessor {
    */
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
-    return jsonData.slice(1).map((row: any) => {
-      if (!row || row.length === 0) return null;
+    // Data starts from the 3rd row (index 2)
+    return jsonData.slice(2).map((row: any) => {
+      if (!row || row.length === 0 || !row[2]) return null;
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
@@ -256,8 +257,8 @@ export class ExcelDataProcessor {
       const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
       if (data.length < 2) return null;
       return {
-          headers: data[0] as string[],
-          data: data.slice(1) as (string | number | Date)[][],
+          headers: data[1] as string[], // Headers are on the 2nd row
+          data: data.slice(2) as (string | number | Date)[][],
       };
   }
 
@@ -318,7 +319,7 @@ export class ExcelDataProcessor {
 
       const diffTime = futureDate.getTime() - sheetDate.getTime();
 
-      if (diffTime > 0) {
+      if (diffTime >= 0) {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const years = diffDays / 365.25;
         
@@ -403,36 +404,44 @@ export class ExcelDataProcessor {
    * Get all client names from Portfolio sheet, column C.
    */
   public getClientNames(): string[] {
-    const sheetData = this.getSheetData('Portfolio');
-    if (sheetData.length < 2) return [];
-    
-    const clientNames = sheetData
-      .slice(1) // Skip header row
-      .map(row => row[2]) // Column C
+    if (!this.processedData?.clientData) return [];
+
+    const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h === 'Client Name');
+    if (clientNameIndex === -1) return [];
+
+    const clientNames = this.processedData.clientData.data
+      .map(row => row[clientNameIndex])
       .filter(name => typeof name === 'string' && name.trim() !== '');
-      
-    return [...new Set(clientNames)].sort(); // Return unique, sorted names
+
+    return [...new Set(clientNames)].sort();
   }
 
   /**
    * Get all data for a specific client.
    */
   public getDataForClient(clientName: string): ClientDetails | null {
-    if (!this.workbook) return null;
+    if (!this.workbook || !this.processedData?.clientData) return null;
+    
+    const clientData = this.processedData.clientData;
+    const clientNameIndex = clientData.headers.findIndex(h => h === 'Client Name');
+    if (clientNameIndex === -1) return null;
 
-    const portfolioSheet = this.getSheetData('Portfolio');
-    const portfolioHeaders = portfolioSheet[0] as string[];
-    const clientRowPortfolio = portfolioSheet.find(row => row[2] === clientName);
-
+    const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValue = this.parseNumber(clientRowPortfolio[16]); // Col Q
-    const gainLoss = this.parseNumber(clientRowPortfolio[17]); // Col R
-    const expiryDate = this.parseDate(clientRowPortfolio[4]); // Col E
+    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value');
+    const gainLossIndex = clientData.headers.findIndex(h => h === 'Unrealised gain');
+    const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry');
+    
+    const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
+    const gainLoss = gainLossIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossIndex]) : 0;
+    const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
+
 
     const sectorSheet = this.getSheetData('Sector Holding Summary');
     const sectorHeaders = sectorSheet[1] as string[];
-    const clientRowSector = sectorSheet.find(row => row[1] === clientName); // Match by client name in Column B
+    // Find client row in sector sheet by name in column B (index 1)
+    const clientRowSector = sectorSheet.find(row => row[1] === clientName);
     
     let sectorAllocations: { sector: string; value: number }[] = [];
     if (clientRowSector) {
@@ -445,7 +454,7 @@ export class ExcelDataProcessor {
         }
     }
     
-    const portfolioData = portfolioHeaders.map((header, index) => ({
+    const portfolioData = clientData.headers.map((header, index) => ({
         header,
         value: clientRowPortfolio[index],
     })).filter(item => item.value !== undefined && item.value !== null && item.value !== '');
