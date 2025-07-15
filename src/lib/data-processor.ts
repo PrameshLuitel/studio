@@ -381,8 +381,8 @@ export class ExcelDataProcessor {
   }
 
   private calculateAssetAllocationByGainLoss(): {
-    assetAllocationGain: SectorAllocation[],
-    assetAllocationLoss: SectorAllocation[],
+    assetAllocationGain: SectorAllocation[];
+    assetAllocationLoss: SectorAllocation[];
   } {
     const sheetData = this.getSheetData('Portfolio');
     const clientRows = sheetData.slice(2, -1);
@@ -404,15 +404,15 @@ export class ExcelDataProcessor {
         continue;
       }
   
-      targetTotals.sumG += this.parseNumber(row[6]);  // Equity - G
-      targetTotals.sumH += this.parseNumber(row[7]);  // Bank Balance - H
-      targetTotals.sumJ += this.parseNumber(row[9]);  // Payable - J
-      targetTotals.sumK += this.parseNumber(row[10]); // Receivable - K
+      targetTotals.sumG += this.parseNumber(row[6]);
+      targetTotals.sumH += this.parseNumber(row[7]);
+      targetTotals.sumJ += this.parseNumber(row[9]);
+      targetTotals.sumK += this.parseNumber(row[10]);
     }
   
-    const createAllocation = (totals: { sumG: number, sumH: number, sumJ: number, sumK: number }): SectorAllocation[] => {
-      const equity = totals.sumG / 2;
-      const cash = (totals.sumH / 2) + (totals.sumK / 2) - (totals.sumJ / 2);
+    const createAllocation = (totals: typeof gainTotals): SectorAllocation[] => {
+      const equity = totals.sumG;
+      const cash = totals.sumH + totals.sumK - totals.sumJ;
   
       const allocation: SectorAllocation[] = [];
       if (cash > 0) {
