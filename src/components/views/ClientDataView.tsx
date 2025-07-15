@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search } from 'lucide-react';
+import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-const StatCard = ({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType, className?: string }) => (
+const StatCard = ({ title, value, subValue, icon: Icon, className }: { title: string; value: string; subValue?: string; icon: React.ElementType, className?: string }) => (
     <Card className={cn("glassmorphic", className)}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium font-body text-foreground/80">{title}</CardTitle>
@@ -24,16 +24,41 @@ const StatCard = ({ title, value, icon: Icon, className }: { title: string; valu
         </CardHeader>
         <CardContent>
             <div className="text-2xl font-bold font-headline text-primary">{value}</div>
+            {subValue && <p className="text-xs text-muted-foreground">{subValue}</p>}
         </CardContent>
     </Card>
 );
+
+const GainLossStatCard = ({ gainLoss, gainLossPercentage }: { gainLoss: number, gainLossPercentage: number }) => {
+    const isGain = gainLoss >= 0;
+    const gainLossColor = isGain ? 'text-green-500' : 'text-red-500';
+
+    return (
+        <Card className="glassmorphic">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium font-body text-foreground/80">Gain / Loss</CardTitle>
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+                <div className={cn("text-2xl font-bold font-headline flex items-center gap-2", gainLossColor)}>
+                   {isGain ? <ArrowUp className="h-6 w-6"/> : <ArrowDown className="h-6 w-6"/>}
+                   {formatCurrency(Math.abs(gainLoss))}
+                </div>
+                <p className={cn("text-xs font-semibold", gainLossColor)}>
+                    {(gainLossPercentage * 100).toFixed(2)}%
+                </p>
+            </CardContent>
+        </Card>
+    );
+};
+
 
 const renderClientDetails = (details: ClientDetails) => {
     const sectorData = details.sectorAllocations
       .filter(s => s.value > 0)
       .map(s => ({ name: s.sector, value: s.value }));
       
-    const excludedHeaders = ['Client Name', 'Present value', 'Unrealised gain', 'Expiry'];
+    const excludedHeaders = ['Client Name', 'Present value', 'Unrealised gain / (loss) %', 'Expiry'];
     const portfolioDataForTable = details.portfolioData.filter(item => 
         !excludedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
@@ -42,9 +67,9 @@ const renderClientDetails = (details: ClientDetails) => {
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
             <div className="lg:col-span-1 flex flex-col gap-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-1 gap-6">
+                 <div className="grid grid-cols-1 gap-6">
                     <StatCard title="Total Value" value={formatCurrency(details.totalValue)} icon={DollarSign} />
-                    <StatCard title="Gain / Loss" value={formatCurrency(details.gainLoss)} icon={TrendingUp} />
+                    <GainLossStatCard gainLoss={details.gainLoss} gainLossPercentage={details.gainLossPercentage} />
                     <StatCard title="Expiry Date" value={details.expiryDate ? format(details.expiryDate, 'dd MMM yyyy') : 'N/A'} icon={CalendarClock} />
                 </div>
                 <Card className="glassmorphic">

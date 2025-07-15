@@ -55,6 +55,7 @@ export interface ClientDetails {
     name: string;
     totalValue: number;
     gainLoss: number;
+    gainLossPercentage: number;
     expiryDate?: Date;
     sectorAllocations: { sector: string; value: number }[];
     portfolioData: { header: string; value: any }[];
@@ -216,7 +217,7 @@ export class ExcelDataProcessor {
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
-        gainLoss: this.parseNumber(row[17]),   // Column R
+        gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, but used here for gain/loss status
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
@@ -444,12 +445,13 @@ export class ExcelDataProcessor {
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value');
-    const gainLossIndex = clientData.headers.findIndex(h => h === 'Unrealised gain');
-    const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry');
+    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column Q
+    const gainLossPercentageIndex = clientData.headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
+    const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
-    const gainLoss = gainLossIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossIndex]) : 0;
+    const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
+    const gainLoss = totalValue * gainLossPercentage;
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 
@@ -478,6 +480,7 @@ export class ExcelDataProcessor {
         name: clientName,
         totalValue,
         gainLoss,
+        gainLossPercentage,
         expiryDate,
         sectorAllocations,
         portfolioData,
