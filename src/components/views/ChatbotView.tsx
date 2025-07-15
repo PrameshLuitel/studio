@@ -47,7 +47,7 @@ export const ChatbotView = () => {
       if (!excelProcessor) {
           throw new Error("Excel data not processed yet.");
       }
-      const portfolioData = JSON.stringify(excelProcessor.getAllSheetsRawData(), null, 2);
+      const portfolioData = excelProcessor.getAllSheetsRawData();
       const result = await portfolioQuery({ portfolioData, query: input });
       setMessages([...newMessages, { role: 'model', content: result.answer }]);
     } catch (error) {
