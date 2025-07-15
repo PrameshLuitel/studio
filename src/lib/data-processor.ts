@@ -391,12 +391,17 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[];
     const clientRows = sheetData.slice(2, -1);
   
-    const gainLossIndex = 17; // Column R for 'Unrealised gain / (loss) %'
+    const gainLossIndex = headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
     const colGIndex = 6;
     const colHIndex = 7;
     const colJIndex = 9;
     const colKIndex = 10;
   
+    if (gainLossIndex === -1) {
+        console.warn("Column 'Unrealised gain / (loss) %' not found for Asset Allocation by Gain/Loss.");
+        return { assetAllocationGain: [], assetAllocationLoss: [] };
+    }
+
     const gainTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
     const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
   
@@ -411,7 +416,7 @@ export class ExcelDataProcessor {
       } else if (gainLossValue < 0) {
         targetTotals = lossTotals;
       } else {
-        continue;
+        continue; // Skip neutral clients
       }
   
       targetTotals.sumG += this.parseNumber(row[colGIndex]);
