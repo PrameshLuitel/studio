@@ -270,11 +270,10 @@ export class ExcelDataProcessor {
   }
 
   /**
-   * Calculate total AUM
+   * Calculate total AUM from column Q
    */
   private calculateTotalAUM(summaryData: SummaryData[]): number {
-    const totalAUM = summaryData.reduce((total, client) => total + (client.totalValue || 0), 0);
-    return totalAUM / 2;
+    return summaryData.reduce((total, client) => total + (client.totalValue || 0), 0);
   }
 
   /**
