@@ -7,12 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase } from 'lucide-react';
+import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Combobox } from '../ui/combobox';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 const StatCard = ({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType, className?: string }) => (
     <Card className={cn("glassmorphic", className)}>
@@ -111,39 +113,59 @@ const renderClientDetails = (details: ClientDetails) => {
 export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const { clientNames, clientDetails } = useMemo(() => {
+  const { allClientNames, clientDetails } = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) {
-      return { clientNames: [], clientDetails: null };
+      return { allClientNames: [], clientDetails: null };
     }
     const names = excelProcessor.getClientNames();
     const details = selectedClient ? excelProcessor.getDataForClient(selectedClient) : null;
     if (selectedClient && !names.includes(selectedClient)) {
         setSelectedClient(null);
-        return { clientNames: names, clientDetails: null };
+        return { allClientNames: names, clientDetails: null };
     }
-    return { clientNames: names, clientDetails: details };
+    return { allClientNames: names, clientDetails: details };
   }, [excelProcessor, selectedClient]);
 
-  const clientOptions = useMemo(() => {
-    return clientNames.map(name => ({ label: name, value: name }));
-  }, [clientNames]);
+  const filteredClientNames = useMemo(() => {
+    if (!searchQuery) return allClientNames;
+    return allClientNames.filter(name => name.toLowerCase().includes(searchQuery.toLowerCase()));
+  }, [allClientNames, searchQuery]);
+
+  const handleClientChange = (clientName: string) => {
+    setSelectedClient(clientName);
+  };
 
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
       <Card className="glassmorphic flex-shrink-0">
           <CardContent className="p-4">
-            <div className="flex items-center gap-4">
-                <Briefcase className="text-primary h-6 w-6" />
-                <Combobox
-                    options={clientOptions}
-                    value={selectedClient || ''}
-                    onChange={setSelectedClient}
-                    placeholder="Select a client..."
-                    searchPlaceholder="Search for a client..."
-                    emptyPlaceholder="No clients found."
-                    className="w-full max-w-sm"
-                />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        placeholder="Search for a client..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="pl-10 w-full"
+                    />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Briefcase className="text-primary h-5 w-5" />
+                    <Select onValueChange={handleClientChange} value={selectedClient || ''}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a client..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredClientNames.map(name => (
+                          <SelectItem key={name} value={name}>
+                            {name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                </div>
             </div>
           </CardContent>
       </Card>
