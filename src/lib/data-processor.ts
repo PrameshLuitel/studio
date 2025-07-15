@@ -281,11 +281,11 @@ export class ExcelDataProcessor {
     '5+': number;
   } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
-    
+
     const futureDate = new Date();
     futureDate.setFullYear(futureDate.getFullYear() + 56);
-    futureDate.setMonth(futureDate.getMonth() + 8); // JS months are 0-indexed, so +8 is correct.
-    futureDate.setDate(futureDate.getDate() + 17);
+    futureDate.setMonth(futureDate.getMonth() + 8);
+    futureDate.setDate(futureDate.getDate() + 15);
     futureDate.setHours(0, 0, 0, 0);
 
     summaryData.forEach(item => {
