@@ -391,7 +391,7 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
     const clientRows = sheetData.slice(2, -1); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Gain/(Loss) in Portfolio";
+    const gainLossHeaderName = "Unrealised gain / (loss) %";
     const gainLossIndex = headers.findIndex(h => h && h.trim() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
