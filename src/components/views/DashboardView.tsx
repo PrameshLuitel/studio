@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle, Banknote } from 'lucide-react';
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend } from 'recharts';
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { formatCurrency, SectorAllocation } from '@/lib/data-processor';
@@ -49,7 +49,59 @@ const ErrorDisplay = () => (
     </div>
 );
 
+const ActiveShape = (props: any) => {
+    const RADIAN = Math.PI / 180;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+    const sx = cx + (outerRadius + 10) * cos;
+    const sy = cy + (outerRadius + 10) * sin;
+    const mx = cx + (outerRadius + 30) * cos;
+    const my = cy + (outerRadius + 30) * sin;
+    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
+    const ey = my;
+    const textAnchor = cos >= 0 ? 'start' : 'end';
+  
+    return (
+      <g>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 8}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          style={{
+             filter: `drop-shadow(0px 4px 12px ${fill})`,
+             WebkitFilter: `drop-shadow(0px 4px 12px ${fill})`
+          }}
+        />
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+      </g>
+    );
+};
+
+
 const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: SectorAllocation[], icon: React.ElementType }) => {
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+    const onPieEnter = useCallback((_: any, index: number) => {
+        setActiveIndex(index);
+    }, [setActiveIndex]);
+
+    const onPieLeave = useCallback(() => {
+        setActiveIndex(null);
+    }, [setActiveIndex]);
+
     const chartData = useMemo(() => {
         if (!data) return [];
         const totalAllocation = data.reduce((acc, curr) => acc + curr.allocation, 0);
@@ -62,7 +114,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
     
     if (chartData.length === 0) {
         return (
-            <Card className="glassmorphic col-span-1 transition-transform duration-300 ease-in-out hover:scale-105">
+            <Card className="glassmorphic col-span-1">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
                 </CardHeader>
@@ -74,7 +126,7 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
     }
 
     return (
-        <Card className="glassmorphic col-span-1 transition-transform duration-300 ease-in-out hover:scale-105">
+        <Card className="glassmorphic col-span-1">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
             </CardHeader>
@@ -84,11 +136,25 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
                         <ResponsiveContainer>
                             <RechartsPieChart>
                                 <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${Number(value).toLocaleString()}`} />} />
-                                <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                                <Pie 
+                                    data={chartData} 
+                                    dataKey="value" 
+                                    nameKey="name" 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    innerRadius={60} 
+                                    outerRadius={100} 
+                                    labelLine={false} 
+                                    activeIndex={activeIndex !== null ? activeIndex : undefined}
+                                    activeShape={<ActiveShape />}
+                                    onMouseEnter={onPieEnter}
+                                    onMouseLeave={onPieLeave}
+                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                                        if (index === activeIndex) return null; // Hide label for active slice
                                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                                         const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
                                         const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                                        return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold">{`${(percent * 100).toFixed(0)}%`}</text> : null;
+                                        return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold pointer-events-none">{`${(percent * 100).toFixed(0)}%`}</text> : null;
                                     }}>
                                     {chartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -100,8 +166,13 @@ const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: 
                     <div>
                         <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Items</h4>
                         <ul className="space-y-3">
-                            {topItems.map((item) => (
-                                <li key={item.name} className="flex items-center text-sm">
+                            {topItems.map((item, index) => (
+                                <li 
+                                    key={item.name} 
+                                    className={cn("flex items-center text-sm transition-all duration-200", activeIndex === index ? 'text-primary font-bold' : '')}
+                                    onMouseEnter={() => onPieEnter(null, chartData.findIndex(d => d.name === item.name))}
+                                    onMouseLeave={onPieLeave}
+                                >
                                     <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
                                     <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
                                     <span className="font-mono text-muted-foreground">{item.percentage.toFixed(2)}%</span>
