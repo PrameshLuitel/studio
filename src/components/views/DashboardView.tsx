@@ -4,7 +4,7 @@
 import React, { useContext, useMemo } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle, Banknote } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -49,14 +49,14 @@ const ErrorDisplay = () => (
     </div>
 );
 
-const SectorPieChart = ({ title, data, icon: Icon }: { title: string, data: SectorAllocation[], icon: React.ElementType }) => {
+const AllocationPieChart = ({ title, data, icon: Icon }: { title: string, data: SectorAllocation[], icon: React.ElementType }) => {
     const chartData = useMemo(() => {
         if (!data) return [];
         const totalAllocation = data.reduce((acc, curr) => acc + curr.allocation, 0);
         return data.map(s => ({ name: s.sector, value: s.allocation, percentage: totalAllocation > 0 ? (s.allocation / totalAllocation) * 100 : 0 }));
     }, [data]);
 
-    const topSectors = useMemo(() => {
+    const topItems = useMemo(() => {
         return [...chartData].sort((a, b) => b.value - a.value).slice(0, 5);
     }, [chartData]);
     
@@ -98,13 +98,13 @@ const SectorPieChart = ({ title, data, icon: Icon }: { title: string, data: Sect
                         </ResponsiveContainer>
                     </ChartContainer>
                     <div>
-                        <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Sectors</h4>
+                        <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Items</h4>
                         <ul className="space-y-3">
-                            {topSectors.map((sector) => (
-                                <li key={sector.name} className="flex items-center text-sm">
-                                    <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === sector.name) % COLORS.length] }} />
-                                    <span className="font-medium text-foreground/90 flex-1">{sector.name}</span>
-                                    <span className="font-mono text-muted-foreground">{sector.percentage.toFixed(2)}%</span>
+                            {topItems.map((item) => (
+                                <li key={item.name} className="flex items-center text-sm">
+                                    <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
+                                    <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
+                                    <span className="font-mono text-muted-foreground">{item.percentage.toFixed(2)}%</span>
                                 </li>
                             ))}
                         </ul>
@@ -137,7 +137,7 @@ export const DashboardView = () => {
     return <ErrorDisplay />;
   }
   
-  const { summaryStats, sectorAllocation, sectorAllocationGain, sectorAllocationLoss, yearsToExpiryChartData } = useMemo(() => {
+  const { summaryStats, assetAllocation, sectorAllocation, sectorAllocationGain, sectorAllocationLoss, yearsToExpiryChartData } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
         ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
@@ -148,6 +148,7 @@ export const DashboardView = () => {
             clientGainLoss: data.clientGainLoss,
             totalClients: data.totalPMSClients
         },
+        assetAllocation: data.assetAllocation || [],
         sectorAllocation: data.sectorAllocation || [],
         sectorAllocationGain: data.sectorAllocationGain || [],
         sectorAllocationLoss: data.sectorAllocationLoss || [],
@@ -166,9 +167,10 @@ export const DashboardView = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <SectorPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
-        <SectorPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
-        <SectorPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <AllocationPieChart title="Asset Allocation" data={assetAllocation} icon={Banknote} />
+        <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <AllocationPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
+        <AllocationPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} />
         
         <Card className="glassmorphic col-span-1">
           <CardHeader>

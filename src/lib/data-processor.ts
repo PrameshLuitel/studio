@@ -82,6 +82,7 @@ export interface ProcessedData {
     '3-5': number;
     '5+': number;
   };
+  assetAllocation: SectorAllocation[];
   sectorAllocation: SectorAllocation[];
   sectorAllocationGain: SectorAllocation[];
   sectorAllocationLoss: SectorAllocation[];
@@ -169,6 +170,7 @@ export class ExcelDataProcessor {
       totalAUM: this.calculateTotalAUM(summaryData),
       clientGainLoss: this.calculateClientGainLoss(summaryData),
       yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
+      assetAllocation: this.calculateAssetAllocation(sectorData),
       sectorAllocation: this.calculateSectorAllocation(sectorData),
       sectorAllocationGain,
       sectorAllocationLoss,
@@ -217,7 +219,7 @@ export class ExcelDataProcessor {
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
-        gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, but used here for gain/loss status
+        gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, used here for gain/loss status
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
@@ -346,6 +348,26 @@ export class ExcelDataProcessor {
       }
     });
     return buckets;
+  }
+  
+  private calculateAssetAllocation(sectorData: SectorHoldingData[]): SectorAllocation[] {
+    const assetClasses = ['Cash', 'FD', 'Equity', 'Debenture'];
+    const assetAllocation: { [key: string]: number } = {
+        'Cash': 0,
+        'FD': 0,
+        'Equity': 0,
+        'Debenture': 0
+    };
+
+    sectorData.forEach(item => {
+        if (assetClasses.includes(item.sector)) {
+            assetAllocation[item.sector] += item.allocation;
+        }
+    });
+
+    return Object.entries(assetAllocation)
+        .map(([sector, allocation]) => ({ sector, allocation }))
+        .filter(item => item.allocation > 0);
   }
 
   /**
