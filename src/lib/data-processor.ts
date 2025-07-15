@@ -389,10 +389,10 @@ export class ExcelDataProcessor {
     if (sheetData.length < 3) return { assetAllocationGain: [], assetAllocationLoss: [] };
   
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
-    const clientRows = sheetData.slice(2, -1); // Data starts from the third row (index 2)
+    const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Unrealised gain / (loss) %";
-    const gainLossIndex = headers.findIndex(h => h && h.trim() === gainLossHeaderName);
+    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
+    const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
     const colGIndex = 6;
@@ -409,7 +409,7 @@ export class ExcelDataProcessor {
     const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
   
     for (const row of clientRows) {
-      if (!row || row.length === 0) continue;
+      if (!row || row.length === 0 || !row[2]) continue; // Skip empty or total rows
   
       const gainLossValue = this.parseNumber(row[gainLossIndex]);
       let targetTotals;
