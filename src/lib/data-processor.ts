@@ -389,16 +389,19 @@ export class ExcelDataProcessor {
     if (sheetData.length < 3) return { assetAllocationGain: [], assetAllocationLoss: [] };
   
     const headers = sheetData[1] as string[];
-    const clientRows = sheetData.slice(2, -1);
+    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total
   
-    const gainLossIndex = headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
+    const gainLossHeaderName = "Unrealised gain / (loss) %";
+    const gainLossIndex = headers.findIndex(h => h === gainLossHeaderName);
+    
+    // Hardcoded indices for G, H, J, K
     const colGIndex = 6;
     const colHIndex = 7;
     const colJIndex = 9;
     const colKIndex = 10;
   
     if (gainLossIndex === -1) {
-        console.warn("Column 'Unrealised gain / (loss) %' not found for Asset Allocation by Gain/Loss.");
+        console.warn(`Column '${gainLossHeaderName}' not found for Asset Allocation by Gain/Loss.`);
         return { assetAllocationGain: [], assetAllocationLoss: [] };
     }
 
