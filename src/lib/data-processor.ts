@@ -412,8 +412,8 @@ export class ExcelDataProcessor {
     }
   
     const createAllocation = (totals: typeof gainTotals): SectorAllocation[] => {
-      const equity = totals.sumG;
-      const cash = totals.sumH + totals.sumK - totals.sumJ;
+      const equity = totals.sumG / 2;
+      const cash = (totals.sumH / 2) + (totals.sumK / 2) - (totals.sumJ / 2);
   
       const allocation: SectorAllocation[] = [];
       if (cash > 0) {
