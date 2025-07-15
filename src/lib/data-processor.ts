@@ -351,24 +351,23 @@ export class ExcelDataProcessor {
   }
   
   private calculateAssetAllocation(): SectorAllocation[] {
-    const sheetData = this.getSheetData('Sector Holding Summary');
+    const sheetData = this.getSheetData('Portfolio');
     if (sheetData.length < 2) return [];
 
     const lastRow = sheetData[sheetData.length - 1];
+    if (!lastRow) return [];
 
-    // Column indices: H=7, J=9, K=10, G=6, S=18
-    const bankBalance = this.parseNumber(lastRow[7]);
-    const receivable = this.parseNumber(lastRow[10]);
-    const payable = this.parseNumber(lastRow[9]);
+    // Column indices from prompt: H=7, K=10, J=9, G=6
+    const bankBalance = this.parseNumber(lastRow[7]); // col H
+    const receivable = this.parseNumber(lastRow[10]); // col K
+    const payable = this.parseNumber(lastRow[9]); // col J
     const cash = bankBalance + receivable - payable;
 
-    const marketValue = this.parseNumber(lastRow[6]);
-    const fdValue = this.parseNumber(lastRow[18]); // Column S
+    const equity = this.parseNumber(lastRow[6]); // col G
 
     const assetAllocation: SectorAllocation[] = [
         { sector: 'Cash', allocation: cash },
-        { sector: 'Equity', allocation: marketValue },
-        { sector: 'FD', allocation: fdValue },
+        { sector: 'Equity', allocation: equity },
     ];
     
     return assetAllocation.filter(item => item.allocation > 0);
