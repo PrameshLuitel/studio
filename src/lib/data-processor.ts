@@ -709,4 +709,3 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-    
