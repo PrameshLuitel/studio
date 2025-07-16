@@ -244,8 +244,8 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                 <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                    <ChartContainer config={{}} className="h-80 w-full">
+                <div className="flex flex-col gap-6 items-center">
+                    <ChartContainer config={{}} className="h-64 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
                                 <Tooltip 
@@ -260,7 +260,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     cx="50%" 
                                     cy="50%" 
                                     innerRadius={60} 
-                                    outerRadius={100} 
+                                    outerRadius={80} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -280,32 +280,32 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                             </RechartsPieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
-                    <div>
-                        <h4 className="font-headline text-lg mb-4 text-foreground">Top 5 Items</h4>
-                        <ul className="space-y-3">
+                    <div className="w-full">
+                        <h4 className="font-headline text-base mb-2 text-foreground">Top 5 Items</h4>
+                        <ul className="space-y-1">
                             {topItems.map((item, index) => (
                                 <li 
                                     key={item.name} 
-                                    className={cn("flex items-center text-sm transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'text-primary font-bold' : '')}
+                                    className={cn("flex items-center text-xs p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                     onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                     onMouseLeave={onPieLeave}
                                 >
-                                    <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
+                                    <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
                                     <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
                                     <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
                                 </li>
                             ))}
                         </ul>
                          {ratioStats && (
-                            <div className="mt-6 pt-4 border-t border-border/50">
-                                <h4 className="font-headline text-lg mb-3 text-foreground">Equity/Cash Ratio Analysis</h4>
-                                <div className="space-y-3 text-sm">
+                            <div className="mt-4 pt-3 border-t border-border/50">
+                                <h4 className="font-headline text-base mb-2 text-foreground">Equity/Cash Ratio Analysis</h4>
+                                <div className="space-y-2 text-xs">
                                     {ratioStats.highest && (
                                     <div className="flex justify-between items-start">
-                                        <span className="text-muted-foreground flex items-center gap-2 pt-1"><TrendingUp className="h-4 w-4 text-green-500" />Highest Ratio:</span>
+                                        <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
                                         <div className="text-right">
                                             <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                            <div className="font-mono text-primary text-xs">
+                                            <div className="font-mono text-primary text-[10px] leading-tight">
                                                 <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
                                                 <span className="text-muted-foreground mx-1">|</span>
                                                 <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
@@ -315,10 +315,10 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     )}
                                     {ratioStats.lowest && (
                                     <div className="flex justify-between items-start">
-                                        <span className="text-muted-foreground flex items-center gap-2 pt-1"><TrendingDown className="h-4 w-4 text-red-500"/>Lowest Ratio:</span>
+                                        <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
                                         <div className="text-right">
                                             <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                            <div className="font-mono text-primary text-xs">
+                                            <div className="font-mono text-primary text-[10px] leading-tight">
                                                 <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
                                                 <span className="text-muted-foreground mx-1">|</span>
                                                 <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
