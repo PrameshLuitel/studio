@@ -354,3 +354,4 @@ export const DashboardView = () => {
     </div>
   );
 };
+
