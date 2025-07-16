@@ -99,8 +99,6 @@ export interface ProcessedData {
   equityToCashRatioStats: EquityCashRatioStats;
   equityToCashRatioStatsGain: EquityCashRatioStats;
   equityToCashRatioStatsLoss: EquityCashRatioStats;
-  stdDevEquity: number;
-  stdDevCash: number;
 }
 
 // Error types
@@ -182,8 +180,6 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss
     } = this.calculateEquityToCashRatioStats();
-    const { stdDevEquity, stdDevCash } = this.calculateStdDeviations();
-
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -202,8 +198,6 @@ export class ExcelDataProcessor {
       equityToCashRatioStats,
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss,
-      stdDevEquity,
-      stdDevCash
     };
   }
   
@@ -700,41 +694,6 @@ export class ExcelDataProcessor {
     };
   }
   
-    private calculateStdDev(data: number[]): number {
-        const n = data.length;
-        if (n === 0) return 0;
-        const mean = data.reduce((a, b) => a + b) / n;
-        const variance = data.map(x => Math.pow(x - mean, 2)).reduce((a, b) => a + b) / n;
-        return Math.sqrt(variance);
-    }
-  
-    private calculateStdDeviations(): { stdDevEquity: number; stdDevCash: number } {
-        const sheetData = this.getSheetData('Portfolio');
-        if (sheetData.length < 3) {
-            return { stdDevEquity: 0, stdDevCash: 0 };
-        }
-    
-        const clientRows = sheetData.slice(2, -1); // Exclude header and grand total
-        const equities: number[] = [];
-        const cashes: number[] = [];
-    
-        const colGIndex = 6;
-        const colHIndex = 7;
-        const colJIndex = 9;
-        const colKIndex = 10;
-    
-        clientRows.forEach(row => {
-            const equity = this.parseNumber(row[colGIndex]) / 2;
-            const cash = (this.parseNumber(row[colHIndex]) / 2) + (this.parseNumber(row[colKIndex]) / 2) - (this.parseNumber(row[colJIndex]) / 2);
-            equities.push(equity);
-            cashes.push(cash);
-        });
-    
-        return {
-            stdDevEquity: this.calculateStdDev(equities),
-            stdDevCash: this.calculateStdDev(cashes)
-        };
-    }
   /**
    * Utility function to parse numbers safely
    */

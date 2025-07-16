@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info, CalendarClock, Sigma } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info, CalendarClock } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -271,8 +271,6 @@ export const DashboardView = () => {
             totalAUM: data.totalAUM,
             clientGainLoss: data.clientGainLoss,
             totalClients: data.totalPMSClients,
-            stdDevEquity: data.stdDevEquity,
-            stdDevCash: data.stdDevCash,
         },
         assetAllocation: data.assetAllocation || [],
         assetAllocationGain: data.assetAllocationGain || [],
@@ -291,7 +289,7 @@ export const DashboardView = () => {
 
   return (
     <div className="grid gap-6 animate-in fade-in-50">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
         
         <Card className="glassmorphic">
@@ -308,8 +306,6 @@ export const DashboardView = () => {
         </Card>
 
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
-        <DataCard title="Equity StDev" value={formatCurrency(summaryStats.stdDevEquity || 0)} icon={Sigma} description="Standard deviation of equity" />
-        <DataCard title="Cash StDev" value={formatCurrency(summaryStats.stdDevCash || 0)} icon={Sigma} description="Standard deviation of cash" />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
