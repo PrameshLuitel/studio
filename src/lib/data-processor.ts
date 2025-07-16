@@ -335,14 +335,13 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number; count: number } } {
+  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number, count: number } } {
     const buckets: { [key: string]: { value: number, count: number } } = {
       '< 6m': { value: 0, count: 0 },
       '6m - 1y': { value: 0, count: 0 },
       '1y - 2y': { value: 0, count: 0 },
       '2y - 3y': { value: 0, count: 0 },
       '3y - 5y': { value: 0, count: 0 },
-      '5+ years': { value: 0, count: 0 },
     };
   
     if (!clientData) return buckets;
@@ -385,9 +384,6 @@ export class ExcelDataProcessor {
       } else if (diffMonths < 60) {
         buckets['3y - 5y'].value += aum;
         buckets['3y - 5y'].count++;
-      } else {
-        buckets['5+ years'].value += aum;
-        buckets['5+ years'].count++;
       }
     });
   
