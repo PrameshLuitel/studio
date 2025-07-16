@@ -80,6 +80,7 @@ export interface EquityCashRatioStats {
 export interface TopMover {
     clientId: string;
     value: number;
+    percentage: number;
 }
 
 
@@ -647,12 +648,12 @@ export class ExcelDataProcessor {
 
     const topGainers: TopMover[] = sortedByPercentage
         .slice(0, 10)
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue }));
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
 
     const topLosers: TopMover[] = sortedByPercentage
         .slice(-10)
         .reverse()
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue }));
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
 
     return { topGainers, topLosers };
   }
@@ -667,7 +668,7 @@ export class ExcelDataProcessor {
     const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h === 'Client Name');
     if (clientNameIndex === -1) return [];
 
-    const clientNames = this.processeddData.clientData.data
+    const clientNames = this.processedData.clientData.data
       .map(row => row[clientNameIndex])
       .filter(name => typeof name === 'string' && name.trim() !== '');
 

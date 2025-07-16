@@ -37,12 +37,14 @@ const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMo
                 {movers.map((mover, index) => (
                     <li key={index} className="flex justify-between items-center text-sm">
                         <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
-                        <span className={cn(
-                            "font-mono font-semibold",
+                        <div className={cn(
+                            "font-mono font-semibold flex items-baseline gap-1.5",
                             isGainer ? 'text-green-500' : 'text-red-500'
                         )}>
-                            {formatCurrency(mover.value)}
-                        </span>
+                           <span>{formatCurrency(mover.value)}</span>
+                           <span className="text-xs text-muted-foreground">/</span>
+                           <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
+                        </div>
                     </li>
                 ))}
             </ul>
