@@ -25,7 +25,7 @@ export default function RootLayout({
         <AppProvider>
           {children}
         </AppProvider>
-        <div className="fixed bottom-2 right-3 text-[7px] text-muted-foreground/60 font-headline z-50 pointer-events-none">
+        <div className="fixed bottom-2 right-3 text-[7px] text-muted-foreground/60 font-headline z-50 transition-all duration-300 ease-in-out hover:text-primary hover:scale-105 hover:drop-shadow-[0_0_4px_hsl(var(--primary)/0.8)]">
           created by Pramesh Luitel
         </div>
         <Toaster />
