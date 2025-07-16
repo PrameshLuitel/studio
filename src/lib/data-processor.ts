@@ -184,6 +184,7 @@ export class ExcelDataProcessor {
     const sheetData = this.getSheetData('Portfolio');
     const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
     const clientRows = sheetData.length > 2 ? sheetData.slice(2) : [];
+    
     const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
 
@@ -431,6 +432,7 @@ export class ExcelDataProcessor {
     const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
+    // Hardcoded indices for G, H, J, K
     const colGIndex = 6;
     const colHIndex = 7;
     const colJIndex = 9;

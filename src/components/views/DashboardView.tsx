@@ -207,10 +207,12 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         </div>
                                     </div>
                                     )}
-                                    <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground flex items-center gap-2"><Info className="h-4 w-4 text-blue-500" />Std. Deviation:</span>
-                                    <span className="font-mono text-primary">{ratioStats.stdDev.toFixed(2)}</span>
-                                    </div>
+                                    {ratioStats.stdDev > 0 && (
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-muted-foreground flex items-center gap-2"><Info className="h-4 w-4 text-blue-500" />Std. Deviation:</span>
+                                            <span className="font-mono text-primary">{ratioStats.stdDev.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -301,7 +303,7 @@ export const DashboardView = () => {
 
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
-
+      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationPieChart 
             title="Asset Allocation" 
