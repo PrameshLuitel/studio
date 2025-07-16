@@ -36,7 +36,7 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
         <div className="space-y-1">
             {movers.map((mover, index) => (
                 <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
-                    <span className="font-medium text-foreground/90 flex-shrink-0 pr-2 min-w-0 flex-1">{mover.clientId}</span>
+                    <span className="font-medium text-foreground/90 flex-1 min-w-0 pr-2">{mover.clientId}</span>
                     <div className={cn(
                         "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right shrink-0",
                         isGainer ? 'text-green-500' : 'text-red-500'
@@ -210,8 +210,8 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={50} 
-                                    outerRadius={70} 
+                                    innerRadius={60} 
+                                    outerRadius={80} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -239,20 +239,22 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <ul className="space-y-1 pt-2">
-                                    {topItems.map((item, index) => (
-                                        <li 
-                                            key={item.name} 
-                                            className={cn("flex items-center text-[11px] p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
-                                            onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
-                                            onMouseLeave={onPieLeave}
-                                        >
-                                            <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
-                                            <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
-                                            <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
-                                        </li>
-                                    ))}
-                                </ul>
+                                <ScrollArea className="h-28">
+                                    <ul className="space-y-1 p-1">
+                                        {topItems.map((item, index) => (
+                                            <li 
+                                                key={item.name} 
+                                                className={cn("flex items-center text-[11px] p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                                onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
+                                                onMouseLeave={onPieLeave}
+                                            >
+                                                <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
+                                                <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
+                                                <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </ScrollArea>
                             </CollapsibleContent>
                         </Collapsible>
                          {ratioStats && (
@@ -263,34 +265,36 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                    <div className="pt-2 text-xs">
-                                        {ratioStats.highest && (
-                                        <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
-                                            <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
-                                            <div className="text-right">
-                                                <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                                <div className="font-mono text-primary leading-tight">
-                                                    <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
-                                                    <span className="text-muted-foreground mx-1">|</span>
-                                                    <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
+                                   <ScrollArea className="h-20">
+                                        <div className="pt-2 text-xs p-1">
+                                            {ratioStats.highest && (
+                                            <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
+                                                <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
+                                                <div className="text-right">
+                                                    <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
+                                                    <div className="font-mono text-primary leading-tight">
+                                                        <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
+                                                        <span className="text-muted-foreground mx-1">|</span>
+                                                        <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        )}
-                                        {ratioStats.lowest && (
-                                        <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
-                                            <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
-                                            <div className="text-right">
-                                                <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                                <div className="font-mono text-primary leading-tight">
-                                                    <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
-                                                    <span className="text-muted-foreground mx-1">|</span>
-                                                    <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
+                                            )}
+                                            {ratioStats.lowest && (
+                                            <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
+                                                <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
+                                                <div className="text-right">
+                                                    <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
+                                                    <div className="font-mono text-primary leading-tight">
+                                                        <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
+                                                        <span className="text-muted-foreground mx-1">|</span>
+                                                        <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
+                                                    </div>
                                                 </div>
                                             </div>
+                                            )}
                                         </div>
-                                        )}
-                                    </div>
+                                    </ScrollArea>
                                 </CollapsibleContent>
                             </Collapsible>
                         )}
@@ -407,8 +411,8 @@ export const DashboardView = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -443,3 +447,4 @@ export const DashboardView = () => {
     </div>
   );
 };
+
