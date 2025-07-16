@@ -59,9 +59,7 @@ const formatValue = (item: { header: string; value: any }) => {
     return String(item.value);
 };
 
-const renderClientDetails = (details: ClientDetails) => {
-    const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
+const renderClientDetails = (details: ClientDetails, activeIndex: number | null, setActiveIndex: (index: number | null) => void) => {
     const sectorData = details.sectorAllocations
       .filter(s => s.value > 0)
       .map(s => ({ name: s.sector, value: s.value }));
@@ -182,6 +180,7 @@ export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const { allClientNames, clientDetails } = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) {
@@ -242,7 +241,7 @@ export const ClientDataView = () => {
         <ScrollArea className="h-full">
           <div className="pr-4 pb-4">
               {selectedClient && clientDetails ? (
-                  renderClientDetails(clientDetails)
+                  renderClientDetails(clientDetails, activeIndex, setActiveIndex)
               ) : (
                   <div className="flex items-center justify-center h-full min-h-[60vh]">
                       <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
