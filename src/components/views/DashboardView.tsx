@@ -60,7 +60,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[34rem]" />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[21rem]" />
         </CardContent>
     </Card>
 );
@@ -79,10 +79,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[34rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[21rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[34rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[21rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -412,7 +412,7 @@ export const DashboardView = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
@@ -448,3 +448,5 @@ export const DashboardView = () => {
     </div>
   );
 };
+
+    
