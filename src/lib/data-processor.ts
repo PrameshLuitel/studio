@@ -642,13 +642,14 @@ export class ExcelDataProcessor {
   private calculateTopMovers(summaryData: SummaryData[]): { topGainers: TopMover[], topLosers: TopMover[] } {
     const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
 
-    const sortedByGain = [...clients].sort((a, b) => b.gainLossValue - a.gainLossValue);
+    // Sort by percentage gain/loss (the `gainLoss` field)
+    const sortedByPercentage = [...clients].sort((a, b) => b.gainLoss - a.gainLoss);
 
-    const topGainers: TopMover[] = sortedByGain
+    const topGainers: TopMover[] = sortedByPercentage
         .slice(0, 10)
         .map(c => ({ clientId: c.clientId, value: c.gainLossValue }));
 
-    const topLosers: TopMover[] = sortedByGain
+    const topLosers: TopMover[] = sortedByPercentage
         .slice(-10)
         .reverse()
         .map(c => ({ clientId: c.clientId, value: c.gainLossValue }));
@@ -666,7 +667,7 @@ export class ExcelDataProcessor {
     const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h === 'Client Name');
     if (clientNameIndex === -1) return [];
 
-    const clientNames = this.processedData.clientData.data
+    const clientNames = this.processeddData.clientData.data
       .map(row => row[clientNameIndex])
       .filter(name => typeof name === 'string' && name.trim() !== '');
 
