@@ -72,10 +72,6 @@ export const AskGiclView = () => {
         return `Here is the ${title}:\n${allocationText}`;
     };
 
-    if (lowerQuery.includes('creator')) {
-        return "Pramesh Luitel created me.";
-    }
-
     if (lowerQuery.includes('aum')) {
          const clientNameMatch = lowerQuery.match(/for (.+)/);
         if (clientNameMatch && clientNameMatch[1]) {
@@ -159,8 +155,7 @@ export const AskGiclView = () => {
 - What is the AUM for [Client Name]?
 - Show me sector allocation for [Client Name].
 - What is the years to expiry breakdown?
-- Who has the highest equity to cash ratio?
-- Who is my creator?`;
+- Who has the highest equity to cash ratio?`;
     }
     
     return "I'm sorry, I don't understand that question. Please type 'help' to see what I can answer.";
