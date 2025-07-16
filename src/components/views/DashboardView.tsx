@@ -53,20 +53,20 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
 );
 
 const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMover[], title: string, icon: React.ElementType, isGainer: boolean }) => (
-    <Card className="glassmorphic">
+    <Card className="glassmorphic h-full">
         <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2">
                 <Icon className="text-accent"/> {title}
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[21rem]" />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[26rem]" />
         </CardContent>
     </Card>
 );
 
 const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => (
-    <Card className="glassmorphic">
+    <Card className="glassmorphic h-full">
         <Tabs defaultValue="gainers">
             <CardHeader>
                  <CardTitle className="font-headline flex items-center justify-between">
@@ -79,10 +79,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[21rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[26rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[21rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[26rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -211,7 +211,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={40} 
+                                    innerRadius={60} 
                                     outerRadius={80} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -245,7 +245,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         {topItems.map((item, index) => (
                                             <li 
                                                 key={item.name} 
-                                                className={cn("flex items-center p-1 rounded-md transition-all duration-200 text-sm", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                                className={cn("flex items-center p-1 rounded-md transition-all duration-200 text-base", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                                 onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                                 onMouseLeave={onPieLeave}
                                             >
@@ -267,7 +267,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                    <ScrollArea className="h-24">
-                                        <div className="pt-2 p-1 text-sm">
+                                        <div className="pt-2 p-1 text-base">
                                             {ratioStats.highest && (
                                             <div className="flex justify-between items-start p-1 rounded-md">
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3.5 w-3.5 text-green-500" />Highest:</span>
@@ -448,6 +448,8 @@ export const DashboardView = () => {
     </div>
   );
 };
+
+    
 
     
 
