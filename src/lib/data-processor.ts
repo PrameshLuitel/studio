@@ -179,8 +179,7 @@ export class ExcelDataProcessor {
     const clientData = this.processClientDataSheet();
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
-    const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
-
+    
     const sheetData = this.getSheetData('Portfolio');
     const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
     const clientRows = sheetData.length > 2 ? sheetData.slice(2) : [];
@@ -202,6 +201,8 @@ export class ExcelDataProcessor {
             }
         }
     }
+
+    const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
     
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -256,13 +257,18 @@ export class ExcelDataProcessor {
    */
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
+    
+    const headers = jsonData.length > 1 ? (jsonData[1] as string[]) : [];
+    const unrealisedGainLossHeader = 'Unrealised gain / (loss) %'.toLowerCase();
+    const unrealisedGainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === unrealisedGainLossHeader);
+
     // Data starts from the 3rd row (index 2)
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
-        gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, used here for gain/loss status
+        gainLoss: this.parseNumber(row[unrealisedGainLossIndex]),   // Column R is a percentage, used here for gain/loss status
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
@@ -507,6 +513,13 @@ export class ExcelDataProcessor {
       const headers = sheetData[1] as string[]; // Headers from Row 2
       const gainAllocation: { [sector: string]: number } = {};
       const lossAllocation: { [sector: string]: number } = {};
+      
+      const unrealisedGainLossHeader = 'Unrealised gain / (loss) %'.toLowerCase();
+      const unrealisedGainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === unrealisedGainLossHeader);
+      
+      if (unrealisedGainLossIndex === -1) {
+          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+      }
 
       // Initialize allocations from headers (C to P, indices 2 to 15)
       for (let i = 2; i <= 15; i++) {
@@ -522,7 +535,7 @@ export class ExcelDataProcessor {
         const row = sheetData[rowIndex] as any[];
         if (!row || row.length === 0) continue;
 
-        const gainLossValue = this.parseNumber(row[17]); // Column R
+        const gainLossValue = this.parseNumber(row[unrealisedGainLossIndex]);
 
         let targetAllocation: { [sector: string]: number } | null = null;
         if (gainLossValue > 0) {
@@ -560,7 +573,7 @@ export class ExcelDataProcessor {
   public getClientNames(): string[] {
     if (!this.processedData?.clientData) return [];
 
-    const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h === 'Client Name');
+    const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h.trim().toLowerCase() === 'client name');
     if (clientNameIndex === -1) return [];
 
     const clientNames = this.processedData.clientData.data
@@ -577,15 +590,15 @@ export class ExcelDataProcessor {
     if (!this.workbook || !this.processedData?.clientData) return null;
     
     const clientData = this.processedData.clientData;
-    const clientNameIndex = clientData.headers.findIndex(h => h === 'Client Name');
+    const clientNameIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'client name');
     if (clientNameIndex === -1) return null;
 
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column Q
-    const gainLossPercentageIndex = clientData.headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
-    const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
+    const totalValueIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'present value'); // Column Q
+    const gainLossPercentageIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'unrealised gain / (loss) %'); // Column R
+    const expiryDateIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'expiry'); // Column E
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
@@ -717,4 +730,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
-
