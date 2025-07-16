@@ -108,6 +108,8 @@ export interface ProcessedData {
   equityToCashRatioStatsLoss: EquityCashRatioStats;
   topGainers: TopMover[];
   topLosers: TopMover[];
+  topGainersAbsolute: TopMover[];
+  topLosersAbsolute: TopMover[];
 }
 
 // Error types
@@ -191,6 +193,7 @@ export class ExcelDataProcessor {
     } = this.calculateEquityToCashRatioStats();
     
     const { topGainers, topLosers } = this.calculateTopMovers(summaryData);
+    const { topGainersAbsolute, topLosersAbsolute } = this.calculateTopMoversAbsolute(summaryData);
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -211,6 +214,8 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
+      topGainersAbsolute,
+      topLosersAbsolute,
     };
   }
   
@@ -647,15 +652,36 @@ export class ExcelDataProcessor {
     const sortedByPercentage = [...clients].sort((a, b) => b.gainLoss - a.gainLoss);
 
     const topGainers: TopMover[] = sortedByPercentage
+        .filter(c => c.gainLoss > 0)
         .slice(0, 10)
         .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
 
     const topLosers: TopMover[] = sortedByPercentage
+        .filter(c => c.gainLoss < 0)
         .slice(-10)
         .reverse()
         .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
 
     return { topGainers, topLosers };
+  }
+
+  private calculateTopMoversAbsolute(summaryData: SummaryData[]): { topGainersAbsolute: TopMover[], topLosersAbsolute: TopMover[] } {
+    const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
+
+    const sortedByAbsoluteValue = [...clients].sort((a, b) => b.gainLossValue - a.gainLossValue);
+    
+    const topGainersAbsolute: TopMover[] = sortedByAbsoluteValue
+        .filter(c => c.gainLossValue > 0)
+        .slice(0, 10)
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
+
+    const topLosersAbsolute: TopMover[] = sortedByAbsoluteValue
+        .filter(c => c.gainLossValue < 0)
+        .slice(-10)
+        .reverse()
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
+        
+    return { topGainersAbsolute, topLosersAbsolute };
   }
 
 

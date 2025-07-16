@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info, CalendarClock } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info, CalendarClock, ShieldAlert } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -53,7 +53,7 @@ const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMo
     <Card className="glassmorphic">
         <Tabs defaultValue="gainers">
             <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                 <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Movers</CardTitle>
+                 <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Movers (%)</CardTitle>
                  <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
                     <TabsTrigger value="gainers">Gainers</TabsTrigger>
                     <TabsTrigger value="losers">Losers</TabsTrigger>
@@ -70,6 +70,7 @@ const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMo
         </Tabs>
     </Card>
 );
+
 
 const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMover[], title: string, icon: React.ElementType, isGainer: boolean }) => (
     <Card className="glassmorphic">
@@ -97,6 +98,30 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
                 </ul>
             </ScrollArea>
         </CardContent>
+    </Card>
+);
+
+const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => (
+    <Card className="glassmorphic">
+        <Tabs defaultValue="gainers">
+            <CardHeader>
+                 <CardTitle className="font-headline flex items-center justify-between">
+                    <span className="flex items-center gap-2"><ShieldAlert className="text-accent" />Top Movers (Absolute)</span>
+                    <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
+                        <TabsTrigger value="gainers">Gainers</TabsTrigger>
+                        <TabsTrigger value="losers">Losers</TabsTrigger>
+                    </TabsList>
+                 </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <TabsContent value="gainers">
+                    <MoverList movers={gainers} isGainer={true} />
+                </TabsContent>
+                <TabsContent value="losers">
+                    <MoverList movers={losers} isGainer={false} />
+                </TabsContent>
+            </CardContent>
+        </Tabs>
     </Card>
 );
 
@@ -347,6 +372,8 @@ export const DashboardView = () => {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
+      topGainersAbsolute,
+      topLosersAbsolute,
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
@@ -370,6 +397,8 @@ export const DashboardView = () => {
         equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss,
         topGainers: data.topGainers || [],
         topLosers: data.topLosers || [],
+        topGainersAbsolute: data.topGainersAbsolute || [],
+        topLosersAbsolute: data.topLosersAbsolute || [],
     };
   }, [dashboardData]);
 
@@ -379,7 +408,6 @@ export const DashboardView = () => {
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
-        
         <Card className="glassmorphic">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium font-body text-foreground/80">Client Gain/Loss</CardTitle>
@@ -392,13 +420,11 @@ export const DashboardView = () => {
                 <p className="text-xs text-muted-foreground">{gainLoss.neutral} Neutral</p>
             </CardContent>
         </Card>
-
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
-        
         <TopMoversCard gainers={topGainers} losers={topLosers} />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart 
             title="Asset Allocation" 
             data={assetAllocation} 
@@ -406,17 +432,19 @@ export const DashboardView = () => {
             ratioStats={equityToCashRatioStats}
         />
         <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <TopMoversAbsoluteCard gainers={topGainersAbsolute} losers={topLosersAbsolute} />
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
-        <TopMoversList movers={topGainers} title="Top Gainers" icon={ArrowUpCircle} isGainer={true} />
+        <TopMoversList movers={topGainers} title="Top Gainers (%)" icon={ArrowUpCircle} isGainer={true} />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
