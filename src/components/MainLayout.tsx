@@ -6,6 +6,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { DashboardView } from './views/DashboardView';
 import { ClientDataView } from './views/ClientDataView';
 import { EpsView } from './views/EpsView';
+import { AskGiclView } from './views/AskGiclView';
 import { Button } from './ui/button';
 import {
   LayoutDashboard,
@@ -13,6 +14,7 @@ import {
   LineChart,
   FileUp,
   BarChartHorizontal,
+  MessageCircle,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -22,6 +24,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'client-data', label: 'Client Data', icon: Table },
   { id: 'eps', label: 'EPS Viewer', icon: LineChart },
+  { id: 'ask-gicl', label: 'Ask Gicl', icon: MessageCircle },
 ];
 
 export const MainLayout = () => {
@@ -35,6 +38,8 @@ export const MainLayout = () => {
         return <ClientDataView />;
       case 'eps':
         return <EpsView />;
+      case 'ask-gicl':
+        return <AskGiclView />;
       default:
         return <DashboardView />;
     }
