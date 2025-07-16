@@ -29,11 +29,11 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
     </Card>
 );
 
-const MoverList = ({ movers, isGainer }: { movers: TopMover[], isGainer: boolean }) => (
-    <ScrollArea className="h-48 pr-3">
-        <ul className="space-y-2">
+const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
+    <ScrollArea className={cn("pr-3", scrollHeight || "h-48")}>
+        <ul className="space-y-1">
             {movers.map((mover, index) => (
-                <li key={index} className="flex justify-between items-center text-sm">
+                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50">
                     <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
                     <div className={cn(
                         "font-mono font-semibold flex items-baseline gap-1.5",
@@ -80,23 +80,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-            <ScrollArea className="h-[28.5rem] pr-3">
-                <ul className="space-y-3">
-                    {movers.map((mover, index) => (
-                        <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-muted/50">
-                            <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
-                            <div className={cn(
-                                "font-mono font-semibold flex items-baseline gap-1.5",
-                                isGainer ? 'text-green-500' : 'text-red-500'
-                            )}>
-                               <span>{formatCurrency(mover.value)}</span>
-                               <span className="text-xs text-muted-foreground">/</span>
-                               <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
-                            </div>
-                        </li>
-                    ))}
-                </ul>
-            </ScrollArea>
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[28.5rem]" />
         </CardContent>
     </Card>
 );
@@ -115,10 +99,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[28.5rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[28.5rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -286,7 +270,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                             {topItems.map((item, index) => (
                                 <li 
                                     key={item.name} 
-                                    className={cn("flex items-center text-xs p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                    className={cn("flex items-center text-[11px] p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                     onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                     onMouseLeave={onPieLeave}
                                 >
@@ -297,15 +281,15 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                             ))}
                         </ul>
                          {ratioStats && (
-                            <div className="mt-4 pt-3 border-t border-border/50">
-                                <h4 className="font-headline text-base mb-2 text-foreground">Equity/Cash Ratio Analysis</h4>
-                                <div className="space-y-2 text-xs">
+                            <div className="mt-3 pt-2 border-t border-border/50">
+                                <h4 className="font-headline text-sm mb-2 text-foreground">Equity/Cash Ratio Analysis</h4>
+                                <div className="space-y-1 text-xs">
                                     {ratioStats.highest && (
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex justify-between items-start text-[10px]">
                                         <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
                                         <div className="text-right">
                                             <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                            <div className="font-mono text-primary text-[10px] leading-tight">
+                                            <div className="font-mono text-primary leading-tight">
                                                 <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
                                                 <span className="text-muted-foreground mx-1">|</span>
                                                 <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
@@ -314,11 +298,11 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     </div>
                                     )}
                                     {ratioStats.lowest && (
-                                    <div className="flex justify-between items-start">
+                                    <div className="flex justify-between items-start text-[10px]">
                                         <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
                                         <div className="text-right">
                                             <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                            <div className="font-mono text-primary text-[10px] leading-tight">
+                                            <div className="font-mono text-primary leading-tight">
                                                 <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
                                                 <span className="text-muted-foreground mx-1">|</span>
                                                 <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
