@@ -639,13 +639,8 @@ export class ExcelDataProcessor {
         const clientName = row[2];
         if (!clientName || typeof clientName !== 'string') continue;
 
-        const g = this.parseNumber(row[6]);
-        const h = this.parseNumber(row[7]);
-        const j = this.parseNumber(row[9]);
-        const k = this.parseNumber(row[10]);
-
-        const equity = g / 2;
-        const cash = (h / 2) + (k / 2) - (j / 2);
+        const equity = this.parseNumber(row[6]) / 2;
+        const cash = (this.parseNumber(row[7]) / 2) + (this.parseNumber(row[10]) / 2) - (this.parseNumber(row[9]) / 2);
         const total = equity + cash;
 
         if (total > 0) {
@@ -708,4 +703,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
-
