@@ -55,11 +55,16 @@ export const AskGiclView = () => {
   }, [messages]);
 
   const getBotResponse = (query: string): string => {
-    const lowerQuery = query.toLowerCase().trim();
+    const lowerQuery = query.toLowerCase().trim().replace(/[^a-z0-9\s]/g, '');
     const data = processedData.current;
 
     if (!data) {
         return "I'm sorry, but I don't have any data loaded. Please upload an Excel file first.";
+    }
+    
+    const creatorKeywords = ['creator', 'created', 'built', 'made', 'developer', 'master', 'pramesh', 'luitel'];
+    if (creatorKeywords.some(keyword => lowerQuery.includes(keyword))) {
+        return "Master Pramesh Luitel Created Me";
     }
 
     const formatAllocations = (title: string, allocations: SectorAllocation[] | undefined): string => {
