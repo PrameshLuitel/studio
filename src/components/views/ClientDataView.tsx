@@ -7,49 +7,38 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp } from 'lucide-react';
+import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
-const StatCard = ({ title, value, subValue, icon: Icon, className }: { title: string; value: string; subValue?: string; icon: React.ElementType, className?: string }) => (
+const StatCard = ({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType, className?: string }) => (
     <Card className={cn("glassmorphic", className)}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium font-body text-foreground/80">{title}</CardTitle>
+            <CardTitle className="text-sm font-medium font-body text-foreground/80 truncate" title={title}>{title}</CardTitle>
             <Icon className="h-5 w-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-            <div className="text-2xl font-bold font-headline text-primary">{value}</div>
-            {subValue && <p className="text-xs text-muted-foreground">{subValue}</p>}
+            <div className="text-2xl font-bold font-headline text-primary truncate" title={value}>{value}</div>
         </CardContent>
     </Card>
 );
 
-const GainLossStatCard = ({ gainLoss, gainLossPercentage }: { gainLoss: number, gainLossPercentage: number }) => {
-    const isGain = gainLoss >= 0;
-    const gainLossColor = isGain ? 'text-green-500' : 'text-red-500';
-
-    return (
-        <Card className="glassmorphic">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium font-body text-foreground/80">Gain / Loss</CardTitle>
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-                <div className={cn("text-2xl font-bold font-headline flex items-center gap-2", gainLossColor)}>
-                   {isGain ? <ArrowUp className="h-6 w-6"/> : <ArrowDown className="h-6 w-6"/>}
-                   {formatCurrency(Math.abs(gainLoss))}
-                </div>
-                <p className={cn("text-xs font-semibold", gainLossColor)}>
-                    {(gainLossPercentage * 100).toFixed(2)}%
-                </p>
-            </CardContent>
-        </Card>
-    );
+const getIconForHeader = (header: string) => {
+    const lowerHeader = header.toLowerCase();
+    if (lowerHeader.includes('value') || lowerHeader.includes('aum') || lowerHeader.includes('amount') || lowerHeader.includes('price')) return DollarSign;
+    if (lowerHeader.includes('gain') || lowerHeader.includes('loss')) return TrendingUp;
+    if (lowerHeader.includes('%')) return Percent;
+    if (lowerHeader.includes('date') || lowerHeader.includes('expiry')) return CalendarIcon;
+    if (lowerHeader.includes('client name')) return User;
+    if (lowerHeader.includes('pan')) return FileText;
+    if (lowerHeader.includes('bank')) return Building;
+    if (lowerHeader.includes('active')) return lowerHeader.includes('yes') ? CheckCircle : XCircle;
+    if (lowerHeader.includes('qty') || lowerHeader.includes('quantity') || lowerHeader.includes('number')) return Hash;
+    return Info;
 };
 
 
@@ -58,83 +47,72 @@ const renderClientDetails = (details: ClientDetails) => {
       .filter(s => s.value > 0)
       .map(s => ({ name: s.sector, value: s.value }));
       
-    const excludedHeaders = ['Client Name', 'Present value', 'Unrealised gain / (loss) %', 'Expiry'];
-    const portfolioDataForTable = details.portfolioData.filter(item => 
+    const excludedHeaders = ['Client Name'];
+    const portfolioDataForCards = details.portfolioData.filter(item => 
         !excludedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
     );
 
+    const formatValue = (item: { header: string; value: any }) => {
+        const lowerHeader = item.header.toLowerCase();
+        if (typeof item.value === 'number') {
+            if (lowerHeader.includes('%')) {
+                return `${(item.value * 100).toFixed(2)}%`;
+            }
+            if (lowerHeader.includes('value') || lowerHeader.includes('gain') || lowerHeader.includes('aum') || lowerHeader.includes('price')) {
+                return formatCurrency(item.value);
+            }
+            return item.value.toLocaleString();
+        }
+        if (item.value instanceof Date) {
+            return format(item.value, 'dd MMM yyyy');
+        }
+        return String(item.value);
+    };
+
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
-            <div className="lg:col-span-1 flex flex-col gap-6">
-                 <div className="grid grid-cols-1 gap-6">
-                    <StatCard title="Total Value" value={formatCurrency(details.totalValue)} icon={DollarSign} />
-                    <GainLossStatCard gainLoss={details.gainLoss} gainLossPercentage={details.gainLossPercentage} />
-                    <StatCard title="Expiry Date" value={details.expiryDate ? format(details.expiryDate, 'dd MMM yyyy') : 'N/A'} icon={CalendarClock} />
-                </div>
-                <Card className="glassmorphic">
-                    <CardHeader>
-                        <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                       <ScrollArea className="h-96">
-                            <ChartContainer config={{}} className="h-full min-h-[384px] w-full">
-                                <ResponsiveContainer>
-                                    <BarChart layout="vertical" data={sectorData} margin={{ left: 10 }}>
-                                        <XAxis type="number" hide />
-                                        <YAxis 
-                                            dataKey="name" 
-                                            type="category" 
-                                            width={100}
-                                            tickLine={false}
-                                            axisLine={false}
-                                            className="text-xs truncate"
-                                            />
-                                        <Tooltip 
-                                            cursor={{ fill: 'hsl(var(--muted))' }}
-                                            content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
-                                            />
-                                        <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                           </ChartContainer>
-                       </ScrollArea>
-                    </CardContent>
-                </Card>
-            </div>
-            <div className="lg:col-span-2 flex flex-col gap-6">
-                <Card className="glassmorphic flex-1 h-full">
-                    <CardHeader>
-                        <CardTitle className="font-headline flex items-center gap-2"><Info className="text-accent"/> Other Details</CardTitle>
-                        <CardDescription>Additional data from the 'Portfolio' sheet for this client.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <ScrollArea className="h-[calc(100vh-25rem)]">
-                             <Table>
-                                <TableBody>
-                                    {portfolioDataForTable.map((item, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell className="font-semibold text-foreground/80">{item.header}</TableCell>
-                                            <TableCell className="text-right">
-                                                {typeof item.value === 'number'
-                                                    ? item.header.toLowerCase().includes('value') || item.header.toLowerCase().includes('gain') || item.header.toLowerCase().includes('aum')
-                                                        ? formatCurrency(item.value)
-                                                        : item.value.toLocaleString()
-                                                    : item.value instanceof Date
-                                                        ? item.value.toLocaleDateString()
-                                                        : String(item.value)}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
-                    </CardContent>
-                </Card>
+            <Card className="glassmorphic lg:col-span-3">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ChartContainer config={{}} className="h-96 w-full">
+                        <ResponsiveContainer>
+                            <BarChart layout="vertical" data={sectorData} margin={{ left: 10, right: 20 }}>
+                                <XAxis type="number" hide />
+                                <YAxis 
+                                    dataKey="name" 
+                                    type="category" 
+                                    width={120}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    className="text-xs truncate"
+                                    />
+                                <Tooltip 
+                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                                    />
+                                <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </ChartContainer>
+                </CardContent>
+            </Card>
+            
+            <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                 {portfolioDataForCards.map((item, index) => (
+                    <StatCard 
+                        key={index}
+                        title={item.header}
+                        value={formatValue(item)}
+                        icon={getIconForHeader(item.header)}
+                    />
+                 ))}
             </div>
         </div>
     );
-  };
+};
   
 export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
