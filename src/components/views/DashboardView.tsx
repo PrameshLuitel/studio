@@ -194,7 +194,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         <span className="text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-500" />Highest Ratio:</span>
                                         <div className="text-right">
                                         <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                        <span className="font-mono text-primary ml-2">{ratioStats.highest.ratio.toFixed(2)}</span>
+                                        <span className="font-mono text-primary ml-2">{(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
                                         </div>
                                     </div>
                                     )}
@@ -203,14 +203,14 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         <span className="text-muted-foreground flex items-center gap-2"><TrendingDown className="h-4 w-4 text-red-500"/>Lowest Ratio:</span>
                                         <div className="text-right">
                                         <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                        <span className="font-mono text-primary ml-2">{ratioStats.lowest.ratio.toFixed(2)}</span>
+                                        <span className="font-mono text-primary ml-2">{(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
                                         </div>
                                     </div>
                                     )}
                                     {ratioStats.stdDev > 0 && (
                                         <div className="flex justify-between items-center">
                                             <span className="text-muted-foreground flex items-center gap-2"><Info className="h-4 w-4 text-blue-500" />Std. Deviation:</span>
-                                            <span className="font-mono text-primary">{ratioStats.stdDev.toFixed(2)}</span>
+                                            <span className="font-mono text-primary">{(ratioStats.stdDev * 100).toFixed(2)}%</span>
                                         </div>
                                     )}
                                 </div>

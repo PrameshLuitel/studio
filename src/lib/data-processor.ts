@@ -218,8 +218,8 @@ export class ExcelDataProcessor {
       epsSheetData,
       clientData,
       equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows),
-      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients),
-      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients),
+      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients, false),
+      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients, false),
     };
   }
   
@@ -625,7 +625,7 @@ export class ExcelDataProcessor {
     };
   }
   
-  private calculateEquityToCashRatiosForGroup(clientRows: any[][]): EquityCashRatioStats {
+  private calculateEquityToCashRatiosForGroup(clientRows: any[][], includeStdDev = true): EquityCashRatioStats {
     if (clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
   
     const ratios: number[] = [];
@@ -643,9 +643,10 @@ export class ExcelDataProcessor {
 
         const equity = g / 2;
         const cash = (h / 2) + (k / 2) - (j / 2);
+        const total = equity + cash;
 
-        if (cash > 0) {
-            const ratio = equity / cash;
+        if (total > 0) {
+            const ratio = equity / total;
             ratios.push(ratio);
 
             if (ratio > highest.ratio) {
@@ -661,10 +662,13 @@ export class ExcelDataProcessor {
         return { highest: null, lowest: null, stdDev: 0 };
     }
 
-    const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
-    const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
-    const stdDev = Math.sqrt(variance);
-
+    let stdDev = 0;
+    if (includeStdDev) {
+        const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+        const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
+        stdDev = Math.sqrt(variance);
+    }
+    
     return {
         highest: highest.ratio > -Infinity ? highest : null,
         lowest: lowest.ratio < Infinity ? lowest : null,
