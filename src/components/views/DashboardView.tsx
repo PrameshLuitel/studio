@@ -8,9 +8,11 @@ import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as Ba
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
-import { formatCurrency, SectorAllocation, EquityCashRatioStats } from '@/lib/data-processor';
+import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
-import { Separator } from '../ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ScrollArea } from '../ui/scroll-area';
+
 
 const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
 
@@ -27,14 +29,55 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
     </Card>
 );
 
+const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => {
+    
+    const MoverList = ({ movers, isGainer }: { movers: TopMover[], isGainer: boolean }) => (
+        <ScrollArea className="h-48 pr-3">
+            <ul className="space-y-2">
+                {movers.map((mover, index) => (
+                    <li key={index} className="flex justify-between items-center text-sm">
+                        <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
+                        <span className={cn(
+                            "font-mono font-semibold",
+                            isGainer ? 'text-green-500' : 'text-red-500'
+                        )}>
+                            {formatCurrency(mover.value)}
+                        </span>
+                    </li>
+                ))}
+            </ul>
+        </ScrollArea>
+    );
+
+    return (
+        <Card className="glassmorphic lg:col-span-2">
+            <Tabs defaultValue="gainers">
+                <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                     <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Gainers / Losers</CardTitle>
+                     <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
+                        <TabsTrigger value="gainers">Gainers</TabsTrigger>
+                        <TabsTrigger value="losers">Losers</TabsTrigger>
+                    </TabsList>
+                </CardHeader>
+                <CardContent>
+                    <TabsContent value="gainers">
+                        <MoverList movers={gainers} isGainer={true} />
+                    </TabsContent>
+                    <TabsContent value="losers">
+                        <MoverList movers={losers} isGainer={false} />
+                    </TabsContent>
+                </CardContent>
+            </Tabs>
+        </Card>
+    );
+};
+
 const LoadingSkeleton = () => (
     <div className="grid gap-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
             <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
             <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
-            <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
-            <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
-            <Card className="glassmorphic"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-7 w-3/5 mb-2" /><Skeleton className="h-3 w-full" /></CardContent></Card>
+            <Card className="glassmorphic lg:col-span-2"><CardHeader><Skeleton className="h-5 w-2/5" /></CardHeader><CardContent><Skeleton className="h-24 w-full" /></CardContent></Card>
         </div>
         <div className="grid gap-6">
             <Card className="glassmorphic"><CardContent className="p-6"><Skeleton className="h-80 w-full" /></CardContent></Card>
@@ -155,7 +198,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 <Tooltip 
                                     useMousePosition
                                     cursor={{stroke: 'hsl(var(--primary))', strokeWidth: 1, fill: 'transparent', r: 30}}
-                                    content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${props.payload.percentage.toFixed(2)}%`} />} 
+                                    content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${(props.payload.percentage * 100).toFixed(2)}%`} />} 
                                 />
                                 <Pie 
                                     data={chartData} 
@@ -196,7 +239,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 >
                                     <span className="w-3 h-3 rounded-full mr-3 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
                                     <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
-                                    <span className="font-mono text-muted-foreground">{item.percentage.toFixed(2)}%</span>
+                                    <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
                                 </li>
                             ))}
                         </ul>
@@ -273,7 +316,9 @@ export const DashboardView = () => {
       yearsToExpiryChartData,
       equityToCashRatioStats,
       equityToCashRatioStatsGain,
-      equityToCashRatioStatsLoss
+      equityToCashRatioStatsLoss,
+      topGainers,
+      topLosers,
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
@@ -294,7 +339,9 @@ export const DashboardView = () => {
         yearsToExpiryChartData,
         equityToCashRatioStats: data.equityToCashRatioStats,
         equityToCashRatioStatsGain: data.equityToCashRatioStatsGain,
-        equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss
+        equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss,
+        topGainers: data.topGainers || [],
+        topLosers: data.topLosers || [],
     };
   }, [dashboardData]);
 
@@ -302,7 +349,7 @@ export const DashboardView = () => {
 
   return (
     <div className="grid gap-6 animate-in fade-in-50">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
         
         <Card className="glassmorphic">
@@ -319,6 +366,8 @@ export const DashboardView = () => {
         </Card>
 
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
+        
+        <TopMoversCard gainers={topGainers} losers={topLosers} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

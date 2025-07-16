@@ -7,7 +7,8 @@ import * as XLSX from 'xlsx';
 export interface SummaryData {
   clientId: string;
   totalValue: number;
-  gainLoss: number;
+  gainLoss: number; // This is the percentage
+  gainLossValue: number; // This is the absolute value
   expiryDate?: Date; // Added for expiry calculation
   [key: string]: any;
 }
@@ -76,6 +77,11 @@ export interface EquityCashRatioStats {
   lowest: EquityCashRatioInfo | null;
 }
 
+export interface TopMover {
+    clientId: string;
+    value: number;
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -99,6 +105,8 @@ export interface ProcessedData {
   equityToCashRatioStats: EquityCashRatioStats;
   equityToCashRatioStatsGain: EquityCashRatioStats;
   equityToCashRatioStatsLoss: EquityCashRatioStats;
+  topGainers: TopMover[];
+  topLosers: TopMover[];
 }
 
 // Error types
@@ -180,6 +188,8 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss
     } = this.calculateEquityToCashRatioStats();
+    
+    const { topGainers, topLosers } = this.calculateTopMovers(summaryData);
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -198,6 +208,8 @@ export class ExcelDataProcessor {
       equityToCashRatioStats,
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss,
+      topGainers,
+      topLosers,
     };
   }
   
@@ -237,10 +249,13 @@ export class ExcelDataProcessor {
     // Data starts from the 3rd row (index 2)
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
+      const totalValue = this.parseNumber(row[16]);
+      const gainLossPercentage = this.parseNumber(row[17]);
       return {
         clientId: row[2], // Client Name is in Column C
-        totalValue: this.parseNumber(row[16]), // Column Q (Present value)
-        gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, used here for gain/loss status
+        totalValue: totalValue, // Column Q (Present value)
+        gainLoss: gainLossPercentage,   // Column R is a percentage, used here for gain/loss status
+        gainLossValue: totalValue * gainLossPercentage,
         expiryDate: this.parseDate(row[20]), // Column U (New expiry date column)
       };
     }).filter(Boolean) as SummaryData[];
@@ -306,7 +321,7 @@ export class ExcelDataProcessor {
    * Calculate total PMS clients
    */
   private calculateTotalPMSClients(summaryData: SummaryData[]): number {
-    return summaryData.filter(client => client.clientId && String(client.clientId).trim() !== '').length;
+    return summaryData.filter(client => client.clientId && String(client.clientId).trim() !== '' && !String(client.clientId).includes('Grand Total')).length;
   }
 
   /**
@@ -325,6 +340,7 @@ export class ExcelDataProcessor {
     neutral: number;
   } {
     return summaryData.reduce((acc, client) => {
+      if (String(client.clientId).includes('Grand Total')) return acc;
       const gainLoss = client.gainLoss || 0;
       if (gainLoss > 0) acc.gain++;
       else if (gainLoss < 0) acc.loss++;
@@ -427,7 +443,7 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
     const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
+    const gainLossHeaderName = "gain/(loss) in portfolio"; // This is how it appears in the sheet
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
@@ -445,7 +461,7 @@ export class ExcelDataProcessor {
     const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
   
     for (const row of clientRows) {
-      if (!row || row.length === 0 || !row[2]) continue; // Skip empty or total rows
+      if (!row || row.length === 0 || !row[2] || String(row[2]).includes('Grand Total')) continue; // Skip empty or total rows
   
       const gainLossValue = this.parseNumber(row[gainLossIndex]);
       let targetTotals;
@@ -518,7 +534,7 @@ export class ExcelDataProcessor {
       // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
       for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
         const row = sheetData[rowIndex] as any[];
-        if (!row || row.length === 0) continue;
+        if (!row || row.length === 0 || !row[1] || String(row[1]).includes('Grand Total')) continue;
 
         const gainLossValue = this.parseNumber(row[17]); // Column R
 
@@ -622,6 +638,24 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsLoss: findMinMax(clientRatiosLoss)
     };
   }
+
+  private calculateTopMovers(summaryData: SummaryData[]): { topGainers: TopMover[], topLosers: TopMover[] } {
+    const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
+
+    const sortedByGain = [...clients].sort((a, b) => b.gainLossValue - a.gainLossValue);
+
+    const topGainers: TopMover[] = sortedByGain
+        .slice(0, 10)
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue }));
+
+    const topLosers: TopMover[] = sortedByGain
+        .slice(-10)
+        .reverse()
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue }));
+
+    return { topGainers, topLosers };
+  }
+
 
    /**
    * Get all client names from Portfolio sheet, column C.
