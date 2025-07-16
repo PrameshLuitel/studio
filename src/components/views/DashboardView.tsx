@@ -31,10 +31,10 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
 
 const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
     <ScrollArea className={cn("pr-3", scrollHeight || "h-[28.5rem]")}>
-        <ul className="space-y-2">
+        <ul className="space-y-1">
             {movers.map((mover, index) => (
                 <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
-                    <span className="font-medium text-foreground/90 flex-shrink-0 pr-2">{mover.clientId}</span>
+                    <span className="font-medium text-foreground/90 flex-shrink-0 pr-2 min-w-0 flex-1">{mover.clientId}</span>
                     <div className={cn(
                         "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right",
                         isGainer ? 'text-green-500' : 'text-red-500'
@@ -208,7 +208,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={60} 
+                                    innerRadius={70} 
                                     outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -226,12 +226,11 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
-                                
                             </RechartsPieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
                     <div className="w-full">
-                        <h4 className="font-headline text-base mb-2 text-foreground">Top 5 Items</h4>
+                        <h4 className="font-headline text-base mb-2 text-foreground">Items</h4>
                         <ul className="space-y-1">
                             {topItems.map((item, index) => (
                                 <li 
@@ -386,14 +385,14 @@ export const DashboardView = () => {
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
-        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
         <TopMoversList movers={topGainers} title="Top Gainers (%)" icon={ArrowUpCircle} isGainer={true} />
+        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
