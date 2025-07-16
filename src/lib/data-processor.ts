@@ -185,7 +185,7 @@ export class ExcelDataProcessor {
     const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
     const clientRows = sheetData.length > 2 ? sheetData.slice(2) : [];
     
-    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
+    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
 
     const gainClients: any[][] = [];
