@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -12,6 +12,8 @@ import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover } from
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
@@ -30,10 +32,10 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
 );
 
 const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
-    <ScrollArea className={cn("pr-3", scrollHeight || "h-[28.5rem]")}>
-        <ul className="space-y-1">
+    <ScrollArea className={cn("pr-3 -mr-3", scrollHeight || "h-[28.5rem]")}>
+        <div className="space-y-1.5">
             {movers.map((mover, index) => (
-                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
+                <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
                     <span className="font-medium text-foreground/90 flex-shrink-0 pr-2 min-w-0 flex-1">{mover.clientId}</span>
                     <div className={cn(
                         "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right",
@@ -43,9 +45,9 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
                        <span className="text-xs text-muted-foreground">/</span>
                        <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
                     </div>
-                </li>
+                </div>
             ))}
-        </ul>
+        </div>
     </ScrollArea>
 );
 
@@ -76,10 +78,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[28.5rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[31rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[28.5rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[31rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -198,7 +200,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                 <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="flex flex-col gap-6 items-center">
+                <div className="flex flex-col gap-4 items-center">
                     <ChartContainer config={{}} className="h-64 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
@@ -208,7 +210,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={70} 
+                                    innerRadius={60} 
                                     outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -229,54 +231,68 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                             </RechartsPieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
-                    <div className="w-full">
-                        <h4 className="font-headline text-base mb-2 text-foreground">Items</h4>
-                        <ul className="space-y-1">
-                            {topItems.map((item, index) => (
-                                <li 
-                                    key={item.name} 
-                                    className={cn("flex items-center text-[11px] p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
-                                    onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
-                                    onMouseLeave={onPieLeave}
-                                >
-                                    <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
-                                    <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
-                                    <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
-                                </li>
-                            ))}
-                        </ul>
+                    <div className="w-full space-y-2">
+                        <Collapsible>
+                            <CollapsibleTrigger asChild>
+                                <Button variant="ghost" className="w-full justify-start h-8 px-2 text-sm font-headline text-foreground/80 hover:bg-muted/80">
+                                   <ListTree className="mr-2"/> Items
+                                </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                                <ul className="space-y-1 pt-2">
+                                    {topItems.map((item, index) => (
+                                        <li 
+                                            key={item.name} 
+                                            className={cn("flex items-center text-[11px] p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                            onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
+                                            onMouseLeave={onPieLeave}
+                                        >
+                                            <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
+                                            <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
+                                            <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CollapsibleContent>
+                        </Collapsible>
                          {ratioStats && (
-                            <div className="mt-3 pt-2 border-t border-border/50">
-                                <h4 className="font-headline text-sm mb-2 text-foreground">Equity/Cash Ratio Analysis</h4>
-                                <div className="space-y-1 text-xs">
-                                    {ratioStats.highest && (
-                                    <div className="flex justify-between items-start text-[10px]">
-                                        <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
-                                        <div className="text-right">
-                                            <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                            <div className="font-mono text-primary leading-tight">
-                                                <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
-                                                <span className="text-muted-foreground mx-1">|</span>
-                                                <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
+                            <Collapsible>
+                                <CollapsibleTrigger asChild>
+                                    <Button variant="ghost" className="w-full justify-start h-8 px-2 text-sm font-headline text-foreground/80 hover:bg-muted/80">
+                                       <Info className="mr-2"/> Equity/Cash Ratio Analysis
+                                    </Button>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div className="pt-2 text-xs">
+                                        {ratioStats.highest && (
+                                        <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
+                                            <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
+                                            <div className="text-right">
+                                                <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
+                                                <div className="font-mono text-primary leading-tight">
+                                                    <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
+                                                    <span className="text-muted-foreground mx-1">|</span>
+                                                    <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    )}
-                                    {ratioStats.lowest && (
-                                    <div className="flex justify-between items-start text-[10px]">
-                                        <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
-                                        <div className="text-right">
-                                            <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                            <div className="font-mono text-primary leading-tight">
-                                                <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
-                                                <span className="text-muted-foreground mx-1">|</span>
-                                                <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
+                                        )}
+                                        {ratioStats.lowest && (
+                                        <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
+                                            <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
+                                            <div className="text-right">
+                                                <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
+                                                <div className="font-mono text-primary leading-tight">
+                                                    <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
+                                                    <span className="text-muted-foreground mx-1">|</span>
+                                                    <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        )}
                                     </div>
-                                    )}
-                                </div>
-                            </div>
+                                </CollapsibleContent>
+                            </Collapsible>
                         )}
                     </div>
                 </div>
