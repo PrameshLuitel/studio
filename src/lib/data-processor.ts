@@ -79,11 +79,6 @@ export interface EquityCashRatioStats {
     lowest: RatioInfo | null;
 }
 
-export interface YearsToExpiryBucket {
-  gain: number;
-  loss: number;
-}
-
 // Processed data interfaces
 export interface ProcessedData {
   totalPMSClients: number;
@@ -94,11 +89,11 @@ export interface ProcessedData {
     neutral: number;
   };
   yearsToExpiryBuckets: {
-    'Less than 6m': YearsToExpiryBucket;
-    '6m to 1y': YearsToExpiryBucket;
-    '1-2 years': YearsToExpiryBucket;
-    '2-3 years': YearsToExpiryBucket;
-    '3-5 years': YearsToExpiryBucket;
+    'Less than 6m': number;
+    '6m to 1y': number;
+    '1-2 years': number;
+    '2-3 years': number;
+    '3-5 years': number;
   };
   assetAllocation: SectorAllocation[];
   assetAllocationGain: SectorAllocation[];
@@ -367,13 +362,13 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-    private calculateYearsToExpiryBuckets(summaryData: SummaryData[]): ProcessedData['yearsToExpiryBuckets'] {
-    const buckets = {
-        'Less than 6m': { gain: 0, loss: 0 },
-        '6m to 1y': { gain: 0, loss: 0 },
-        '1-2 years': { gain: 0, loss: 0 },
-        '2-3 years': { gain: 0, loss: 0 },
-        '3-5 years': { gain: 0, loss: 0 },
+  private calculateYearsToExpiryBuckets(summaryData: SummaryData[]): ProcessedData['yearsToExpiryBuckets'] {
+    const buckets: ProcessedData['yearsToExpiryBuckets'] = {
+        'Less than 6m': 0,
+        '6m to 1y': 0,
+        '1-2 years': 0,
+        '2-3 years': 0,
+        '3-5 years': 0,
       };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -398,11 +393,7 @@ export class ExcelDataProcessor {
         else if (years <= 5) bucketKey = '3-5 years';
 
         if (bucketKey) {
-            if(item.gainLoss > 0) {
-                buckets[bucketKey].gain += clientAUM;
-            } else if (item.gainLoss < 0) {
-                buckets[bucketKey].loss += clientAUM;
-            }
+          buckets[bucketKey] += clientAUM;
         }
       }
     });
