@@ -66,18 +66,11 @@ export interface EPSSheetData {
     data: any[][];
 }
 
-export interface RatioInfo {
-    clientName: string;
-    equity: number;
-    cash: number;
-    total: number;
-    ratio: number;
-}
-  
 export interface EquityCashRatioStats {
-    highest: RatioInfo | null;
-    lowest: RatioInfo | null;
+    highest: { clientName: string; ratio: number } | null;
+    lowest: { clientName: string; ratio: number } | null;
 }
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -104,9 +97,9 @@ export interface ProcessedData {
   epsData: EPSData[];
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
-  equityToCashRatioStats: EquityCashRatioStats;
-  equityToCashRatioStatsGain: EquityCashRatioStats;
-  equityToCashRatioStatsLoss: EquityCashRatioStats;
+  equityToCashRatioStats: EquityCashRatioStats | null;
+  equityToCashRatioStatsGain: EquityCashRatioStats | null;
+  equityToCashRatioStatsLoss: EquityCashRatioStats | null;
 }
 
 // Error types
@@ -183,34 +176,12 @@ export class ExcelDataProcessor {
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
-    
-    const sheetData = this.getSheetData('Portfolio');
-    const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
-    const clientRows = sheetData.length > 2 ? sheetData.slice(2) : [];
-    
-    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
-    const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
 
-    const gainClients: any[][] = [];
-    const lossClients: any[][] = [];
-
-    if (gainLossIndex !== -1) {
-        for (const row of clientRows) {
-            if (!row || row.length === 0 || !row[2]) continue;
-            const gainLossValue = this.parseNumber(row[gainLossIndex]);
-            if (gainLossValue > 0) {
-                gainClients.push(row);
-            } else if (gainLossValue < 0) {
-                lossClients.push(row);
-            }
-        }
-    }
-    
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
       totalAUM: this.calculateTotalAUM(summaryData),
       clientGainLoss: this.calculateClientGainLoss(summaryData),
-      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
+      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(),
       assetAllocation: this.calculateAssetAllocation(),
       assetAllocationGain,
       assetAllocationLoss,
@@ -220,9 +191,9 @@ export class ExcelDataProcessor {
       epsData,
       epsSheetData,
       clientData,
-      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows),
-      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients),
-      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients),
+      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(),
+      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup('gain'),
+      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup('loss'),
     };
   }
   
@@ -240,14 +211,26 @@ export class ExcelDataProcessor {
       return value;
     }
     if (typeof value === 'string') {
-      const parts = value.split('/');
+      // Handles both 'mm/dd/yyyy' and 'dd/mm/yyyy' by checking the first part.
+      const parts = value.split(/[/.-]/); 
       if (parts.length === 3) {
-        // Assuming mm/dd/yyyy
-        const month = parseInt(parts[0], 10) - 1;
-        const day = parseInt(parts[1], 10);
-        const year = parseInt(parts[2], 10);
+        let day, month, year;
+        const part1 = parseInt(parts[0], 10);
+        const part2 = parseInt(parts[1], 10);
+        const yearPart = parseInt(parts[2], 10);
+
+        if (part1 > 12) { // dd/mm/yyyy
+            day = part1;
+            month = part2 -1;
+            year = yearPart;
+        } else { // mm/dd/yyyy
+            month = part1 -1;
+            day = part2;
+            year = yearPart;
+        }
+
         if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-          return new Date(year, month, day);
+          return new Date(year < 100 ? 2000 + year : year, month, day);
         }
       }
     }
@@ -259,7 +242,6 @@ export class ExcelDataProcessor {
    */
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
-    
     // Data starts from the 3rd row (index 2)
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
@@ -351,7 +333,7 @@ export class ExcelDataProcessor {
     neutral: number;
   } {
     return summaryData.reduce((acc, client) => {
-      const gainLoss = this.parseNumber(client.gainLoss);
+      const gainLoss = client.gainLoss || 0;
       if (gainLoss > 0) acc.gain++;
       else if (gainLoss < 0) acc.loss++;
       else acc.neutral++;
@@ -362,43 +344,50 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(summaryData: SummaryData[]): ProcessedData['yearsToExpiryBuckets'] {
-    const buckets: ProcessedData['yearsToExpiryBuckets'] = {
-        'Less than 6m': 0,
-        '6m to 1y': 0,
-        '1-2 years': 0,
-        '2-3 years': 0,
-        '3-5 years': 0,
-      };
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    private calculateYearsToExpiryBuckets(): {
+        'Less than 6m': number;
+        '6m to 1y': number;
+        '1-2 years': number;
+        '2-3 years': number;
+        '3-5 years': number;
+    } {
+        const buckets = { 
+            'Less than 6m': 0, 
+            '6m to 1y': 0, 
+            '1-2 years': 0, 
+            '2-3 years': 0, 
+            '3-5 years': 0 
+        };
+    
+        const sheetData = this.getSheetData('Portfolio');
+        if (sheetData.length < 3) return buckets;
+    
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+    
+        const clientRows = sheetData.slice(2, -1);
+    
+        clientRows.forEach(row => {
+            const expiryDate = this.parseDate(row[20]); // Column U
+            const aum = this.parseNumber(row[16]); // Column Q
 
-    summaryData.forEach(item => {
-      if (!item.expiryDate || !(item.expiryDate instanceof Date)) return;
-      
-      const sheetDate = item.expiryDate;
-      sheetDate.setHours(0, 0, 0, 0);
-
-      const diffTime = sheetDate.getTime() - today.getTime();
-      const clientAUM = item.totalValue || 0;
-
-      if (diffTime >= 0) {
-        const years = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+            if (!expiryDate || isNaN(aum) || aum === 0) return;
+            
+            const diffTime = expiryDate.getTime() - today.getTime();
+            if (diffTime < 0) return; // Skip expired
+    
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const years = diffDays / 365.25;
+            
+            if (years < 0.5) buckets['Less than 6m'] += aum;
+            else if (years < 1) buckets['6m to 1y'] += aum;
+            else if (years < 2) buckets['1-2 years'] += aum;
+            else if (years < 3) buckets['2-3 years'] += aum;
+            else if (years <= 5) buckets['3-5 years'] += aum;
+        });
         
-        let bucketKey: keyof typeof buckets | null = null;
-        if (years < 0.5) bucketKey = 'Less than 6m';
-        else if (years <= 1) bucketKey = '6m to 1y';
-        else if (years <= 2) bucketKey = '1-2 years';
-        else if (years <= 3) bucketKey = '2-3 years';
-        else if (years <= 5) bucketKey = '3-5 years';
-
-        if (bucketKey) {
-          buckets[bucketKey] += clientAUM;
-        }
-      }
-    });
-    return buckets;
-  }
+        return buckets;
+    }
   
   private calculateAssetAllocation(): SectorAllocation[] {
     const sheetData = this.getSheetData('Portfolio');
@@ -434,7 +423,7 @@ export class ExcelDataProcessor {
     if (sheetData.length < 3) return { assetAllocationGain: [], assetAllocationLoss: [] };
   
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
-    const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
+    const clientRows = sheetData.slice(2, -1); // Data starts from the third row, exclude total
   
     const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
@@ -454,7 +443,7 @@ export class ExcelDataProcessor {
     const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
   
     for (const row of clientRows) {
-      if (!row || row.length === 0 || !row[2]) continue; // Skip empty or total rows
+      if (!row || row.length === 0 || !row[2]) continue; // Skip empty rows
   
       const gainLossValue = this.parseNumber(row[gainLossIndex]);
       let targetTotals;
@@ -502,83 +491,64 @@ export class ExcelDataProcessor {
       .sort((a, b) => b.allocation - a.allocation);
   }
 
-  private calculateSectorAllocationsByGainLoss(): {
+    private calculateSectorAllocationsByGainLoss(): {
     sectorAllocationGain: SectorAllocation[],
     sectorAllocationLoss: SectorAllocation[]
-  } {
-      const sheetData = this.getSheetData('Sector Holding Summary');
-      if (sheetData.length < 3) {
-          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
-      }
-
-      const headers = sheetData[1] as string[]; // Headers from Row 2
-      const gainAllocation: { [sector: string]: number } = {};
-      const lossAllocation: { [sector: string]: number } = {};
-
-      // Initialize allocations from headers (C to P, indices 2 to 15)
-      for (let i = 2; i <= 15; i++) {
-        const sector = headers[i];
-        if (sector) {
-          gainAllocation[sector] = 0;
-          lossAllocation[sector] = 0;
-        }
-      }
-      
-      const portfolioSheet = this.getSheetData('Portfolio');
-      const portfolioHeaders = portfolioSheet[1] as string[];
-      const gainLossIndex = portfolioHeaders.findIndex(h => h && h.trim().toLowerCase() === "unrealised gain / (loss) %");
-      if (gainLossIndex === -1) {
-        return { sectorAllocationGain: [], sectorAllocationLoss: [] };
-      }
-
-      // Create a map of client name to gain/loss status
-      const clientGainLossStatus: { [clientName: string]: 'gain' | 'loss' } = {};
-      portfolioSheet.slice(2).forEach(row => {
-          const clientName = row[2];
-          const gainLossValue = this.parseNumber(row[gainLossIndex]);
-          if(clientName){
-            if(gainLossValue > 0) clientGainLossStatus[clientName] = 'gain';
-            else if (gainLossValue < 0) clientGainLossStatus[clientName] = 'loss';
-          }
-      });
-      
-      // Iterate over each client row in Sector Holding Summary
-      for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
-        const row = sheetData[rowIndex] as any[];
-        if (!row || row.length === 0 || !row[1]) continue; // Column B for client name
-
-        const clientName = row[1];
-        const status = clientGainLossStatus[clientName];
-
-        let targetAllocation: { [sector: string]: number } | null = null;
-        if (status === 'gain') {
-            targetAllocation = gainAllocation;
-        } else if (status === 'loss') {
-            targetAllocation = lossAllocation;
+    } {
+        const sheetData = this.getSheetData('Sector Holding Summary');
+        if (sheetData.length < 3) {
+            return { sectorAllocationGain: [], sectorAllocationLoss: [] };
         }
 
-        if (targetAllocation) {
-            for (let colIndex = 2; colIndex <= 15; colIndex++) { // Columns C to P
-                const sector = headers[colIndex];
-                if (sector) {
-                    targetAllocation[sector] += this.parseNumber(row[colIndex]);
+        const headers = sheetData[1] as string[]; // Headers from Row 2
+        const gainAllocation: { [sector: string]: number } = {};
+        const lossAllocation: { [sector: string]: number } = {};
+
+        // Initialize allocations from headers (C to P, indices 2 to 15)
+        for (let i = 2; i <= 15; i++) {
+            const sector = headers[i];
+            if (sector) {
+            gainAllocation[sector] = 0;
+            lossAllocation[sector] = 0;
+            }
+        }
+        
+        // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
+        for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
+            const row = sheetData[rowIndex] as any[];
+            if (!row || row.length === 0 || !row[1]) continue;
+
+            const gainLossValue = this.parseNumber(row[17]); // Column R
+
+            let targetAllocation: { [sector: string]: number } | null = null;
+            if (gainLossValue > 0) {
+                targetAllocation = gainAllocation;
+            } else if (gainLossValue < 0) {
+                targetAllocation = lossAllocation;
+            }
+
+            if (targetAllocation) {
+                for (let colIndex = 2; colIndex <= 15; colIndex++) { // Columns C to P
+                    const sector = headers[colIndex];
+                    if (sector) {
+                        targetAllocation[sector] += this.parseNumber(row[colIndex]);
+                    }
                 }
             }
         }
-      }
-      
-      const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
-          return Object.entries(allocation)
-              .map(([sector, value]) => ({ sector, allocation: value }))
-              .filter(item => item.allocation > 0)
-              .sort((a, b) => b.allocation - a.allocation);
-      };
+        
+        const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
+            return Object.entries(allocation)
+                .map(([sector, value]) => ({ sector, allocation: value }))
+                .filter(item => item.allocation > 0)
+                .sort((a, b) => b.allocation - a.allocation);
+        };
 
-      return {
-          sectorAllocationGain: formatAndSort(gainAllocation),
-          sectorAllocationLoss: formatAndSort(lossAllocation)
-      };
-  }
+        return {
+            sectorAllocationGain: formatAndSort(gainAllocation),
+            sectorAllocationLoss: formatAndSort(lossAllocation)
+        };
+    }
 
    /**
    * Get all client names from Portfolio sheet, column C.
@@ -586,9 +556,7 @@ export class ExcelDataProcessor {
   public getClientNames(): string[] {
     if (!this.processedData?.clientData) return [];
 
-    const clientData = this.processedData.clientData;
-    const lowerCaseHeaders = clientData.headers.map(h => h ? h.trim().toLowerCase() : '');
-    const clientNameIndex = lowerCaseHeaders.findIndex(h => h === 'client name');
+    const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h === 'Client Name');
     if (clientNameIndex === -1) return [];
 
     const clientNames = this.processedData.clientData.data
@@ -605,23 +573,15 @@ export class ExcelDataProcessor {
     if (!this.workbook || !this.processedData?.clientData) return null;
     
     const clientData = this.processedData.clientData;
-    const lowerCaseHeaders = clientData.headers.map(h => h ? h.trim().toLowerCase() : '');
-
-    const clientNameIndex = lowerCaseHeaders.findIndex(h => h === 'client name');
+    const clientNameIndex = clientData.headers.findIndex(h => h === 'Client Name');
     if (clientNameIndex === -1) return null;
 
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
-    
-    const headersToFind = {
-        totalValue: 'present value',
-        gainLossPercentage: 'unrealised gain / (loss) %',
-        expiryDate: 'expiry'
-    };
-    
-    const totalValueIndex = lowerCaseHeaders.findIndex(h => h === headersToFind.totalValue);
-    const gainLossPercentageIndex = lowerCaseHeaders.findIndex(h => h === headersToFind.gainLossPercentage);
-    const expiryDateIndex = lowerCaseHeaders.findIndex(h => h === headersToFind.expiryDate);
+
+    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column Q
+    const gainLossPercentageIndex = clientData.headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
+    const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
@@ -660,38 +620,51 @@ export class ExcelDataProcessor {
         portfolioData,
     };
   }
-  
-    private calculateEquityToCashRatiosForGroup(clientRows: any[][]): EquityCashRatioStats {
-        if (!clientRows || clientRows.length === 0) return { highest: null, lowest: null };
-    
-        const clientRatios: RatioInfo[] = [];
 
-        for (const row of clientRows) {
-            const clientName = row[2];
-            if (!clientName || typeof clientName !== 'string') continue;
+  private calculateEquityToCashRatiosForGroup(group?: 'gain' | 'loss'): EquityCashRatioStats | null {
+    const sheetData = this.getSheetData('Portfolio');
+    if (sheetData.length < 3) return null;
 
-            const equity = this.parseNumber(row[6]) / 2;
-            const cash = (this.parseNumber(row[7]) / 2) + (this.parseNumber(row[10]) / 2) - (this.parseNumber(row[9]) / 2);
-            const total = equity + cash;
+    const headers = sheetData[1] as string[];
+    const clientRows = sheetData.slice(2, -1);
 
-            if (total > 0) {
-                const ratio = equity / total;
-                clientRatios.push({ clientName, equity, cash, total, ratio });
-            }
-        }
+    const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === "unrealised gain / (loss) %");
+    const clientNameIndex = headers.findIndex(h => h && h.trim().toLowerCase() === "client name");
+    const colGIndex = 6;
+    const colHIndex = 7;
 
-        if (clientRatios.length === 0) return { highest: null, lowest: null };
-        
-        const sortedRatios = [...clientRatios].sort((a, b) => a.ratio - b.ratio);
-        
-        const highest = sortedRatios.length > 0 ? sortedRatios[sortedRatios.length - 1] : null;
-        const lowest = sortedRatios.length > 0 ? sortedRatios[0] : null;
-
-        return {
-            highest,
-            lowest,
-        };
+    if (gainLossIndex === -1 || clientNameIndex === -1) {
+        console.warn("Required columns for Equity/Cash ratio not found.");
+        return null;
     }
+
+    let highest: { clientName: string; ratio: number } | null = null;
+    let lowest: { clientName: string; ratio: number } | null = null;
+
+    for (const row of clientRows) {
+        const gainLossValue = this.parseNumber(row[gainLossIndex]);
+
+        if (group === 'gain' && gainLossValue <= 0) continue;
+        if (group === 'loss' && gainLossValue >= 0) continue;
+
+        const equity = this.parseNumber(row[colGIndex]);
+        const cash = this.parseNumber(row[colHIndex]);
+        const total = equity + cash;
+        if (total === 0) continue;
+
+        const ratio = equity / total;
+        const clientName = String(row[clientNameIndex]);
+
+        if (!highest || ratio > highest.ratio) {
+            highest = { clientName, ratio };
+        }
+        if (!lowest || ratio < lowest.ratio) {
+            lowest = { clientName, ratio };
+        }
+    }
+
+    return { highest, lowest };
+  }
   
   /**
    * Utility function to parse numbers safely
