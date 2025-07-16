@@ -587,7 +587,8 @@ export class ExcelDataProcessor {
     if (!this.processedData?.clientData) return [];
 
     const clientData = this.processedData.clientData;
-    const clientNameIndex = clientData.headers.findIndex(h => h && h.trim().toLowerCase() === 'client name');
+    const lowerCaseHeaders = clientData.headers.map(h => h ? h.trim().toLowerCase() : '');
+    const clientNameIndex = lowerCaseHeaders.findIndex(h => h === 'client name');
     if (clientNameIndex === -1) return [];
 
     const clientNames = this.processedData.clientData.data
