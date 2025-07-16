@@ -218,7 +218,7 @@ export class ExcelDataProcessor {
       epsData,
       epsSheetData,
       clientData,
-      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows),
+      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows, true),
       equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients, false),
       equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients, false),
     };
@@ -596,9 +596,9 @@ export class ExcelDataProcessor {
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValueIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'present value'); // Column Q
-    const gainLossPercentageIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'unrealised gain / (loss) %'); // Column R
-    const expiryDateIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'expiry'); // Column E
+    const totalValueIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'present value');
+    const gainLossPercentageIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'unrealised gain / (loss) %');
+    const expiryDateIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'expiry');
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
@@ -638,12 +638,12 @@ export class ExcelDataProcessor {
     };
   }
   
-  private calculateEquityToCashRatiosForGroup(clientRows: any[][], includeStdDev = true): EquityCashRatioStats {
-    if (clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
+  private calculateEquityToCashRatiosForGroup(clientRows: any[][], includeStdDev: boolean): EquityCashRatioStats {
+    if (!clientRows || clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
   
     const ratios: number[] = [];
-    let highest: RatioInfo = { clientName: '', ratio: -Infinity };
-    let lowest: RatioInfo = { clientName: '', ratio: Infinity };
+    let highest: RatioInfo | null = null;
+    let lowest: RatioInfo | null = null;
   
     for (const row of clientRows) {
         const clientName = row[2];
@@ -662,30 +662,26 @@ export class ExcelDataProcessor {
             const ratio = equity / total;
             ratios.push(ratio);
 
-            if (ratio > highest.ratio) {
+            if (!highest || ratio > highest.ratio) {
                 highest = { clientName, ratio };
             }
-            if (ratio < lowest.ratio) {
+            if (!lowest || ratio < lowest.ratio) {
                 lowest = { clientName, ratio };
             }
         }
     }
 
-    if (ratios.length === 0) {
-        return { highest: null, lowest: null, stdDev: 0 };
-    }
-
     let stdDev = 0;
-    if (includeStdDev) {
+    if (includeStdDev && ratios.length > 1) {
         const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
         const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
         stdDev = Math.sqrt(variance);
     }
     
     return {
-        highest: highest.ratio > -Infinity ? highest : null,
-        lowest: lowest.ratio < Infinity ? lowest : null,
-        stdDev: stdDev,
+        highest,
+        lowest,
+        stdDev,
     };
   }
   
@@ -730,3 +726,5 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
+
+    
