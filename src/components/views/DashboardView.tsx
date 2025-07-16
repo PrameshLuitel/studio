@@ -30,13 +30,13 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
 );
 
 const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
-    <ScrollArea className={cn("pr-3", scrollHeight || "h-48")}>
+    <ScrollArea className={cn("pr-3", scrollHeight || "h-[28.5rem]")}>
         <ul className="space-y-1">
             {movers.map((mover, index) => (
-                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50">
-                    <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
+                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 overflow-x-auto">
+                    <span className="font-medium text-foreground/90 whitespace-nowrap pr-2">{mover.clientId}</span>
                     <div className={cn(
-                        "font-mono font-semibold flex items-baseline gap-1.5",
+                        "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap",
                         isGainer ? 'text-green-500' : 'text-red-500'
                     )}>
                        <span>{formatCurrency(mover.value)}</span>
@@ -49,29 +49,6 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
     </ScrollArea>
 );
 
-const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => (
-    <Card className="glassmorphic">
-        <Tabs defaultValue="gainers">
-            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                 <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Movers (%)</CardTitle>
-                 <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
-                    <TabsTrigger value="gainers">Gainers</TabsTrigger>
-                    <TabsTrigger value="losers">Losers</TabsTrigger>
-                </TabsList>
-            </CardHeader>
-            <CardContent>
-                <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} />
-                </TabsContent>
-                <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} />
-                </TabsContent>
-            </CardContent>
-        </Tabs>
-    </Card>
-);
-
-
 const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMover[], title: string, icon: React.ElementType, isGainer: boolean }) => (
     <Card className="glassmorphic">
         <CardHeader>
@@ -80,7 +57,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[28.5rem]" />
+           <MoverList movers={movers} isGainer={isGainer} />
         </CardContent>
     </Card>
 );
@@ -99,10 +76,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[28.5rem]" />
+                    <MoverList movers={gainers} isGainer={true} />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[28.5rem]" />
+                    <MoverList movers={losers} isGainer={false} />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -243,8 +220,8 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={60} 
-                                    outerRadius={80} 
+                                    innerRadius={50} 
+                                    outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -390,7 +367,7 @@ export const DashboardView = () => {
 
   return (
     <div className="grid gap-6 animate-in fade-in-50">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
         <Card className="glassmorphic">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -405,7 +382,6 @@ export const DashboardView = () => {
             </CardContent>
         </Card>
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
-        <TopMoversCard gainers={topGainers} losers={topLosers} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -463,3 +439,4 @@ export const DashboardView = () => {
     </div>
   );
 };
+
