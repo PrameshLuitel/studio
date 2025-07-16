@@ -4,8 +4,8 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info, CalendarClock, ShieldAlert } from 'lucide-react';
-import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock } from 'lucide-react';
+import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover } from '@/lib/data-processor';
@@ -34,7 +34,9 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
         <ul className="space-y-1">
             {movers.map((mover, index) => (
                 <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 overflow-x-auto">
-                    <span className="font-medium text-foreground/90 whitespace-nowrap pr-2">{mover.clientId}</span>
+                    <div className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-thin">
+                        <span className="font-medium text-foreground/90 pr-2">{mover.clientId}</span>
+                    </div>
                     <div className={cn(
                         "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap",
                         isGainer ? 'text-green-500' : 'text-red-500'
@@ -57,7 +59,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[28.5rem]" />
         </CardContent>
     </Card>
 );
@@ -76,10 +78,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[28.5rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[28.5rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -114,13 +116,6 @@ const ActiveShape = (props: any) => {
     const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
     const sin = Math.sin(-RADIAN * midAngle);
     const cos = Math.cos(-RADIAN * midAngle);
-    const sx = cx + (outerRadius + 10) * cos;
-    const sy = cy + (outerRadius + 10) * sin;
-    const mx = cx + (outerRadius + 30) * cos;
-    const my = cy + (outerRadius + 30) * sin;
-    const ex = mx + (cos >= 0 ? 1 : -1) * 22;
-    const ey = my;
-    const textAnchor = cos >= 0 ? 'start' : 'end';
   
     return (
       <g>
@@ -209,18 +204,13 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                     <ChartContainer config={{}} className="h-64 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
-                                <Tooltip 
-                                    useMousePosition
-                                    cursor={{stroke: 'hsl(var(--primary))', strokeWidth: 1, fill: 'transparent', r: 30}}
-                                    content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${(props.payload.percentage * 100).toFixed(2)}%`} />} 
-                                />
                                 <Pie 
                                     data={chartData} 
                                     dataKey="value" 
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={50} 
+                                    innerRadius={60} 
                                     outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -228,7 +218,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     onMouseEnter={handlePieEnter}
                                     onMouseLeave={onPieLeave}
                                     label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-                                        if (index === activeIndex) return null; // Hide label for active slice
+                                        if (index === activeIndex) return null;
                                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
                                         const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
                                         const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
@@ -439,4 +429,5 @@ export const DashboardView = () => {
     </div>
   );
 };
+
 
