@@ -252,7 +252,9 @@ export const DashboardView = () => {
       sectorAllocationGain, 
       sectorAllocationLoss, 
       yearsToExpiryChartData,
-      equityToCashRatioStats
+      equityToCashRatioStats,
+      equityToCashRatioStatsGain,
+      equityToCashRatioStatsLoss
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
@@ -272,6 +274,8 @@ export const DashboardView = () => {
         sectorAllocationLoss: data.sectorAllocationLoss || [],
         yearsToExpiryChartData,
         equityToCashRatioStats: data.equityToCashRatioStats,
+        equityToCashRatioStatsGain: data.equityToCashRatioStatsGain,
+        equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss
     };
   }, [dashboardData]);
 
@@ -309,12 +313,12 @@ export const DashboardView = () => {
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} />
+        <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
         <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 

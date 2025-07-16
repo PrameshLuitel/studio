@@ -102,6 +102,8 @@ export interface ProcessedData {
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
   equityToCashRatioStats: EquityCashRatioStats;
+  equityToCashRatioStatsGain: EquityCashRatioStats;
+  equityToCashRatioStatsLoss: EquityCashRatioStats;
 }
 
 // Error types
@@ -179,6 +181,27 @@ export class ExcelDataProcessor {
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
 
+    const sheetData = this.getSheetData('Portfolio');
+    const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
+    const clientRows = sheetData.length > 2 ? sheetData.slice(2) : [];
+    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
+    const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
+
+    const gainClients: any[][] = [];
+    const lossClients: any[][] = [];
+
+    if (gainLossIndex !== -1) {
+        for (const row of clientRows) {
+            if (!row || row.length === 0 || !row[2]) continue;
+            const gainLossValue = this.parseNumber(row[gainLossIndex]);
+            if (gainLossValue > 0) {
+                gainClients.push(row);
+            } else if (gainLossValue < 0) {
+                lossClients.push(row);
+            }
+        }
+    }
+    
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
       totalAUM: this.calculateTotalAUM(summaryData),
@@ -193,7 +216,9 @@ export class ExcelDataProcessor {
       epsData,
       epsSheetData,
       clientData,
-      equityToCashRatioStats: this.calculateEquityToCashRatiosForAllClients(),
+      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows),
+      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients),
+      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients),
     };
   }
   
@@ -403,10 +428,9 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
     const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
+    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
-    // Hardcoded indices for G, H, J, K
     const colGIndex = 6;
     const colHIndex = 7;
     const colJIndex = 9;
@@ -599,11 +623,9 @@ export class ExcelDataProcessor {
     };
   }
 
-  private calculateEquityToCashRatiosForAllClients(): EquityCashRatioStats {
-    const sheetData = this.getSheetData('Portfolio');
-    if (sheetData.length < 3) return { highest: null, lowest: null, stdDev: 0 };
+  private calculateEquityToCashRatiosForGroup(clientRows: any[][]): EquityCashRatioStats {
+    if (clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
   
-    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total row
     const ratios: number[] = [];
     let highest: RatioInfo = { clientName: '', ratio: -Infinity };
     let lowest: RatioInfo = { clientName: '', ratio: Infinity };
@@ -637,7 +659,6 @@ export class ExcelDataProcessor {
         return { highest: null, lowest: null, stdDev: 0 };
     }
 
-    // Calculate Standard Deviation
     const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
     const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
     const stdDev = Math.sqrt(variance);
