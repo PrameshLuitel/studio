@@ -32,7 +32,7 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
 );
 
 const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
-    <ScrollArea className={cn("pr-3 -mr-3", scrollHeight || "h-[28.5rem]")}>
+    <ScrollArea className={cn("pr-3 -mr-3", scrollHeight || "h-[34rem]")}>
         <div className="space-y-1">
             {movers.map((mover, index) => (
                  <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
@@ -60,7 +60,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[28.5rem]" />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[34rem]" />
         </CardContent>
     </Card>
 );
@@ -79,10 +79,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[28.5rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[34rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[28.5rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[34rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -212,7 +212,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     cx="50%" 
                                     cy="50%" 
                                     innerRadius={50} 
-                                    outerRadius={75} 
+                                    outerRadius={70} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -241,11 +241,11 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <ScrollArea className="h-20">
-                                    <ul className="space-y-1 p-1 text-sm">
+                                    <ul className="space-y-1 p-1">
                                         {topItems.map((item, index) => (
                                             <li 
                                                 key={item.name} 
-                                                className={cn("flex items-center p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                                className={cn("flex items-center p-1 rounded-md transition-all duration-200 text-sm", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                                 onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                                 onMouseLeave={onPieLeave}
                                             >
@@ -273,7 +273,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3.5 w-3.5 text-green-500" />Highest:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                                    <div className="font-mono text-primary leading-tight text-xs">
+                                                    <div className="font-mono text-primary leading-tight">
                                                         <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
                                                         <span className="text-muted-foreground mx-1">|</span>
                                                         <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
@@ -286,7 +286,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3.5 w-3.5 text-red-500"/>Lowest:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                                    <div className="font-mono text-primary leading-tight text-xs">
+                                                    <div className="font-mono text-primary leading-tight">
                                                         <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
                                                         <span className="text-muted-foreground mx-1">|</span>
                                                         <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
@@ -411,9 +411,9 @@ export const DashboardView = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
