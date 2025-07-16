@@ -65,6 +65,16 @@ export interface EPSSheetData {
     data: any[][];
 }
 
+export interface EquityCashRatioInfo {
+  clientName: string;
+  ratio: number;
+}
+
+export interface EquityCashRatioStats {
+  highest: EquityCashRatioInfo | null;
+  lowest: EquityCashRatioInfo | null;
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -90,6 +100,9 @@ export interface ProcessedData {
   epsData: EPSData[];
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
+  equityToCashRatioStats: EquityCashRatioStats;
+  equityToCashRatioStatsGain: EquityCashRatioStats;
+  equityToCashRatioStatsLoss: EquityCashRatioStats;
 }
 
 // Error types
@@ -166,6 +179,11 @@ export class ExcelDataProcessor {
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
+    const {
+      equityToCashRatioStats,
+      equityToCashRatioStatsGain,
+      equityToCashRatioStatsLoss
+    } = this.calculateEquityToCashRatioStats();
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -180,7 +198,10 @@ export class ExcelDataProcessor {
       sectorAllocationLoss,
       epsData,
       epsSheetData,
-      clientData
+      clientData,
+      equityToCashRatioStats,
+      equityToCashRatioStatsGain,
+      equityToCashRatioStatsLoss
     };
   }
   
@@ -513,6 +534,71 @@ export class ExcelDataProcessor {
           sectorAllocationGain: formatAndSort(gainAllocation),
           sectorAllocationLoss: formatAndSort(lossAllocation)
       };
+  }
+
+   private calculateEquityToCashRatioStats() {
+    const sheetData = this.getSheetData('Portfolio');
+    if (sheetData.length < 3) {
+      return { 
+        equityToCashRatioStats: { highest: null, lowest: null },
+        equityToCashRatioStatsGain: { highest: null, lowest: null },
+        equityToCashRatioStatsLoss: { highest: null, lowest: null }
+      };
+    }
+
+    const headers = sheetData[1] as string[];
+    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total
+
+    const clientNameIndex = 2;
+    const colGIndex = 6;
+    const colHIndex = 7;
+    const colJIndex = 9;
+    const colKIndex = 10;
+    const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === "gain/(loss) in portfolio");
+
+    const calculateRatio = (row: any[]): number => {
+      const equity = this.parseNumber(row[colGIndex]) / 2;
+      const cash = (this.parseNumber(row[colHIndex]) / 2) + (this.parseNumber(row[colKIndex]) / 2) - (this.parseNumber(row[colJIndex]) / 2);
+      const total = equity + cash;
+      return total > 0 ? equity / total : 0;
+    };
+
+    const clientRatios: EquityCashRatioInfo[] = clientRows.map(row => ({
+      clientName: String(row[clientNameIndex]),
+      ratio: calculateRatio(row),
+    })).filter(item => item.clientName && item.clientName !== 'Grand Total');
+
+    const clientRatiosGain: EquityCashRatioInfo[] = [];
+    const clientRatiosLoss: EquityCashRatioInfo[] = [];
+
+    if (gainLossIndex !== -1) {
+        clientRows.forEach(row => {
+            const clientName = String(row[clientNameIndex]);
+            if (!clientName || clientName === 'Grand Total') return;
+            const gainLossValue = this.parseNumber(row[gainLossIndex]);
+            const ratio = calculateRatio(row);
+            if (gainLossValue > 0) {
+                clientRatiosGain.push({ clientName, ratio });
+            } else if (gainLossValue < 0) {
+                clientRatiosLoss.push({ clientName, ratio });
+            }
+        });
+    }
+
+    const findMinMax = (ratios: EquityCashRatioInfo[]): EquityCashRatioStats => {
+      if (ratios.length === 0) return { highest: null, lowest: null };
+      const sortedRatios = [...ratios].sort((a, b) => a.ratio - b.ratio);
+      return {
+        lowest: sortedRatios[0],
+        highest: sortedRatios[sortedRatios.length - 1],
+      };
+    };
+
+    return {
+      equityToCashRatioStats: findMinMax(clientRatios),
+      equityToCashRatioStatsGain: findMinMax(clientRatiosGain),
+      equityToCashRatioStatsLoss: findMinMax(clientRatiosLoss)
+    };
   }
 
    /**
