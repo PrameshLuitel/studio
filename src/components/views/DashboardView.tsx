@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart as BarChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ChevronsUpDown, Info, CalendarClock } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -335,16 +335,19 @@ export const DashboardView = () => {
       <div className="grid grid-cols-1 gap-6">
         <Card className="glassmorphic col-span-1">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><BarChart className="text-accent"/> Years to Expiry</CardTitle>
+            <CardTitle className="font-headline flex items-center gap-2"><CalendarClock className="text-accent"/> Years to Expiry</CardTitle>
           </CardHeader>
           <CardContent>
           <ChartContainer config={{}} className="h-64 w-full">
               <ResponsiveContainer>
-                <RechartsBarChart data={yearsToExpiryChartData} layout="vertical">
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={80} />
-                    <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                    <Bar dataKey="value" name="Count" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                <RechartsBarChart data={yearsToExpiryChartData}>
+                    <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <YAxis tickFormatter={(value) => formatCurrency(Number(value))} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <Tooltip 
+                        cursor={{ fill: 'hsl(var(--muted))' }} 
+                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                    />
+                    <Bar dataKey="value" name="AUM" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </RechartsBarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -354,4 +357,3 @@ export const DashboardView = () => {
     </div>
   );
 };
-

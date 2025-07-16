@@ -349,7 +349,7 @@ export class ExcelDataProcessor {
     neutral: number;
   } {
     return summaryData.reduce((acc, client) => {
-      const gainLoss = client.gainLoss || 0;
+      const gainLoss = this.parseNumber(client.gainLoss);
       if (gainLoss > 0) acc.gain++;
       else if (gainLoss < 0) acc.loss++;
       else acc.neutral++;
@@ -381,15 +381,16 @@ export class ExcelDataProcessor {
       sheetDate.setHours(0, 0, 0, 0);
 
       const diffTime = futureDate.getTime() - sheetDate.getTime();
+      const clientAUM = item.totalValue || 0;
 
       if (diffTime >= 0) {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const years = diffDays / 365.25;
         
-        if (years <= 1) buckets['0-1']++;
-        else if (years <= 3) buckets['1-3']++;
-        else if (years <= 5) buckets['3-5']++;
-        else if (years > 5) buckets['5+']++;
+        if (years <= 1) buckets['0-1'] += clientAUM;
+        else if (years <= 3) buckets['1-3'] += clientAUM;
+        else if (years <= 5) buckets['3-5'] += clientAUM;
+        else if (years > 5) buckets['5+'] += clientAUM;
       }
     });
     return buckets;
@@ -715,5 +716,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
-
-    
