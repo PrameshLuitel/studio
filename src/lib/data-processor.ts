@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as XLSX from 'xlsx';
@@ -89,10 +88,11 @@ export interface ProcessedData {
     neutral: number;
   };
   yearsToExpiryBuckets: {
-    '0-1': number;
-    '1-3': number;
-    '3-5': number;
-    '5+': number;
+    'Less than 6m': number;
+    '6m to 1y': number;
+    '1-2 years': number;
+    '2-3 years': number;
+    '3-5 years': number;
   };
   assetAllocation: SectorAllocation[];
   assetAllocationGain: SectorAllocation[];
@@ -362,12 +362,19 @@ export class ExcelDataProcessor {
    * Calculate years to expiry buckets from Portfolio sheet
    */
   private calculateYearsToExpiryBuckets(summaryData: SummaryData[]): {
-    '0-1': number;
-    '1-3': number;
-    '3-5': number;
-    '5+': number;
+    'Less than 6m': number;
+    '6m to 1y': number;
+    '1-2 years': number;
+    '2-3 years': number;
+    '3-5 years': number;
   } {
-    const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
+    const buckets = {
+        'Less than 6m': 0,
+        '6m to 1y': 0,
+        '1-2 years': 0,
+        '2-3 years': 0,
+        '3-5 years': 0,
+      };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -384,10 +391,11 @@ export class ExcelDataProcessor {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         const years = diffDays / 365.25;
         
-        if (years <= 1) buckets['0-1'] += clientAUM;
-        else if (years <= 3) buckets['1-3'] += clientAUM;
-        else if (years <= 5) buckets['3-5'] += clientAUM;
-        else if (years > 5) buckets['5+'] += clientAUM;
+        if (years < 0.5) buckets['Less than 6m'] += clientAUM;
+        else if (years <= 1) buckets['6m to 1y'] += clientAUM;
+        else if (years <= 2) buckets['1-2 years'] += clientAUM;
+        else if (years <= 3) buckets['2-3 years'] += clientAUM;
+        else if (years <= 5) buckets['3-5 years'] += clientAUM;
       }
     });
     return buckets;
@@ -517,17 +525,42 @@ export class ExcelDataProcessor {
         }
       }
       
-      // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
+      const portfolioSheetData = this.getSheetData('Portfolio');
+      const portfolioHeaders = portfolioSheetData[1] as string[];
+      const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
+      const gainLossIndex = portfolioHeaders.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
+      const clientNameIndexPortfolio = portfolioHeaders.findIndex(h => h && h.trim().toLowerCase() === 'client name');
+      const clientNameIndexSector = headers.findIndex(h => h && h.trim().toLowerCase() === 'client name');
+
+      if (gainLossIndex === -1 || clientNameIndexPortfolio === -1 || clientNameIndexSector === -1) {
+          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+      }
+
+      // Create a map of client name to gain/loss status
+      const clientGainLossMap = new Map<string, 'gain' | 'loss'>();
+      for (let i = 2; i < portfolioSheetData.length; i++) {
+          const row = portfolioSheetData[i];
+          if (!row || !row[clientNameIndexPortfolio]) continue;
+          const clientName = row[clientNameIndexPortfolio];
+          const gainLossValue = this.parseNumber(row[gainLossIndex]);
+          if (gainLossValue > 0) {
+              clientGainLossMap.set(clientName, 'gain');
+          } else if (gainLossValue < 0) {
+              clientGainLossMap.set(clientName, 'loss');
+          }
+      }
+
+      // Iterate over each client row in the sector sheet
       for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
         const row = sheetData[rowIndex] as any[];
-        if (!row || row.length === 0) continue;
-
-        const gainLossValue = this.parseNumber(row[17]); // Column R
-
+        if (!row || row.length === 0 || !row[clientNameIndexSector]) continue;
+        const clientName = row[clientNameIndexSector];
+        const clientStatus = clientGainLossMap.get(clientName);
+        
         let targetAllocation: { [sector: string]: number } | null = null;
-        if (gainLossValue > 0) {
+        if (clientStatus === 'gain') {
             targetAllocation = gainAllocation;
-        } else if (gainLossValue < 0) {
+        } else if (clientStatus === 'loss') {
             targetAllocation = lossAllocation;
         }
 
