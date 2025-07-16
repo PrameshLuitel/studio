@@ -29,50 +29,76 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
     </Card>
 );
 
-const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => {
-    
-    const MoverList = ({ movers, isGainer }: { movers: TopMover[], isGainer: boolean }) => (
-        <ScrollArea className="h-48 pr-3">
-            <ul className="space-y-2">
-                {movers.map((mover, index) => (
-                    <li key={index} className="flex justify-between items-center text-sm">
-                        <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
-                        <div className={cn(
-                            "font-mono font-semibold flex items-baseline gap-1.5",
-                            isGainer ? 'text-green-500' : 'text-red-500'
-                        )}>
-                           <span>{formatCurrency(mover.value)}</span>
-                           <span className="text-xs text-muted-foreground">/</span>
-                           <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
-                        </div>
-                    </li>
-                ))}
-            </ul>
-        </ScrollArea>
-    );
+const MoverList = ({ movers, isGainer }: { movers: TopMover[], isGainer: boolean }) => (
+    <ScrollArea className="h-48 pr-3">
+        <ul className="space-y-2">
+            {movers.map((mover, index) => (
+                <li key={index} className="flex justify-between items-center text-sm">
+                    <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
+                    <div className={cn(
+                        "font-mono font-semibold flex items-baseline gap-1.5",
+                        isGainer ? 'text-green-500' : 'text-red-500'
+                    )}>
+                       <span>{formatCurrency(mover.value)}</span>
+                       <span className="text-xs text-muted-foreground">/</span>
+                       <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
+                    </div>
+                </li>
+            ))}
+        </ul>
+    </ScrollArea>
+);
 
-    return (
-        <Card className="glassmorphic">
-            <Tabs defaultValue="gainers">
-                <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-                     <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Gainers / Losers</CardTitle>
-                     <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
-                        <TabsTrigger value="gainers">Gainers</TabsTrigger>
-                        <TabsTrigger value="losers">Losers</TabsTrigger>
-                    </TabsList>
-                </CardHeader>
-                <CardContent>
-                    <TabsContent value="gainers">
-                        <MoverList movers={gainers} isGainer={true} />
-                    </TabsContent>
-                    <TabsContent value="losers">
-                        <MoverList movers={losers} isGainer={false} />
-                    </TabsContent>
-                </CardContent>
-            </Tabs>
-        </Card>
-    );
-};
+const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => (
+    <Card className="glassmorphic">
+        <Tabs defaultValue="gainers">
+            <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
+                 <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Movers</CardTitle>
+                 <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
+                    <TabsTrigger value="gainers">Gainers</TabsTrigger>
+                    <TabsTrigger value="losers">Losers</TabsTrigger>
+                </TabsList>
+            </CardHeader>
+            <CardContent>
+                <TabsContent value="gainers">
+                    <MoverList movers={gainers} isGainer={true} />
+                </TabsContent>
+                <TabsContent value="losers">
+                    <MoverList movers={losers} isGainer={false} />
+                </TabsContent>
+            </CardContent>
+        </Tabs>
+    </Card>
+);
+
+const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMover[], title: string, icon: React.ElementType, isGainer: boolean }) => (
+    <Card className="glassmorphic">
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+                <Icon className="text-accent"/> {title}
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            <ScrollArea className="h-[28.5rem] pr-3">
+                <ul className="space-y-3">
+                    {movers.map((mover, index) => (
+                        <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md hover:bg-muted/50">
+                            <span className="font-medium text-foreground/90 truncate pr-2">{mover.clientId}</span>
+                            <div className={cn(
+                                "font-mono font-semibold flex items-baseline gap-1.5",
+                                isGainer ? 'text-green-500' : 'text-red-500'
+                            )}>
+                               <span>{formatCurrency(mover.value)}</span>
+                               <span className="text-xs text-muted-foreground">/</span>
+                               <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            </ScrollArea>
+        </CardContent>
+    </Card>
+);
 
 const LoadingSkeleton = () => (
     <div className="grid gap-6">
@@ -382,13 +408,14 @@ export const DashboardView = () => {
         <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
       </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
-        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <TopMoversList movers={topGainers} title="Top Gainers" icon={ArrowUpCircle} isGainer={true} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
