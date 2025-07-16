@@ -211,7 +211,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={60} 
+                                    innerRadius={40} 
                                     outerRadius={80} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -448,5 +448,7 @@ export const DashboardView = () => {
     </div>
   );
 };
+
+    
 
     
