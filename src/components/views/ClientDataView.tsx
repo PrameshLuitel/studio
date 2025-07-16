@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle } from 'lucide-react';
+import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -38,37 +38,56 @@ const getIconForHeader = (header: string) => {
     if (lowerHeader.includes('bank')) return Building;
     if (lowerHeader.includes('active')) return lowerHeader.includes('yes') ? CheckCircle : XCircle;
     if (lowerHeader.includes('qty') || lowerHeader.includes('quantity') || lowerHeader.includes('number')) return Hash;
+    if (lowerHeader.includes('a/c no')) return FileDigit;
     return Info;
 };
 
+const formatValue = (item: { header: string; value: any }) => {
+    const lowerHeader = item.header.toLowerCase();
+    if (typeof item.value === 'number') {
+        if (lowerHeader.includes('%')) {
+            return `${(item.value * 100).toFixed(2)}%`;
+        }
+        if (lowerHeader.includes('value') || lowerHeader.includes('gain') || lowerHeader.includes('aum') || lowerHeader.includes('price')) {
+            return formatCurrency(item.value);
+        }
+        return item.value.toLocaleString();
+    }
+    if (item.value instanceof Date) {
+        return format(item.value, 'dd MMM yyyy');
+    }
+    return String(item.value);
+};
 
 const renderClientDetails = (details: ClientDetails) => {
     const sectorData = details.sectorAllocations
       .filter(s => s.value > 0)
       .map(s => ({ name: s.sector, value: s.value }));
       
-    const excludedHeaders = ['Client Name'];
-    const portfolioDataForCards = details.portfolioData.filter(item => 
+    const groupedHeaders = [
+        'Portfolio A/C No.',
+        'PMS Opening Date',
+        '% of Cash Balance',
+        'Payable',
+        'Receivable',
+        'IPO Apply',
+        'FPO Apply',
+        'Cash Dividend Value',
+        'Stock Dividend Value',
+        'Right Payable'
+    ];
+
+    const excludedHeaders = ['Client Name', 'S.N.', ...groupedHeaders];
+
+    const individualCardsData = details.portfolioData.filter(item => 
         !excludedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
     );
-
-    const formatValue = (item: { header: string; value: any }) => {
-        const lowerHeader = item.header.toLowerCase();
-        if (typeof item.value === 'number') {
-            if (lowerHeader.includes('%')) {
-                return `${(item.value * 100).toFixed(2)}%`;
-            }
-            if (lowerHeader.includes('value') || lowerHeader.includes('gain') || lowerHeader.includes('aum') || lowerHeader.includes('price')) {
-                return formatCurrency(item.value);
-            }
-            return item.value.toLocaleString();
-        }
-        if (item.value instanceof Date) {
-            return format(item.value, 'dd MMM yyyy');
-        }
-        return String(item.value);
-    };
+    
+    const groupedCardData = details.portfolioData.filter(item => 
+        groupedHeaders.includes(item.header) &&
+        item.value !== undefined && item.value !== null && item.value !== ''
+    );
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
@@ -101,7 +120,7 @@ const renderClientDetails = (details: ClientDetails) => {
             </Card>
             
             <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                 {portfolioDataForCards.map((item, index) => (
+                 {individualCardsData.map((item, index) => (
                     <StatCard 
                         key={index}
                         title={item.header}
@@ -109,6 +128,23 @@ const renderClientDetails = (details: ClientDetails) => {
                         icon={getIconForHeader(item.header)}
                     />
                  ))}
+                 {groupedCardData.length > 0 && (
+                    <Card className="glassmorphic md:col-span-2 lg:col-span-3 xl:col-span-5">
+                         <CardHeader>
+                            <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+                                {groupedCardData.map((item, index) => (
+                                    <div key={index} className="flex flex-col">
+                                        <p className="text-sm text-muted-foreground font-body">{item.header}</p>
+                                        <p className="text-lg font-semibold text-foreground font-headline">{formatValue(item)}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                 )}
             </div>
         </div>
     );
