@@ -66,6 +66,16 @@ export interface EPSSheetData {
     data: any[][];
 }
 
+export interface RatioInfo {
+    clientName: string;
+    ratio: number;
+}
+  
+export interface EquityCashRatioStats {
+    highest: RatioInfo | null;
+    lowest: RatioInfo | null;
+    stdDev: number;
+}
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -91,6 +101,7 @@ export interface ProcessedData {
   epsData: EPSData[];
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
+  equityToCashRatioStats: EquityCashRatioStats;
 }
 
 // Error types
@@ -181,7 +192,8 @@ export class ExcelDataProcessor {
       sectorAllocationLoss,
       epsData,
       epsSheetData,
-      clientData
+      clientData,
+      equityToCashRatioStats: this.calculateEquityToCashRatiosForAllClients(),
     };
   }
   
@@ -584,6 +596,56 @@ export class ExcelDataProcessor {
         expiryDate,
         sectorAllocations,
         portfolioData,
+    };
+  }
+
+  private calculateEquityToCashRatiosForAllClients(): EquityCashRatioStats {
+    const sheetData = this.getSheetData('Portfolio');
+    if (sheetData.length < 3) return { highest: null, lowest: null, stdDev: 0 };
+  
+    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total row
+    const ratios: number[] = [];
+    let highest: RatioInfo = { clientName: '', ratio: -Infinity };
+    let lowest: RatioInfo = { clientName: '', ratio: Infinity };
+  
+    for (const row of clientRows) {
+        const clientName = row[2];
+        if (!clientName || typeof clientName !== 'string') continue;
+
+        const g = this.parseNumber(row[6]);
+        const h = this.parseNumber(row[7]);
+        const j = this.parseNumber(row[9]);
+        const k = this.parseNumber(row[10]);
+
+        const equity = g / 2;
+        const cash = (h / 2) + (k / 2) - (j / 2);
+
+        if (cash > 0) {
+            const ratio = equity / cash;
+            ratios.push(ratio);
+
+            if (ratio > highest.ratio) {
+                highest = { clientName, ratio };
+            }
+            if (ratio < lowest.ratio) {
+                lowest = { clientName, ratio };
+            }
+        }
+    }
+
+    if (ratios.length === 0) {
+        return { highest: null, lowest: null, stdDev: 0 };
+    }
+
+    // Calculate Standard Deviation
+    const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
+    const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
+    const stdDev = Math.sqrt(variance);
+
+    return {
+        highest: highest.ratio > -Infinity ? highest : null,
+        lowest: lowest.ratio < Infinity ? lowest : null,
+        stdDev: stdDev,
     };
   }
   
