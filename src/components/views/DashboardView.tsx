@@ -67,6 +67,15 @@ const ActiveShape = (props: any) => {
   
     return (
       <g>
+        <text x={cx} y={cy} dy={-15} textAnchor="middle" fill="hsl(var(--foreground))" className="text-lg font-headline">
+            {payload.name}
+        </text>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="font-mono">
+            {formatCurrency(value)}
+        </text>
+         <text x={cx} y={cy} dy={30} textAnchor="middle" fill={fill} className="text-base font-bold font-mono">
+          {`( ${(percent * 100).toFixed(2)}% )`}
+        </text>
         <Sector
           cx={cx}
           cy={cy}
