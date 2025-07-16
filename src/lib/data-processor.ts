@@ -102,8 +102,8 @@ export interface ProcessedData {
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
   equityToCashRatioStats: EquityCashRatioStats;
-  equityToCashRatioStatsGain: EquityCashRatioStats;
-  equityToCashRatioStatsLoss: EquityCashRatioStats;
+  equityToCashRatioStatsGain: Omit<EquityCashRatioStats, 'stdDev'>;
+  equityToCashRatioStatsLoss: Omit<EquityCashRatioStats, 'stdDev'>;
 }
 
 // Error types
@@ -184,7 +184,7 @@ export class ExcelDataProcessor {
     const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
     const clientRows = sheetData.length > 2 ? sheetData.slice(2) : [];
     
-    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
+    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
 
     const gainClients: any[][] = [];
@@ -432,7 +432,7 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
     const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
+    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
@@ -511,6 +511,14 @@ export class ExcelDataProcessor {
       const gainAllocation: { [sector: string]: number } = {};
       const lossAllocation: { [sector: string]: number } = {};
       
+      const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
+      const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
+
+      if (gainLossIndex === -1) {
+          console.warn(`Column '${gainLossHeaderName}' not found for Sector Allocation by Gain/Loss.`);
+          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+      }
+
       // Initialize allocations from headers (C to P, indices 2 to 15)
       for (let i = 2; i <= 15; i++) {
         const sector = headers[i];
@@ -525,7 +533,7 @@ export class ExcelDataProcessor {
         const row = sheetData[rowIndex] as any[];
         if (!row || row.length === 0) continue;
 
-        const gainLossValue = this.parseNumber(row[17]); // Column R
+        const gainLossValue = this.parseNumber(row[gainLossIndex]);
 
         let targetAllocation: { [sector: string]: number } | null = null;
         if (gainLossValue > 0) {
@@ -563,7 +571,8 @@ export class ExcelDataProcessor {
   public getClientNames(): string[] {
     if (!this.processedData?.clientData) return [];
 
-    const clientNameIndex = this.processedData.clientData.headers.findIndex(h => h.trim().toLowerCase() === 'client name');
+    const clientData = this.processedData.clientData;
+    const clientNameIndex = clientData.headers.findIndex(h => h && h.trim().toLowerCase() === 'client name');
     if (clientNameIndex === -1) return [];
 
     const clientNames = this.processedData.clientData.data
@@ -580,15 +589,15 @@ export class ExcelDataProcessor {
     if (!this.workbook || !this.processedData?.clientData) return null;
     
     const clientData = this.processedData.clientData;
-    const clientNameIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'client name');
+    const clientNameIndex = clientData.headers.findIndex(h => h && h.trim().toLowerCase() === 'client name');
     if (clientNameIndex === -1) return null;
 
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValueIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'present value');
-    const gainLossPercentageIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'unrealised gain / (loss) %');
-    const expiryDateIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'expiry');
+    const totalValueIndex = clientData.headers.findIndex(h => h && h.trim().toLowerCase() === 'present value');
+    const gainLossPercentageIndex = clientData.headers.findIndex(h => h && h.trim().toLowerCase() === 'unrealised gain / (loss) %');
+    const expiryDateIndex = clientData.headers.findIndex(h => h && h.trim().toLowerCase() === 'expiry');
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
@@ -631,7 +640,7 @@ export class ExcelDataProcessor {
   private calculateEquityToCashRatiosForGroup(clientRows: any[][], includeStdDev: boolean): EquityCashRatioStats {
     if (!clientRows || clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
   
-    const ratios: number[] = [];
+    const clientRatios: {name: string, ratio: number}[] = [];
     let highest: RatioInfo | null = null;
     let lowest: RatioInfo | null = null;
   
@@ -650,7 +659,7 @@ export class ExcelDataProcessor {
 
         if (total > 0) {
             const ratio = equity / total;
-            ratios.push(ratio);
+            clientRatios.push({name: clientName, ratio: ratio});
 
             if (!highest || ratio > highest.ratio) {
                 highest = { clientName, ratio };
@@ -662,7 +671,17 @@ export class ExcelDataProcessor {
     }
 
     let stdDev = 0;
-    if (includeStdDev && ratios.length > 1) {
+    if (includeStdDev && clientRatios.length > 4) {
+        const sortedRatios = clientRatios.map(r => r.ratio).sort((a, b) => a - b);
+        const trimmedRatios = sortedRatios.slice(2, -2);
+        
+        if (trimmedRatios.length > 0) {
+            const mean = trimmedRatios.reduce((a, b) => a + b, 0) / trimmedRatios.length;
+            const variance = trimmedRatios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / trimmedRatios.length;
+            stdDev = Math.sqrt(variance);
+        }
+    } else if (includeStdDev && clientRatios.length > 1) {
+        const ratios = clientRatios.map(r => r.ratio);
         const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
         const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
         stdDev = Math.sqrt(variance);
@@ -716,3 +735,4 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
+
