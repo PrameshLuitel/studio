@@ -429,7 +429,7 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
     const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
+    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
@@ -624,7 +624,7 @@ export class ExcelDataProcessor {
         portfolioData,
     };
   }
-
+  
   private calculateEquityToCashRatiosForGroup(clientRows: any[][]): EquityCashRatioStats {
     if (clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
   
