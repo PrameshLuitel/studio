@@ -74,7 +74,8 @@ const renderClientDetails = (details: ClientDetails) => {
         'FPO Apply',
         'Cash Dividend Value',
         'Stock Dividend Value',
-        'Right Payable'
+        'Right Payable',
+        'Net Cash'
     ];
 
     const excludedHeaders = ['Client Name', 'S.N.', ...groupedHeaders];
