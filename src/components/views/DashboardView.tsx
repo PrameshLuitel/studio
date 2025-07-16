@@ -35,15 +35,16 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
     <ScrollArea className={cn("pr-3 -mr-3", scrollHeight || "h-[28.5rem]")}>
         <div className="space-y-1">
             {movers.map((mover, index) => (
-                <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
+                 <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
                     <span className="font-medium text-foreground/90 flex-1 min-w-0 pr-2">{mover.clientId}</span>
                     <div className={cn(
                         "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right shrink-0",
                         isGainer ? 'text-green-500' : 'text-red-500'
                     )}>
-                       <span>{formatCurrency(mover.value)}</span>
-                       <span className="text-xs text-muted-foreground">/</span>
-                       <span className="text-xs">{(mover.percentage * 100).toFixed(2)}%</span>
+                       <div className="flex flex-col items-end -space-y-1">
+                         <span>{formatCurrency(mover.value)}</span>
+                         <span className="text-xs text-muted-foreground/80">{mover.percentage.toFixed(2)}%</span>
+                       </div>
                     </div>
                 </div>
             ))}
@@ -59,7 +60,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[24rem]" />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[28.5rem]" />
         </CardContent>
     </Card>
 );
@@ -78,10 +79,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[20rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[28.5rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[20rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[28.5rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -201,7 +202,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col gap-4 items-center">
-                    <ChartContainer config={{}} className="h-36 w-full">
+                    <ChartContainer config={{}} className="h-48 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
                                 <Pie 
@@ -210,8 +211,8 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={45} 
-                                    outerRadius={60} 
+                                    innerRadius={50} 
+                                    outerRadius={75} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -410,9 +411,9 @@ export const DashboardView = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
-        <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
