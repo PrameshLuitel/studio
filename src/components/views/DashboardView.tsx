@@ -152,7 +152,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                     <ChartContainer config={{}} className="h-80 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
-                                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${formatCurrency(Number(value))}`} />} />
+                                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${props.payload.percentage.toFixed(2)}%`} />} />
                                 <Pie 
                                     data={chartData} 
                                     dataKey="value" 
