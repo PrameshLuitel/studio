@@ -59,7 +59,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[28.5rem]" />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[24rem]" />
         </CardContent>
     </Card>
 );
@@ -78,10 +78,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[24rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[20rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[24rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[20rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -239,12 +239,12 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <ScrollArea className="h-[7.5rem]">
-                                    <ul className="space-y-1 p-1">
+                                <ScrollArea className="h-20">
+                                    <ul className="space-y-1 p-1 text-sm">
                                         {topItems.map((item, index) => (
                                             <li 
                                                 key={item.name} 
-                                                className={cn("flex items-center text-sm p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                                className={cn("flex items-center p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                                 onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                                 onMouseLeave={onPieLeave}
                                             >
@@ -265,14 +265,14 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     </Button>
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
-                                   <ScrollArea className="h-20">
-                                        <div className="pt-2 text-sm p-1">
+                                   <ScrollArea className="h-24">
+                                        <div className="pt-2 p-1 text-sm">
                                             {ratioStats.highest && (
                                             <div className="flex justify-between items-start p-1 rounded-md">
-                                                <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3.5 w-3.5 text-green-500" />Highest Ratio:</span>
+                                                <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3.5 w-3.5 text-green-500" />Highest:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                                    <div className="font-mono text-primary leading-tight">
+                                                    <div className="font-mono text-primary leading-tight text-xs">
                                                         <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
                                                         <span className="text-muted-foreground mx-1">|</span>
                                                         <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
@@ -282,10 +282,10 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                             )}
                                             {ratioStats.lowest && (
                                             <div className="flex justify-between items-start p-1 rounded-md">
-                                                <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3.5 w-3.5 text-red-500"/>Lowest Ratio:</span>
+                                                <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3.5 w-3.5 text-red-500"/>Lowest:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                                    <div className="font-mono text-primary leading-tight">
+                                                    <div className="font-mono text-primary leading-tight text-xs">
                                                         <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
                                                         <span className="text-muted-foreground mx-1">|</span>
                                                         <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
@@ -410,9 +410,9 @@ export const DashboardView = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
-        <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -447,6 +447,3 @@ export const DashboardView = () => {
     </div>
   );
 };
-
-
-
