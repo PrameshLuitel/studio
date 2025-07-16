@@ -585,17 +585,23 @@ export class ExcelDataProcessor {
         });
     }
 
-    const findMinMax = (ratios: EquityCashRatioInfo[]): EquityCashRatioStats => {
-      if (ratios.length === 0) return { highest: null, lowest: null };
-      const sortedRatios = [...ratios].sort((a, b) => a.ratio - b.ratio);
-      return {
-        lowest: sortedRatios[0],
-        highest: sortedRatios[sortedRatios.length - 1],
-      };
+    const findMinMax = (ratios: EquityCashRatioInfo[], isMainCard: boolean = false): EquityCashRatioStats => {
+        if (ratios.length === 0) return { highest: null, lowest: null };
+        const sortedRatios = [...ratios].sort((a, b) => a.ratio - b.ratio);
+        
+        let lowest = sortedRatios[0];
+        if (isMainCard && sortedRatios.length > 1) {
+            lowest = sortedRatios[1]; // Get the 2nd lowest for the main card
+        }
+        
+        return {
+            lowest: lowest,
+            highest: sortedRatios[sortedRatios.length - 1],
+        };
     };
 
     return {
-      equityToCashRatioStats: findMinMax(clientRatios),
+      equityToCashRatioStats: findMinMax(clientRatios, true), // Pass true for the main card
       equityToCashRatioStatsGain: findMinMax(clientRatiosGain),
       equityToCashRatioStatsLoss: findMinMax(clientRatiosLoss)
     };
