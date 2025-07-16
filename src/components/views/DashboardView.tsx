@@ -211,8 +211,8 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={50} 
-                                    outerRadius={70} 
+                                    innerRadius={60} 
+                                    outerRadius={80} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -411,8 +411,8 @@ export const DashboardView = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
