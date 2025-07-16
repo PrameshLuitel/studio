@@ -122,7 +122,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
     const chartData = useMemo(() => {
         if (!data) return [];
         const totalAllocation = data.reduce((acc, curr) => acc + curr.allocation, 0);
-        return data.map(s => ({ name: s.sector, value: s.allocation, percentage: totalAllocation > 0 ? (s.allocation / totalAllocation) * 100 : 0 }));
+        return data.map(s => ({ name: s.sector, value: s.allocation, percentage: totalAllocation > 0 ? (s.allocation / totalAllocation) : 0 }));
     }, [data]);
 
     const topItems = useMemo(() => {
@@ -152,7 +152,11 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                     <ChartContainer config={{}} className="h-80 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
-                                <Tooltip cursor={{fill: 'hsl(var(--muted))'}} content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${props.payload.percentage.toFixed(2)}%`} />} />
+                                <Tooltip 
+                                    useMousePosition
+                                    cursor={{stroke: 'hsl(var(--primary))', strokeWidth: 1, fill: 'transparent', r: 30}}
+                                    content={<ChartTooltipContent hideLabel formatter={(value, name, props) => `${props.payload.name}: ${props.payload.percentage.toFixed(2)}%`} />} 
+                                />
                                 <Pie 
                                     data={chartData} 
                                     dataKey="value" 
