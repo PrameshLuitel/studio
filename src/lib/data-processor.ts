@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as XLSX from 'xlsx';
@@ -64,11 +63,6 @@ export interface ClientDetails {
 export interface EPSSheetData {
     headers: string[];
     data: any[][];
-}
-
-export interface EquityCashRatioStats {
-    highest: { clientName: string; ratio: number } | null;
-    lowest: { clientName: string; ratio: number } | null;
 }
 
 
@@ -697,6 +691,11 @@ export class ExcelDataProcessor {
   isDataLoaded(): boolean {
     return this.processedData !== null;
   }
+}
+
+export interface EquityCashRatioStats {
+    highest: { clientName: string; ratio: number } | null;
+    lowest: { clientName: string; ratio: number } | null;
 }
 
 export const formatCurrency = (amount: number): string => {
