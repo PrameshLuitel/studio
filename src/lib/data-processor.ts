@@ -256,12 +256,12 @@ export class ExcelDataProcessor {
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[16]);
-      const gainLossPercentage = this.parseNumber(row[17]);
+      const gainLossPercentage = this.parseNumber(row[17]); // This is the percentage from column R
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: totalValue, // Column Q (Present value)
         gainLoss: gainLossPercentage,   // Column R is a percentage, used here for gain/loss status
-        gainLossValue: totalValue * gainLossPercentage,
+        gainLossValue: totalValue * (gainLossPercentage / 100),
         expiryDate: this.parseDate(row[20]), // Column U (New expiry date column)
       };
     }).filter(Boolean) as SummaryData[];
@@ -720,7 +720,7 @@ export class ExcelDataProcessor {
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
-    const gainLoss = totalValue * gainLossPercentage;
+    const gainLoss = totalValue * (gainLossPercentage / 100);
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 
