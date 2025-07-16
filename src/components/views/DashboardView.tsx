@@ -52,7 +52,7 @@ const TopMoversCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMo
     );
 
     return (
-        <Card className="glassmorphic lg:col-span-2">
+        <Card className="glassmorphic">
             <Tabs defaultValue="gainers">
                 <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
                      <CardTitle className="text-sm font-medium font-body text-foreground/80">Top Gainers / Losers</CardTitle>
