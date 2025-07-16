@@ -129,24 +129,24 @@ const renderClientDetails = (details: ClientDetails) => {
                         icon={getIconForHeader(item.header)}
                     />
                  ))}
-                 {groupedCardData.length > 0 && (
-                    <Card className="glassmorphic md:col-span-2 lg:col-span-3 xl:col-span-5">
-                         <CardHeader>
-                            <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
-                                {groupedCardData.map((item, index) => (
-                                    <div key={index} className="flex flex-col">
-                                        <p className="text-sm text-muted-foreground font-body">{item.header}</p>
-                                        <p className="text-lg font-semibold text-foreground font-headline">{formatValue(item)}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                 )}
             </div>
+            {groupedCardData.length > 0 && (
+                <Card className="glassmorphic lg:col-span-3">
+                     <CardHeader>
+                        <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+                            {groupedCardData.map((item, index) => (
+                                <div key={index} className="flex flex-col">
+                                    <p className="text-sm text-muted-foreground font-body">{item.header}</p>
+                                    <p className="text-lg font-semibold text-foreground font-headline">{formatValue(item)}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 };
