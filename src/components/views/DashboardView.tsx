@@ -31,14 +31,12 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
 
 const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
     <ScrollArea className={cn("pr-3", scrollHeight || "h-[28.5rem]")}>
-        <ul className="space-y-1">
+        <ul className="space-y-2">
             {movers.map((mover, index) => (
-                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50">
-                    <div className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-thin">
-                        <span className="font-medium text-foreground/90 pr-2">{mover.clientId}</span>
-                    </div>
+                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
+                    <span className="font-medium text-foreground/90 flex-shrink-0 pr-2">{mover.clientId}</span>
                     <div className={cn(
-                        "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap",
+                        "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right",
                         isGainer ? 'text-green-500' : 'text-red-500'
                     )}>
                        <span>{formatCurrency(mover.value)}</span>
@@ -210,7 +208,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={70} 
+                                    innerRadius={60} 
                                     outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -393,8 +391,8 @@ export const DashboardView = () => {
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
       </div>
 
@@ -430,6 +428,3 @@ export const DashboardView = () => {
     </div>
   );
 };
-
-
-
