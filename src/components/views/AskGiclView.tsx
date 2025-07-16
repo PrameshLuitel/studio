@@ -3,7 +3,6 @@
 
 import React, { useState, useRef, useEffect, useContext } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { queryPortfolio } from '@/ai/flows/portfolio-query-flow';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, User, Bot, Loader2, Info } from 'lucide-react';
@@ -12,25 +11,41 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { ProcessedData } from '@/lib/data-processor';
+import { formatCurrency } from '@/lib/data-processor';
+
 
 interface Message {
   role: 'user' | 'model';
   content: string;
 }
 
+const GREETING_MESSAGE: Message = {
+    role: 'model',
+    content: `Hello! I am Gicl, your portfolio assistant.
+
+I can answer specific questions about your data. Try asking me:
+- "What is the total AUM?"
+- "How many clients?"
+- "Show me asset allocation"
+- "Who is my creator?"
+
+Type 'help' to see all commands.`
+};
+
 export const AskGiclView = () => {
   const { excelProcessor } = useContext(AppContext);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([GREETING_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const excelDataJson = useRef<string>('');
+  const processedData = useRef<ProcessedData | null>(null);
 
   useEffect(() => {
     if (excelProcessor) {
-      excelDataJson.current = excelProcessor.getAllSheetsRawData();
+        processedData.current = excelProcessor.getProcessedData();
     }
   }, [excelProcessor]);
 
@@ -42,44 +57,72 @@ export const AskGiclView = () => {
       });
     }
   }, [messages]);
+
+  const getBotResponse = (query: string): string => {
+    const lowerQuery = query.toLowerCase().trim();
+    const data = processedData.current;
+
+    if (!data) {
+        return "I'm sorry, but I don't have any data loaded. Please upload an Excel file first.";
+    }
+
+    if (lowerQuery.includes('creator')) {
+        return "Pramesh Luitel created me.";
+    }
+
+    if (lowerQuery.includes('aum')) {
+        return `The total Assets Under Management (AUM) is ${formatCurrency(data.totalAUM)}.`;
+    }
+
+    if (lowerQuery.includes('clients') || lowerQuery.includes('how many clients')) {
+        return `There are a total of ${data.totalPMSClients} clients.`;
+    }
+    
+    if (lowerQuery.includes('asset allocation')) {
+        if (!data.assetAllocation || data.assetAllocation.length === 0) {
+            return "There is no asset allocation data available.";
+        }
+        const allocationText = data.assetAllocation
+            .map(a => `${a.sector}: ${formatCurrency(a.allocation)}`)
+            .join('\n');
+        return `Here is the asset allocation:\n${allocationText}`;
+    }
+
+    if (lowerQuery.includes('help')) {
+        return `Here are the commands I understand:
+- 'What is the total AUM?'
+- 'How many clients?'
+- 'Show me asset allocation'
+- 'Who is my creator?'`;
+    }
+    
+    return "I'm sorry, I don't understand that question. Please type 'help' to see what I can answer.";
+  };
   
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: input }];
-    setMessages(newMessages);
+    const userMessage: Message = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    
+    setIsLoading(true);
     const currentInput = input;
     setInput('');
-    setIsLoading(true);
 
-    try {
-      const result = await queryPortfolio({ query: currentInput, excelData: excelDataJson.current });
-      setMessages([...newMessages, { role: 'model', content: result.answer }]);
-    } catch (error) {
-      console.error('AI query failed:', error);
-      toast({
-        variant: 'destructive',
-        title: 'AI Error',
-        description: 'The chatbot could not be reached. Please check your API key and try again.'
-      });
-       setMessages(newMessages); // Revert to messages before AI call
-    } finally {
-      setIsLoading(false);
-    }
+    // Simulate a slight delay for a more natural feel
+    setTimeout(() => {
+        const botResponseContent = getBotResponse(currentInput);
+        const botMessage: Message = { role: 'model', content: botResponseContent };
+        setMessages(prev => [...prev, botMessage]);
+        setIsLoading(false);
+    }, 500);
   };
 
   return (
     <div className="h-full flex flex-col animate-in fade-in-50">
       <ScrollArea className="flex-1 pr-4 -mr-4" ref={scrollAreaRef}>
         <div className="space-y-6">
-          {messages.length === 0 && (
-            <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
-              <Bot className="mx-auto h-12 w-12 mb-4 text-primary/50" />
-              <h3 className="font-headline text-lg text-foreground">Ask Gicl</h3>
-              <p className="mt-2 text-sm">I am an AI assistant that can answer questions about your uploaded portfolio data.</p>
-            </div>
-          )}
           {messages.map((message, index) => (
             <div
               key={index}
