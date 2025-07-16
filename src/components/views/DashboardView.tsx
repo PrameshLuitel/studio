@@ -262,7 +262,7 @@ export const DashboardView = () => {
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
-        ? Object.entries(data.yearsToExpiryBuckets).map(([name, value]) => ({ name, value })) 
+        ? Object.entries(data.yearsToExpiryBuckets).map(([name, { value, count }]) => ({ name, value, count })) 
         : [];
     return {
         summaryStats: {
@@ -339,7 +339,14 @@ export const DashboardView = () => {
                     <YAxis tickFormatter={(value) => formatCurrency(Number(value))} stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <Tooltip 
                         cursor={{ fill: 'hsl(var(--muted))' }} 
-                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                        content={<ChartTooltipContent 
+                            formatter={(value, name, props) => (
+                                <div className="flex flex-col gap-0.5">
+                                    <span className="font-semibold">{formatCurrency(Number(value))}</span>
+                                    <span className="text-xs text-muted-foreground">{props.payload.count} clients</span>
+                                </div>
+                            )}
+                         />}
                     />
                     <Bar dataKey="value" name="AUM" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </RechartsBarChart>

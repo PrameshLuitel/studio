@@ -85,7 +85,7 @@ export interface ProcessedData {
     loss: number;
     neutral: number;
   };
-  yearsToExpiryBuckets: { [key: string]: number };
+  yearsToExpiryBuckets: { [key: string]: { value: number; count: number } };
   assetAllocation: SectorAllocation[];
   assetAllocationGain: SectorAllocation[];
   assetAllocationLoss: SectorAllocation[];
@@ -335,14 +335,14 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: number } {
-    const buckets = {
-      '< 6m': 0,
-      '6m - 1y': 0,
-      '1y - 2y': 0,
-      '2y - 3y': 0,
-      '3y - 5y': 0,
-      '5+ years': 0,
+  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number; count: number } } {
+    const buckets: { [key: string]: { value: number, count: number } } = {
+      '< 6m': { value: 0, count: 0 },
+      '6m - 1y': { value: 0, count: 0 },
+      '1y - 2y': { value: 0, count: 0 },
+      '2y - 3y': { value: 0, count: 0 },
+      '3y - 5y': { value: 0, count: 0 },
+      '5+ years': { value: 0, count: 0 },
     };
   
     if (!clientData) return buckets;
@@ -371,17 +371,23 @@ export class ExcelDataProcessor {
       const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44); // Average months
   
       if (diffMonths < 6) {
-        buckets['< 6m'] += aum;
+        buckets['< 6m'].value += aum;
+        buckets['< 6m'].count++;
       } else if (diffMonths < 12) {
-        buckets['6m - 1y'] += aum;
+        buckets['6m - 1y'].value += aum;
+        buckets['6m - 1y'].count++;
       } else if (diffMonths < 24) {
-        buckets['1y - 2y'] += aum;
+        buckets['1y - 2y'].value += aum;
+        buckets['1y - 2y'].count++;
       } else if (diffMonths < 36) {
-        buckets['2y - 3y'] += aum;
+        buckets['2y - 3y'].value += aum;
+        buckets['2y - 3y'].count++;
       } else if (diffMonths < 60) {
-        buckets['3y - 5y'] += aum;
+        buckets['3y - 5y'].value += aum;
+        buckets['3y - 5y'].count++;
       } else {
-        buckets['5+ years'] += aum;
+        buckets['5+ years'].value += aum;
+        buckets['5+ years'].count++;
       }
     });
   
