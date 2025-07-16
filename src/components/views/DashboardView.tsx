@@ -8,7 +8,7 @@ import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, BarChart, Arro
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Legend, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
-import { formatCurrency, SectorAllocation, EquityToCashRatioInfo } from '@/lib/data-processor';
+import { formatCurrency, SectorAllocation } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 
@@ -92,13 +92,10 @@ const ActiveShape = (props: any) => {
 };
 
 
-const AllocationPieChart = ({ title, data, icon: Icon, showRatio, highestRatio, lowestRatio }: { 
+const AllocationPieChart = ({ title, data, icon: Icon }: { 
     title: string; 
     data: SectorAllocation[]; 
-    icon: React.ElementType; 
-    showRatio?: boolean;
-    highestRatio?: EquityToCashRatioInfo | null;
-    lowestRatio?: EquityToCashRatioInfo | null;
+    icon: React.ElementType;
 }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -187,32 +184,6 @@ const AllocationPieChart = ({ title, data, icon: Icon, showRatio, highestRatio, 
                                 </li>
                             ))}
                         </ul>
-                         {showRatio && (highestRatio || lowestRatio) && (
-                            <>
-                                <Separator className="my-4" />
-                                <h4 className="font-headline text-lg mb-4 text-foreground flex items-center gap-2"><ChevronsUpDown className="h-5 w-5 text-accent"/> Equity/Cash Ratio</h4>
-                                <div className="space-y-3 text-sm">
-                                    {highestRatio && (
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium text-foreground/90">Highest:</span>
-                                            <div className="text-right">
-                                                <div className="font-mono text-primary font-semibold">{highestRatio.ratio.toFixed(2)}</div>
-                                                <div className="text-xs text-muted-foreground">{highestRatio.clientName}</div>
-                                            </div>
-                                        </div>
-                                    )}
-                                     {lowestRatio && (
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium text-foreground/90">Lowest:</span>
-                                            <div className="text-right">
-                                                <div className="font-mono text-primary font-semibold">{lowestRatio.ratio.toFixed(2)}</div>
-                                                <div className="text-xs text-muted-foreground">{lowestRatio.clientName}</div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </>
-                         )}
                     </div>
                 </div>
             </CardContent>
@@ -251,8 +222,6 @@ export const DashboardView = () => {
       sectorAllocationGain, 
       sectorAllocationLoss, 
       yearsToExpiryChartData,
-      highestEquityToCashRatio,
-      lowestEquityToCashRatio
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
@@ -271,8 +240,6 @@ export const DashboardView = () => {
         sectorAllocationGain: data.sectorAllocationGain || [],
         sectorAllocationLoss: data.sectorAllocationLoss || [],
         yearsToExpiryChartData,
-        highestEquityToCashRatio: data.highestEquityToCashRatio,
-        lowestEquityToCashRatio: data.lowestEquityToCashRatio,
     };
   }, [dashboardData]);
 
@@ -304,21 +271,18 @@ export const DashboardView = () => {
             title="Asset Allocation" 
             data={assetAllocation} 
             icon={Banknote} 
-            showRatio={true}
-            highestRatio={highestEquityToCashRatio}
-            lowestRatio={lowestEquityToCashRatio}
         />
         <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} />
-        <AllocationPieChart title="Sector-wise Allocation For Gain" data={sectorAllocationGain} icon={ArrowUpCircle} />
+        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} />
-        <AllocationPieChart title="Sector-wise Allocation For Loss" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">

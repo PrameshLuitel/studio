@@ -66,11 +66,6 @@ export interface EPSSheetData {
     data: any[][];
 }
 
-export interface EquityToCashRatioInfo {
-    clientName: string;
-    ratio: number;
-}
-
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -96,8 +91,6 @@ export interface ProcessedData {
   epsData: EPSData[];
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
-  highestEquityToCashRatio: EquityToCashRatioInfo | null;
-  lowestEquityToCashRatio: EquityToCashRatioInfo | null;
 }
 
 // Error types
@@ -174,7 +167,6 @@ export class ExcelDataProcessor {
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
-    const { highest, lowest } = this.calculateEquityToCashRatios();
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -189,9 +181,7 @@ export class ExcelDataProcessor {
       sectorAllocationLoss,
       epsData,
       epsSheetData,
-      clientData,
-      highestEquityToCashRatio: highest,
-      lowestEquityToCashRatio: lowest,
+      clientData
     };
   }
   
@@ -398,12 +388,13 @@ export class ExcelDataProcessor {
     const sheetData = this.getSheetData('Portfolio');
     if (sheetData.length < 3) return { assetAllocationGain: [], assetAllocationLoss: [] };
   
-    const headers = (sheetData[1] as string[]).map(h => typeof h === 'string' ? h.trim().toLowerCase() : '');
-    const clientRows = sheetData.slice(2);
+    const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
+    const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "unrealised gain / (loss) %";
-    const gainLossIndex = headers.findIndex(h => h === gainLossHeaderName);
+    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
+    const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
+    // Hardcoded indices for G, H, J, K
     const colGIndex = 6;
     const colHIndex = 7;
     const colJIndex = 9;
@@ -418,7 +409,7 @@ export class ExcelDataProcessor {
     const lossTotals = { sumG: 0, sumH: 0, sumJ: 0, sumK: 0 };
   
     for (const row of clientRows) {
-      if (!row || row.length === 0 || !row[2]) continue;
+      if (!row || row.length === 0 || !row[2]) continue; // Skip empty or total rows
   
       const gainLossValue = this.parseNumber(row[gainLossIndex]);
       let targetTotals;
@@ -428,7 +419,7 @@ export class ExcelDataProcessor {
       } else if (gainLossValue < 0) {
         targetTotals = lossTotals;
       } else {
-        continue;
+        continue; // Skip neutral clients
       }
   
       targetTotals.sumG += this.parseNumber(row[colGIndex]);
@@ -523,42 +514,6 @@ export class ExcelDataProcessor {
           sectorAllocationGain: formatAndSort(gainAllocation),
           sectorAllocationLoss: formatAndSort(lossAllocation)
       };
-  }
-
-  private calculateEquityToCashRatios(): { highest: EquityToCashRatioInfo | null; lowest: EquityToCashRatioInfo | null } {
-    const sheetData = this.getSheetData('Portfolio');
-    if (sheetData.length < 3) return { highest: null, lowest: null };
-
-    const clientRows = sheetData.slice(2, -1); // Exclude header and grand total row
-
-    let highest: EquityToCashRatioInfo | null = null;
-    let lowest: EquityToCashRatioInfo | null = null;
-
-    for (const row of clientRows) {
-        const clientName = row[2];
-        if (!clientName) continue;
-
-        const g = this.parseNumber(row[6]);
-        const h = this.parseNumber(row[7]);
-        const j = this.parseNumber(row[9]);
-        const k = this.parseNumber(row[10]);
-
-        const equity = g / 2;
-        const cash = (h / 2) + (k / 2) - (j / 2);
-
-        if (cash > 0) { // Only consider clients with positive cash to avoid division by zero or meaningless ratios
-            const ratio = equity / cash;
-
-            if (highest === null || ratio > highest.ratio) {
-                highest = { clientName, ratio };
-            }
-            if (lowest === null || ratio < lowest.ratio) {
-                lowest = { clientName, ratio };
-            }
-        }
-    }
-
-    return { highest, lowest };
   }
 
    /**
