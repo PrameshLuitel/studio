@@ -188,29 +188,37 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                          {ratioStats && (
                             <div className="mt-6 pt-4 border-t border-border/50">
                                 <h4 className="font-headline text-lg mb-3 text-foreground">Equity/Cash Ratio Analysis</h4>
-                                <div className="space-y-2 text-sm">
+                                <div className="space-y-3 text-sm">
                                     {ratioStats.highest && (
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-muted-foreground flex items-center gap-2"><TrendingUp className="h-4 w-4 text-green-500" />Highest Ratio:</span>
+                                    <div className="flex justify-between items-start">
+                                        <span className="text-muted-foreground flex items-center gap-2 pt-1"><TrendingUp className="h-4 w-4 text-green-500" />Highest Ratio:</span>
                                         <div className="text-right">
-                                        <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                        <span className="font-mono text-primary ml-2">{(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
+                                            <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
+                                            <div className="font-mono text-primary text-xs">
+                                                <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
+                                                <span className="text-muted-foreground mx-1">|</span>
+                                                <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
+                                            </div>
                                         </div>
                                     </div>
                                     )}
                                     {ratioStats.lowest && (
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-muted-foreground flex items-center gap-2"><TrendingDown className="h-4 w-4 text-red-500"/>Lowest Ratio:</span>
+                                    <div className="flex justify-between items-start">
+                                        <span className="text-muted-foreground flex items-center gap-2 pt-1"><TrendingDown className="h-4 w-4 text-red-500"/>Lowest Ratio:</span>
                                         <div className="text-right">
-                                        <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                        <span className="font-mono text-primary ml-2">{(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
+                                            <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
+                                            <div className="font-mono text-primary text-xs">
+                                                <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
+                                                <span className="text-muted-foreground mx-1">|</span>
+                                                <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
+                                            </div>
                                         </div>
                                     </div>
                                     )}
                                     {ratioStats.stdDev > 0 && (
                                         <div className="flex justify-between items-center">
                                             <span className="text-muted-foreground flex items-center gap-2"><Info className="h-4 w-4 text-blue-500" />Std. Deviation:</span>
-                                            <span className="font-mono text-primary">{(ratioStats.stdDev * 100).toFixed(2)}%</span>
+                                            <span className="font-mono text-primary">{ratioStats.stdDev.toFixed(4)}</span>
                                         </div>
                                     )}
                                 </div>
