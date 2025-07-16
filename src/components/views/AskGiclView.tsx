@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { ProcessedData } from '@/lib/data-processor';
+import type { ProcessedData, SectorAllocation, ClientDetails } from '@/lib/data-processor';
 import { formatCurrency } from '@/lib/data-processor';
 
 
@@ -24,11 +24,7 @@ const GREETING_MESSAGE: Message = {
     role: 'model',
     content: `Hello! I am Gicl, your portfolio assistant.
 
-I can answer specific questions about your data. Try asking me:
-- "What is the total AUM?"
-- "How many clients?"
-- "Show me asset allocation"
-- "Who is my creator?"
+I can answer specific questions about your data. Try asking me questions about the dashboard or a specific client.
 
 Type 'help' to see all commands.`
 };
@@ -66,34 +62,105 @@ export const AskGiclView = () => {
         return "I'm sorry, but I don't have any data loaded. Please upload an Excel file first.";
     }
 
+    const formatAllocations = (title: string, allocations: SectorAllocation[] | undefined): string => {
+        if (!allocations || allocations.length === 0) {
+            return `There is no data for ${title}.`;
+        }
+        const allocationText = allocations
+            .map(a => `${a.sector}: ${formatCurrency(a.allocation)}`)
+            .join('\n');
+        return `Here is the ${title}:\n${allocationText}`;
+    };
+
     if (lowerQuery.includes('creator')) {
         return "Pramesh Luitel created me.";
     }
 
     if (lowerQuery.includes('aum')) {
+         const clientNameMatch = lowerQuery.match(/for (.+)/);
+        if (clientNameMatch && clientNameMatch[1]) {
+            const clientName = clientNameMatch[1].trim();
+            const clientDetails = excelProcessor?.getDataForClient(clientName);
+            if (clientDetails) {
+                return `The AUM for ${clientDetails.name} is ${formatCurrency(clientDetails.totalValue)}.`;
+            }
+            return `Could not find client: ${clientName}`;
+        }
         return `The total Assets Under Management (AUM) is ${formatCurrency(data.totalAUM)}.`;
     }
 
-    if (lowerQuery.includes('clients') || lowerQuery.includes('how many clients')) {
+    if (lowerQuery.includes('how many clients') || lowerQuery.startsWith('clients')) {
         return `There are a total of ${data.totalPMSClients} clients.`;
     }
-    
+
+    if (lowerQuery.includes('gain') && lowerQuery.includes('loss')) {
+        const { gain, loss, neutral } = data.clientGainLoss;
+        return `There are ${gain} clients in gain, ${loss} clients in loss, and ${neutral} neutral.`;
+    }
+
     if (lowerQuery.includes('asset allocation')) {
-        if (!data.assetAllocation || data.assetAllocation.length === 0) {
-            return "There is no asset allocation data available.";
+        if (lowerQuery.includes('gain')) return formatAllocations("asset allocation for clients in gain", data.assetAllocationGain);
+        if (lowerQuery.includes('loss')) return formatAllocations("asset allocation for clients in loss", data.assetAllocationLoss);
+        return formatAllocations("asset allocation", data.assetAllocation);
+    }
+    
+    if (lowerQuery.includes('sector allocation') || lowerQuery.includes('sector-wise allocation')) {
+        const clientNameMatch = lowerQuery.match(/for (.+)/);
+        if (clientNameMatch && clientNameMatch[1]) {
+            const clientName = clientNameMatch[1].trim();
+            const clientDetails = excelProcessor?.getDataForClient(clientName);
+            if (clientDetails) {
+                 return formatAllocations(`sector allocation for ${clientDetails.name}`, clientDetails.sectorAllocations.map(s => ({ sector: s.sector, allocation: s.value })));
+            }
+            return `Could not find client: ${clientName}`;
         }
-        const allocationText = data.assetAllocation
-            .map(a => `${a.sector}: ${formatCurrency(a.allocation)}`)
+        if (lowerQuery.includes('gain')) return formatAllocations("sector-wise allocation for clients in gain", data.sectorAllocationGain);
+        if (lowerQuery.includes('loss')) return formatAllocations("sector-wise allocation for clients in loss", data.sectorAllocationLoss);
+        return formatAllocations("sector-wise allocation", data.sectorAllocation);
+    }
+
+    if (lowerQuery.includes('expiry') || lowerQuery.includes('years to expiry')) {
+        if (!data.yearsToExpiryBuckets) return "No data available for years to expiry.";
+        const expiryText = Object.entries(data.yearsToExpiryBuckets)
+            .map(([bucket, { value, count }]) => `${bucket}: ${formatCurrency(value)} from ${count} clients`)
             .join('\n');
-        return `Here is the asset allocation:\n${allocationText}`;
+        return `Years to Expiry Breakdown:\n${expiryText}`;
+    }
+    
+    if (lowerQuery.includes('equity') && lowerQuery.includes('cash') && lowerQuery.includes('ratio')) {
+        let response = 'Equity to Cash Ratio Analysis:\n';
+        if(data.equityToCashRatioStats.highest) {
+            response += `- Highest Ratio: ${data.equityToCashRatioStats.highest.clientName} (${(data.equityToCashRatioStats.highest.ratio * 100).toFixed(2)}% Equity)\n`;
+        }
+        if(data.equityToCashRatioStats.lowest) {
+            response += `- Lowest Ratio: ${data.equityToCashRatioStats.lowest.clientName} (${(data.equityToCashRatioStats.lowest.ratio * 100).toFixed(2)}% Equity)`;
+        }
+        return response;
+    }
+    
+    if (lowerQuery.startsWith('show me data for')) {
+        const clientName = query.substring('show me data for'.length).trim();
+        const clientDetails = excelProcessor?.getDataForClient(clientName);
+        if (clientDetails) {
+            const detailsText = clientDetails.portfolioData
+                .map(d => `${d.header}: ${d.value}`)
+                .join('\n');
+            return `Details for ${clientName}:\n${detailsText}`;
+        }
+        return `Could not find data for client: ${clientName}`;
     }
 
     if (lowerQuery.includes('help')) {
-        return `Here are the commands I understand:
-- 'What is the total AUM?'
-- 'How many clients?'
-- 'Show me asset allocation'
-- 'Who is my creator?'`;
+        return `Here are some questions you can ask:
+- What is the total AUM?
+- How many clients are in gain/loss?
+- Show me asset allocation.
+- Show me sector allocation for clients in gain.
+- What is the AUM for [Client Name]?
+- Show me sector allocation for [Client Name].
+- What is the years to expiry breakdown?
+- Who has the highest equity to cash ratio?
+- Who is my creator?`;
     }
     
     return "I'm sorry, I don't understand that question. Please type 'help' to see what I can answer.";
