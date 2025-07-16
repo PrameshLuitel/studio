@@ -244,7 +244,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         {topItems.map((item, index) => (
                                             <li 
                                                 key={item.name} 
-                                                className={cn("flex items-center text-[11px] p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                                className={cn("flex items-center text-xs p-1 rounded-md transition-all duration-200", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                                 onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                                 onMouseLeave={onPieLeave}
                                             >
@@ -268,7 +268,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                    <ScrollArea className="h-20">
                                         <div className="pt-2 text-xs p-1">
                                             {ratioStats.highest && (
-                                            <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
+                                            <div className="flex justify-between items-start p-1 rounded-md">
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3 w-3 text-green-500" />Highest Ratio:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
@@ -281,7 +281,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                             </div>
                                             )}
                                             {ratioStats.lowest && (
-                                            <div className="flex justify-between items-start text-[10px] p-1 rounded-md">
+                                            <div className="flex justify-between items-start p-1 rounded-md">
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3 w-3 text-red-500"/>Lowest Ratio:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
@@ -411,8 +411,8 @@ export const DashboardView = () => {
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -447,4 +447,5 @@ export const DashboardView = () => {
     </div>
   );
 };
+
 
