@@ -60,7 +60,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
-           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[26rem]" />
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[31.5rem]" />
         </CardContent>
     </Card>
 );
@@ -79,10 +79,10 @@ const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], loser
             </CardHeader>
             <CardContent>
                 <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[26rem]" />
+                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[31.5rem]" />
                 </TabsContent>
                 <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[26rem]" />
+                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[31.5rem]" />
                 </TabsContent>
             </CardContent>
         </Tabs>
@@ -202,7 +202,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
             </CardHeader>
             <CardContent>
                 <div className="flex flex-col gap-4 items-center">
-                    <ChartContainer config={{}} className="h-48 w-full">
+                    <ChartContainer config={{}} className="h-52 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
                                 <Pie 
@@ -212,7 +212,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     cx="50%" 
                                     cy="50%" 
                                     innerRadius={60} 
-                                    outerRadius={80} 
+                                    outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
@@ -240,18 +240,18 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <ScrollArea className="h-20">
+                                <ScrollArea className="h-24">
                                     <ul className="space-y-1 p-1">
                                         {topItems.map((item, index) => (
                                             <li 
                                                 key={item.name} 
-                                                className={cn("flex items-center p-1 rounded-md transition-all duration-200 text-base", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                                className={cn("flex items-center p-1.5 rounded-md transition-all duration-200 text-base", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                                 onMouseEnter={() => handlePieEnter(null, chartData.findIndex(d => d.name === item.name))}
                                                 onMouseLeave={onPieLeave}
                                             >
                                                 <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[chartData.findIndex(s => s.name === item.name) % COLORS.length] }} />
-                                                <span className="font-medium text-foreground/90 flex-1">{item.name}</span>
-                                                <span className="font-mono text-muted-foreground">{(item.percentage * 100).toFixed(2)}%</span>
+                                                <span className="font-medium text-foreground/90 flex-1 text-sm">{item.name}</span>
+                                                <span className="font-mono text-muted-foreground text-sm">{(item.percentage * 100).toFixed(2)}%</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -267,13 +267,13 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </CollapsibleTrigger>
                                 <CollapsibleContent>
                                    <ScrollArea className="h-24">
-                                        <div className="pt-2 p-1 text-base">
+                                        <div className="pt-2 p-1 text-sm">
                                             {ratioStats.highest && (
                                             <div className="flex justify-between items-start p-1 rounded-md">
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingUp className="h-3.5 w-3.5 text-green-500" />Highest:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.highest.clientName}</span>
-                                                    <div className="font-mono text-primary leading-tight">
+                                                    <div className="font-mono text-primary leading-tight text-xs">
                                                         <span>E: {(ratioStats.highest.ratio * 100).toFixed(2)}%</span>
                                                         <span className="text-muted-foreground mx-1">|</span>
                                                         <span>C: {((1 - ratioStats.highest.ratio) * 100).toFixed(2)}%</span>
@@ -286,7 +286,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                                 <span className="text-muted-foreground flex items-center gap-1.5 pt-0.5"><TrendingDown className="h-3.5 w-3.5 text-red-500"/>Lowest:</span>
                                                 <div className="text-right">
                                                     <span className="font-medium text-foreground">{ratioStats.lowest.clientName}</span>
-                                                    <div className="font-mono text-primary leading-tight">
+                                                    <div className="font-mono text-primary leading-tight text-xs">
                                                         <span>E: {(ratioStats.lowest.ratio * 100).toFixed(2)}%</span>
                                                         <span className="text-muted-foreground mx-1">|</span>
                                                         <span>C: {((1 - ratioStats.lowest.ratio) * 100).toFixed(2)}%</span>
