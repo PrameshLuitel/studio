@@ -33,7 +33,7 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
     <ScrollArea className={cn("pr-3", scrollHeight || "h-[28.5rem]")}>
         <ul className="space-y-1">
             {movers.map((mover, index) => (
-                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 overflow-x-auto">
+                <li key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50">
                     <div className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-thin">
                         <span className="font-medium text-foreground/90 pr-2">{mover.clientId}</span>
                     </div>
@@ -210,7 +210,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={60} 
+                                    innerRadius={70} 
                                     outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
@@ -228,6 +228,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
+                                
                             </RechartsPieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
@@ -387,13 +388,13 @@ export const DashboardView = () => {
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
         <TopMoversList movers={topGainers} title="Top Gainers (%)" icon={ArrowUpCircle} isGainer={true} />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
       </div>
 
@@ -429,5 +430,6 @@ export const DashboardView = () => {
     </div>
   );
 };
+
 
 
