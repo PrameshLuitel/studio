@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
 import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit } from 'lucide-react';
@@ -60,6 +60,8 @@ const formatValue = (item: { header: string; value: any }) => {
 };
 
 const renderClientDetails = (details: ClientDetails) => {
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
     const sectorData = details.sectorAllocations
       .filter(s => s.value > 0)
       .map(s => ({ name: s.sector, value: s.value }));
@@ -89,6 +91,17 @@ const renderClientDetails = (details: ClientDetails) => {
         groupedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
     );
+    
+    const CustomBarLabel = (props: any) => {
+        const { x, y, width, value, index } = props;
+        if (index !== activeIndex || width < 80) return null;
+
+        return (
+            <text x={x + width - 10} y={y + 18} fill="hsl(var(--primary-foreground))" textAnchor="end" className="text-sm font-bold transition-opacity duration-300">
+                {formatCurrency(value)}
+            </text>
+        );
+    };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
@@ -99,7 +112,19 @@ const renderClientDetails = (details: ClientDetails) => {
                 <CardContent>
                     <ChartContainer config={{}} className="h-96 w-full">
                         <ResponsiveContainer>
-                            <BarChart layout="vertical" data={sectorData} margin={{ left: 10, right: 20 }}>
+                            <BarChart 
+                                layout="vertical" 
+                                data={sectorData} 
+                                margin={{ left: 10, right: 20 }}
+                                onMouseMove={(state) => {
+                                    if (state.isTooltipActive) {
+                                        setActiveIndex(state.activeTooltipIndex ?? null);
+                                    } else {
+                                        setActiveIndex(null);
+                                    }
+                                }}
+                                onMouseLeave={() => setActiveIndex(null)}
+                            >
                                 <XAxis type="number" hide />
                                 <YAxis 
                                     dataKey="name" 
@@ -110,10 +135,12 @@ const renderClientDetails = (details: ClientDetails) => {
                                     className="text-xs truncate"
                                     />
                                 <Tooltip 
-                                    cursor={{ fill: 'hsl(var(--muted))' }}
+                                    cursor={{ fill: 'hsl(var(--primary) / 0.5)' }}
                                     content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
                                     />
-                                <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                                <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
+                                  <LabelList dataKey="value" content={<CustomBarLabel />} />
+                                </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     </ChartContainer>
