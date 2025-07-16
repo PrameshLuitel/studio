@@ -329,7 +329,7 @@ export const DashboardView = () => {
       <div className="grid grid-cols-1 gap-6">
         <Card className="glassmorphic col-span-1">
           <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2"><CalendarClock className="text-accent"/> Years to Expiry</CardTitle>
+            <CardTitle className="font-headline flex items-center gap-2"><CalendarClock className="text-accent"/> Years to Expiry vs AUM</CardTitle>
           </CardHeader>
           <CardContent>
           <ChartContainer config={{}} className="h-64 w-full">

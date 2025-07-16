@@ -85,12 +85,7 @@ export interface ProcessedData {
     loss: number;
     neutral: number;
   };
-  yearsToExpiryBuckets: {
-    '0-1': number;
-    '1-3': number;
-    '3-5': number;
-    '5+': number;
-  };
+  yearsToExpiryBuckets: { [key: string]: number };
   assetAllocation: SectorAllocation[];
   assetAllocationGain: SectorAllocation[];
   assetAllocationLoss: SectorAllocation[];
@@ -189,7 +184,7 @@ export class ExcelDataProcessor {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
       totalAUM: this.calculateTotalAUM(summaryData),
       clientGainLoss: this.calculateClientGainLoss(summaryData),
-      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(summaryData),
+      yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(clientData),
       assetAllocation: this.calculateAssetAllocation(),
       assetAllocationGain,
       assetAllocationLoss,
@@ -212,7 +207,7 @@ export class ExcelDataProcessor {
   }
 
    /**
-   * Utility to parse dates that might be strings (e.g., "dd/mm/yyyy") or Date objects
+   * Utility to parse dates that might be strings (e.g., "mm/dd/yyyy") or Date objects
    */
   private parseDate(value: any): Date | undefined {
     if (value instanceof Date) {
@@ -221,9 +216,9 @@ export class ExcelDataProcessor {
     if (typeof value === 'string') {
       const parts = value.split('/');
       if (parts.length === 3) {
-        // Assuming dd/mm/yyyy
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
+        // Assuming mm/dd/yyyy format
+        const month = parseInt(parts[0], 10) - 1;
+        const day = parseInt(parts[1], 10);
         const year = parseInt(parts[2], 10);
         if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
           return new Date(year, month, day);
@@ -243,9 +238,9 @@ export class ExcelDataProcessor {
       if (!row || row.length === 0 || !row[2]) return null;
       return {
         clientId: row[2], // Client Name is in Column C
-        totalValue: this.parseNumber(row[16]), // Column Q
+        totalValue: this.parseNumber(row[16]), // Column Q (Present value)
         gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, used here for gain/loss status
-        expiryDate: this.parseDate(row[4]), // Column E
+        expiryDate: this.parseDate(row[20]), // Column U (New expiry date column)
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -340,38 +335,56 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(summaryData: SummaryData[]): {
-    '0-1': number;
-    '1-3': number;
-    '3-5': number;
-    '5+': number;
-  } {
-    const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
-
-    const futureDate = new Date();
-    futureDate.setFullYear(futureDate.getFullYear() + 56);
-    futureDate.setMonth(futureDate.getMonth() + 8);
-    futureDate.setDate(futureDate.getDate() + 15);
-    futureDate.setHours(0, 0, 0, 0);
-
-    summaryData.forEach(item => {
-      if (!item.expiryDate || !(item.expiryDate instanceof Date)) return;
-      
-      const sheetDate = item.expiryDate;
-      sheetDate.setHours(0, 0, 0, 0);
-
-      const diffTime = futureDate.getTime() - sheetDate.getTime();
-
-      if (diffTime >= 0) {
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const years = diffDays / 365.25;
-        
-        if (years <= 1) buckets['0-1']++;
-        else if (years <= 3) buckets['1-3']++;
-        else if (years <= 5) buckets['3-5']++;
-        else if (years > 5) buckets['5+']++;
+  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: number } {
+    const buckets = {
+      '< 6m': 0,
+      '6m - 1y': 0,
+      '1y - 2y': 0,
+      '2y - 3y': 0,
+      '3y - 5y': 0,
+      '5+ years': 0,
+    };
+  
+    if (!clientData) return buckets;
+  
+    const { headers, data } = clientData;
+    const expiryDateIndex = 20; // Column U
+    const aumIndex = 16; // Column Q (Present value is AUM)
+  
+    if (expiryDateIndex === -1 || aumIndex === -1) {
+      console.warn('Required columns for expiry bucketing not found.');
+      return buckets;
+    }
+  
+    const now = new Date();
+  
+    data.forEach(row => {
+      const expiryDateValue = row[expiryDateIndex];
+      const aum = this.parseNumber(row[aumIndex]);
+  
+      if (!expiryDateValue || aum <= 0) return;
+  
+      const expiryDate = this.parseDate(expiryDateValue);
+      if (!expiryDate || expiryDate < now) return; // Ignore past dates
+  
+      const diffTime = expiryDate.getTime() - now.getTime();
+      const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44); // Average months
+  
+      if (diffMonths < 6) {
+        buckets['< 6m'] += aum;
+      } else if (diffMonths < 12) {
+        buckets['6m - 1y'] += aum;
+      } else if (diffMonths < 24) {
+        buckets['1y - 2y'] += aum;
+      } else if (diffMonths < 36) {
+        buckets['2y - 3y'] += aum;
+      } else if (diffMonths < 60) {
+        buckets['3y - 5y'] += aum;
+      } else {
+        buckets['5+ years'] += aum;
       }
     });
+  
     return buckets;
   }
   
