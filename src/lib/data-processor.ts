@@ -7,8 +7,8 @@ import * as XLSX from 'xlsx';
 export interface SummaryData {
   clientId: string;
   totalValue: number;
-  gainLoss: number; // This is the percentage
-  gainLossValue: number; // This is the absolute value
+  gainLossPercentage: number;
+  gainLossValue: number;
   expiryDate?: Date; // Added for expiry calculation
   [key: string]: any;
 }
@@ -256,12 +256,12 @@ export class ExcelDataProcessor {
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[16]);
-      const gainLossPercentage = this.parseNumber(row[17]); // This is the percentage from column R
+      const gainLossPercentage = this.parseNumber(row[17]); // Column R
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: totalValue, // Column Q (Present value)
-        gainLoss: gainLossPercentage,   // Column R is a percentage, used here for gain/loss status
-        gainLossValue: totalValue * (gainLossPercentage / 100),
+        gainLossPercentage: gainLossPercentage,   // Direct value from Column R
+        gainLossValue: totalValue * (gainLossPercentage / 100), // Correct calculation for absolute value
         expiryDate: this.parseDate(row[20]), // Column U (New expiry date column)
       };
     }).filter(Boolean) as SummaryData[];
@@ -347,7 +347,7 @@ export class ExcelDataProcessor {
   } {
     return summaryData.reduce((acc, client) => {
       if (String(client.clientId).includes('Grand Total')) return acc;
-      const gainLoss = client.gainLoss || 0;
+      const gainLoss = client.gainLossPercentage || 0;
       if (gainLoss > 0) acc.gain++;
       else if (gainLoss < 0) acc.loss++;
       else acc.neutral++;
@@ -648,19 +648,18 @@ export class ExcelDataProcessor {
   private calculateTopMovers(summaryData: SummaryData[]): { topGainers: TopMover[], topLosers: TopMover[] } {
     const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
 
-    // Sort by percentage gain/loss (the `gainLoss` field)
-    const sortedByPercentage = [...clients].sort((a, b) => b.gainLoss - a.gainLoss);
+    const sortedByPercentage = [...clients].sort((a, b) => b.gainLossPercentage - a.gainLossPercentage);
 
     const topGainers: TopMover[] = sortedByPercentage
-        .filter(c => c.gainLoss > 0)
+        .filter(c => c.gainLossPercentage > 0)
         .slice(0, 10)
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
 
     const topLosers: TopMover[] = sortedByPercentage
-        .filter(c => c.gainLoss < 0)
+        .filter(c => c.gainLossPercentage < 0)
         .slice(-10)
         .reverse()
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
 
     return { topGainers, topLosers };
   }
@@ -673,13 +672,13 @@ export class ExcelDataProcessor {
     const topGainersAbsolute: TopMover[] = sortedByAbsoluteValue
         .filter(c => c.gainLossValue > 0)
         .slice(0, 10)
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
 
     const topLosersAbsolute: TopMover[] = sortedByAbsoluteValue
         .filter(c => c.gainLossValue < 0)
         .slice(-10)
         .reverse()
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLoss }));
+        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
         
     return { topGainersAbsolute, topLosersAbsolute };
   }
