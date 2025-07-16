@@ -1,14 +1,13 @@
 
 'use client';
 
-import React, { useContext, useState, useRef, useEffect } from 'react';
-import { AppContext } from '@/contexts/AppContext';
-import { portfolioQuery } from '@/ai/flows/portfolio-query';
+import React, { useState, useRef, useEffect } from 'react';
+import { askMe } from '@/ai/flows/ask-me-flow';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,8 +16,7 @@ interface Message {
   content: string;
 }
 
-export const ChatbotView = () => {
-  const { excelProcessor } = useContext(AppContext);
+export const AskMeView = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -40,15 +38,12 @@ export const ChatbotView = () => {
 
     const newMessages: Message[] = [...messages, { role: 'user', content: input }];
     setMessages(newMessages);
+    const currentInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      if (!excelProcessor) {
-          throw new Error("Excel data not processed yet.");
-      }
-      const portfolioData = excelProcessor.getAllSheetsRawData();
-      const result = await portfolioQuery({ portfolioData: JSON.stringify(portfolioData), query: input });
+      const result = await askMe({ query: currentInput });
       setMessages([...newMessages, { role: 'model', content: result.answer }]);
     } catch (error) {
       console.error('AI query failed:', error);
@@ -70,8 +65,8 @@ export const ChatbotView = () => {
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
               <Bot className="mx-auto h-12 w-12 mb-4 text-primary/50" />
-              <h3 className="font-headline text-lg text-foreground">Welcome to the AI Portfolio Assistant</h3>
-              <p className="mt-2 text-sm">Ask me anything about your uploaded portfolio data. <br/> For example: "What is the total AUM?" or "Which client has the highest gain?".</p>
+              <h3 className="font-headline text-lg text-foreground">Ask Me Anything</h3>
+              <p className="mt-2 text-sm">I am a general-purpose AI assistant powered by Gemini. <br/> How can I help you today?</p>
             </div>
           )}
           {messages.map((message, index) => (
@@ -110,7 +105,7 @@ export const ChatbotView = () => {
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask about your portfolio..."
+          placeholder="Ask me anything..."
           className="flex-1"
           disabled={isLoading}
         />

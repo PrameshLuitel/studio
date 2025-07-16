@@ -5,7 +5,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { DashboardView } from './views/DashboardView';
 import { ClientDataView } from './views/ClientDataView';
 import { EpsView } from './views/EpsView';
-import { ChatbotView } from './views/ChatbotView';
+import { AskMeView } from './views/AskMeView';
 import { Button } from './ui/button';
 import {
   LayoutDashboard,
@@ -23,7 +23,7 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'client-data', label: 'Client Data', icon: Table },
   { id: 'eps', label: 'EPS Viewer', icon: LineChart },
-  { id: 'chatbot', label: 'AI Chat', icon: MessageSquare },
+  { id: 'ask-me', label: 'Ask Me', icon: MessageSquare },
 ];
 
 export const MainLayout = () => {
@@ -37,8 +37,8 @@ export const MainLayout = () => {
         return <ClientDataView />;
       case 'eps':
         return <EpsView />;
-      case 'chatbot':
-        return <ChatbotView />;
+      case 'ask-me':
+        return <AskMeView />;
       default:
         return <DashboardView />;
     }

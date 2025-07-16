@@ -1,4 +1,4 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/portfolio-query.ts';
+import '@/ai/flows/ask-me-flow.ts';
