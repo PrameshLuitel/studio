@@ -178,6 +178,7 @@ export class ExcelDataProcessor {
     const clientData = this.processClientDataSheet();
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
+    const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
     
     const sheetData = this.getSheetData('Portfolio');
     const headers = sheetData.length > 1 ? (sheetData[1] as string[]) : [];
@@ -200,8 +201,6 @@ export class ExcelDataProcessor {
             }
         }
     }
-
-    const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
     
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -431,7 +430,7 @@ export class ExcelDataProcessor {
     const headers = sheetData[1] as string[]; // Headers are in the second row (index 1)
     const clientRows = sheetData.slice(2); // Data starts from the third row (index 2)
   
-    const gainLossHeaderName = "Unrealised gain / (loss) %".toLowerCase();
+    const gainLossHeaderName = "Gain/(LOSS) IN pORTFOLIO".toLowerCase();
     const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
     
     // Hardcoded indices for G, H, J, K
@@ -714,5 +713,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
-
-
