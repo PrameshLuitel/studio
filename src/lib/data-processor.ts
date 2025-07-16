@@ -232,7 +232,7 @@ export class ExcelDataProcessor {
   }
 
    /**
-   * Utility to parse dates that might be strings (e.g., "dd/mm/yyyy") or Date objects
+   * Utility to parse dates that might be strings (e.g., "mm/dd/yyyy") or Date objects
    */
   private parseDate(value: any): Date | undefined {
     if (value instanceof Date) {
@@ -241,9 +241,9 @@ export class ExcelDataProcessor {
     if (typeof value === 'string') {
       const parts = value.split('/');
       if (parts.length === 3) {
-        // Assuming dd/mm/yyyy
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
+        // Assuming mm/dd/yyyy
+        const month = parseInt(parts[0], 10) - 1;
+        const day = parseInt(parts[1], 10);
         const year = parseInt(parts[2], 10);
         if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
           return new Date(year, month, day);
@@ -266,7 +266,7 @@ export class ExcelDataProcessor {
         clientId: row[2], // Client Name is in Column C
         totalValue: this.parseNumber(row[16]), // Column Q
         gainLoss: this.parseNumber(row[17]),   // Column R is a percentage, used here for gain/loss status
-        expiryDate: this.parseDate(row[4]), // Column E
+        expiryDate: this.parseDate(row[20]), // Column U
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -368,12 +368,8 @@ export class ExcelDataProcessor {
     '5+': number;
   } {
     const buckets = { '0-1': 0, '1-3': 0, '3-5': 0, '5+': 0 };
-
-    const futureDate = new Date();
-    futureDate.setFullYear(futureDate.getFullYear() + 56);
-    futureDate.setMonth(futureDate.getMonth() + 8);
-    futureDate.setDate(futureDate.getDate() + 15);
-    futureDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     summaryData.forEach(item => {
       if (!item.expiryDate || !(item.expiryDate instanceof Date)) return;
@@ -381,7 +377,7 @@ export class ExcelDataProcessor {
       const sheetDate = item.expiryDate;
       sheetDate.setHours(0, 0, 0, 0);
 
-      const diffTime = futureDate.getTime() - sheetDate.getTime();
+      const diffTime = sheetDate.getTime() - today.getTime();
       const clientAUM = item.totalValue || 0;
 
       if (diffTime >= 0) {
