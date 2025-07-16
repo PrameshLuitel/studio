@@ -74,7 +74,6 @@ export interface RatioInfo {
 export interface EquityCashRatioStats {
     highest: RatioInfo | null;
     lowest: RatioInfo | null;
-    stdDev: number;
 }
 
 // Processed data interfaces
@@ -102,8 +101,8 @@ export interface ProcessedData {
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
   equityToCashRatioStats: EquityCashRatioStats;
-  equityToCashRatioStatsGain: Omit<EquityCashRatioStats, 'stdDev'>;
-  equityToCashRatioStatsLoss: Omit<EquityCashRatioStats, 'stdDev'>;
+  equityToCashRatioStatsGain: EquityCashRatioStats;
+  equityToCashRatioStatsLoss: EquityCashRatioStats;
 }
 
 // Error types
@@ -218,9 +217,9 @@ export class ExcelDataProcessor {
       epsData,
       epsSheetData,
       clientData,
-      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows, true),
-      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients, false),
-      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients, false),
+      equityToCashRatioStats: this.calculateEquityToCashRatiosForGroup(clientRows),
+      equityToCashRatioStatsGain: this.calculateEquityToCashRatiosForGroup(gainClients),
+      equityToCashRatioStatsLoss: this.calculateEquityToCashRatiosForGroup(lossClients),
     };
   }
   
@@ -637,10 +636,9 @@ export class ExcelDataProcessor {
     };
   }
   
-  private calculateEquityToCashRatiosForGroup(clientRows: any[][], includeStdDev: boolean): EquityCashRatioStats {
-    if (!clientRows || clientRows.length === 0) return { highest: null, lowest: null, stdDev: 0 };
+  private calculateEquityToCashRatiosForGroup(clientRows: any[][]): EquityCashRatioStats {
+    if (!clientRows || clientRows.length === 0) return { highest: null, lowest: null };
   
-    const clientRatios: {name: string, ratio: number}[] = [];
     let highest: RatioInfo | null = null;
     let lowest: RatioInfo | null = null;
   
@@ -659,7 +657,6 @@ export class ExcelDataProcessor {
 
         if (total > 0) {
             const ratio = equity / total;
-            clientRatios.push({name: clientName, ratio: ratio});
 
             if (!highest || ratio > highest.ratio) {
                 highest = { clientName, ratio };
@@ -669,28 +666,10 @@ export class ExcelDataProcessor {
             }
         }
     }
-
-    let stdDev = 0;
-    if (includeStdDev && clientRatios.length > 4) {
-        const sortedRatios = clientRatios.map(r => r.ratio).sort((a, b) => a - b);
-        const trimmedRatios = sortedRatios.slice(2, -2);
-        
-        if (trimmedRatios.length > 0) {
-            const mean = trimmedRatios.reduce((a, b) => a + b, 0) / trimmedRatios.length;
-            const variance = trimmedRatios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / trimmedRatios.length;
-            stdDev = Math.sqrt(variance);
-        }
-    } else if (includeStdDev && clientRatios.length > 1) {
-        const ratios = clientRatios.map(r => r.ratio);
-        const mean = ratios.reduce((a, b) => a + b, 0) / ratios.length;
-        const variance = ratios.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / ratios.length;
-        stdDev = Math.sqrt(variance);
-    }
     
     return {
         highest,
         lowest,
-        stdDev,
     };
   }
   
@@ -735,4 +714,5 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
+
 

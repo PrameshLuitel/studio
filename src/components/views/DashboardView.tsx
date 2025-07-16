@@ -215,12 +215,6 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                         </div>
                                     </div>
                                     )}
-                                    {ratioStats.stdDev > 0 && (
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-muted-foreground flex items-center gap-2"><Info className="h-4 w-4 text-blue-500" />Std. Deviation:</span>
-                                            <span className="font-mono text-primary">{ratioStats.stdDev.toFixed(4)}</span>
-                                        </div>
-                                    )}
                                 </div>
                             </div>
                         )}
