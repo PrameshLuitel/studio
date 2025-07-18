@@ -125,7 +125,23 @@ export class ExcelDataProcessor {
   private workbook: XLSX.WorkBook | null = null;
   private processedData: ProcessedData | null = null;
 
-  constructor() {}
+  constructor(workbook?: XLSX.WorkBook) {
+    if (workbook) {
+      this.workbook = workbook;
+    }
+  }
+
+  public setProcessedData(data: ProcessedData): void {
+      this.processedData = data;
+      // We don't have the raw workbook on the main thread,
+      // but we can reconstruct the essential parts needed for client-side interactions.
+      if (data.clientData) {
+          this.workbook = XLSX.utils.book_new();
+          const portfolioSheet = XLSX.utils.aoa_to_sheet([data.clientData.headers, ...data.clientData.data]);
+          XLSX.utils.book_append_sheet(this.workbook, portfolioSheet, 'Portfolio');
+          // This is a simplification. If other sheets are needed for client-side logic, they must also be reconstructed.
+      }
+  }
 
   /**
    * Load and parse Excel file
@@ -173,7 +189,7 @@ export class ExcelDataProcessor {
   /**
    * Process all worksheets and calculate metrics
    */
-  private processWorkbook(): ProcessedData {
+  public processWorkbook(): ProcessedData {
     if (!this.workbook) {
       throw new ExcelProcessingError('No workbook loaded');
     }
@@ -256,7 +272,7 @@ export class ExcelDataProcessor {
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[16]);
-      const gainLossPercentage = this.parseNumber(row[17]) * 100; // Column R, multiplied by 100
+      const gainLossPercentage = this.parseNumber(row[17]) * 100; // Column R
       return {
         clientId: row[2], // Client Name is in Column C
         totalValue: totalValue, // Column Q (Present value)
@@ -718,13 +734,13 @@ export class ExcelDataProcessor {
     const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
-    const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
+    const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) * 100 : 0;
     const gainLoss = totalValue * (gainLossPercentage / 100);
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 
     const sectorSheet = this.getSheetData('Sector Holding Summary');
-    const sectorHeaders = sectorSheet[1] as string[];
+    const sectorHeaders = sectorSheet.length > 1 ? sectorSheet[1] as string[] : [];
     // Find client row in sector sheet by name in column B (index 1)
     const clientRowSector = sectorSheet.find(row => row[1] === clientName);
     

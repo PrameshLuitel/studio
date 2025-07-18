@@ -1,9 +1,9 @@
 
 'use client';
 
-import React, { useContext, useState, useCallback } from 'react';
+import React, { useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { ExcelDataProcessor, ExcelProcessingError } from '@/lib/data-processor';
+import { ExcelDataProcessor, ExcelProcessingError, ProcessedData } from '@/lib/data-processor';
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,6 +14,51 @@ export const FileUpload = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { toast } = useToast();
+  const workerRef = useRef<Worker>();
+
+  useEffect(() => {
+    workerRef.current = new Worker(new URL('../workers/data.worker.ts', import.meta.url));
+
+    workerRef.current.onmessage = (event: MessageEvent<{ processedData: ProcessedData, error?: string }>) => {
+      const { processedData, error } = event.data;
+      
+      if (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Processing Error',
+          description: error,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const processor = new ExcelDataProcessor();
+        processor.setProcessedData(processedData);
+        setExcelProcessor(processor);
+        if (uploadedFile) {
+            setFileName(uploadedFile.name);
+        }
+      } catch (e) {
+          console.error(e);
+          const description = e instanceof ExcelProcessingError 
+            ? e.message 
+            : 'Failed to process the Excel file. Please check the format and try again.';
+          toast({
+            variant: 'destructive',
+            title: 'Processing Error',
+            description,
+          });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    return () => {
+      workerRef.current?.terminate();
+    };
+  }, [setExcelProcessor, setIsLoading, setFileName, toast, uploadedFile]);
 
   const handleFile = useCallback(async (file: File | null) => {
     if (!file) return;
@@ -34,24 +79,7 @@ export const FileUpload = () => {
   const handleProcessFile = async () => {
     if (!uploadedFile) return;
     setIsLoading(true);
-    try {
-      const processor = new ExcelDataProcessor();
-      await processor.loadExcelFile(uploadedFile);
-      setExcelProcessor(processor);
-      setFileName(uploadedFile.name);
-    } catch (error) {
-      console.error(error);
-      const description = error instanceof ExcelProcessingError 
-        ? error.message 
-        : 'Failed to process the Excel file. Please check the format and try again.';
-      toast({
-        variant: 'destructive',
-        title: 'Processing Error',
-        description,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    workerRef.current?.postMessage({ file: uploadedFile });
   };
 
   const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
