@@ -6,8 +6,8 @@ import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit } from 'lucide-react';
+import { formatCurrency, ClientDetails, SummaryData } from '@/lib/data-processor';
+import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit, Filter, ArrowUpDown } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -175,30 +175,65 @@ const renderClientDetails = (details: ClientDetails, activeIndex: number | null,
         </div>
     );
 };
-  
+
 export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [sortOption, setSortOption] = useState('name-asc');
+  const [filterOption, setFilterOption] = useState('all');
 
-  const { allClientNames, clientDetails } = useMemo(() => {
+  const { allClients, clientDetails } = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) {
-      return { allClientNames: [], clientDetails: null };
+      return { allClients: [], clientDetails: null };
     }
-    const names = excelProcessor.getClientNames();
+    const allSummaryData = excelProcessor.getSummaryData() || [];
     const details = selectedClient ? excelProcessor.getDataForClient(selectedClient) : null;
-    if (selectedClient && !names.includes(selectedClient)) {
-        setSelectedClient(null);
-        return { allClientNames: names, clientDetails: null };
-    }
-    return { allClientNames: names, clientDetails: details };
+    return { allClients: allSummaryData, clientDetails: details };
   }, [excelProcessor, selectedClient]);
 
-  const filteredClientNames = useMemo(() => {
-    if (!searchQuery) return allClientNames;
-    return allClientNames.filter(name => name.toLowerCase().includes(searchQuery.toLowerCase()));
-  }, [allClientNames, searchQuery]);
+  const filteredAndSortedClients = useMemo(() => {
+    let clients = [...allClients];
+
+    // Filter by search query
+    if (searchQuery) {
+        clients = clients.filter(c => c.clientId.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+
+    // Filter by gain/loss status
+    if (filterOption === 'gain') {
+        clients = clients.filter(c => c.gainLossPercentage > 0);
+    } else if (filterOption === 'loss') {
+        clients = clients.filter(c => c.gainLossPercentage < 0);
+    } else if (filterOption === 'neutral') {
+        clients = clients.filter(c => c.gainLossPercentage === 0);
+    }
+
+    // Sort
+    switch (sortOption) {
+        case 'name-asc':
+            clients.sort((a, b) => a.clientId.localeCompare(b.clientId));
+            break;
+        case 'name-desc':
+            clients.sort((a, b) => b.clientId.localeCompare(a.clientId));
+            break;
+        case 'value-desc':
+            clients.sort((a, b) => b.totalValue - a.totalValue);
+            break;
+        case 'value-asc':
+            clients.sort((a, b) => a.totalValue - b.totalValue);
+            break;
+        case 'gain-desc':
+            clients.sort((a, b) => b.gainLossPercentage - a.gainLossPercentage);
+            break;
+        case 'gain-asc':
+            clients.sort((a, b) => a.gainLossPercentage - b.gainLossPercentage);
+            break;
+    }
+
+    return clients.map(c => c.clientId);
+  }, [allClients, searchQuery, filterOption, sortOption]);
 
   const handleClientChange = (clientName: string) => {
     setSelectedClient(clientName);
@@ -208,7 +243,7 @@ export const ClientDataView = () => {
     <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
       <Card className="glassmorphic flex-shrink-0">
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 items-center">
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
@@ -218,20 +253,52 @@ export const ClientDataView = () => {
                         className="pl-10 w-full"
                     />
                 </div>
-                <div className="flex items-center gap-2">
-                    <Briefcase className="text-primary h-5 w-5" />
-                    <Select onValueChange={handleClientChange} value={selectedClient || ''}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select a client..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredClientNames.map(name => (
-                          <SelectItem key={name} value={name}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="flex items-center gap-2 sm:col-span-1">
+                        <Filter className="text-primary h-5 w-5"/>
+                        <Select onValueChange={setFilterOption} value={filterOption}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filter by status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Clients</SelectItem>
+                                <SelectItem value="gain">Gain</SelectItem>
+                                <SelectItem value="loss">Loss</SelectItem>
+                                <SelectItem value="neutral">Neutral</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="flex items-center gap-2 sm:col-span-1">
+                        <ArrowUpDown className="text-primary h-5 w-5"/>
+                        <Select onValueChange={setSortOption} value={sortOption}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Sort by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
+                                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
+                                <SelectItem value="value-desc">Value (High-Low)</SelectItem>
+                                <SelectItem value="value-asc">Value (Low-High)</SelectItem>
+                                <SelectItem value="gain-desc">Gain % (High-Low)</SelectItem>
+                                <SelectItem value="gain-asc">Gain % (Low-High)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="flex items-center gap-2 sm:col-span-1">
+                        <Briefcase className="text-primary h-5 w-5" />
+                        <Select onValueChange={handleClientChange} value={selectedClient || ''}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a client..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {filteredAndSortedClients.map(name => (
+                              <SelectItem key={name} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                    </div>
                 </div>
             </div>
           </CardContent>

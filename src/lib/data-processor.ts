@@ -110,6 +110,7 @@ export interface ProcessedData {
   epsData: EPSData[];
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
+  summaryData: SummaryData[] | null;
   equityToCashRatioStats: EquityCashRatioStats;
   equityToCashRatioStatsGain: EquityCashRatioStats;
   equityToCashRatioStatsLoss: EquityCashRatioStats;
@@ -215,6 +216,7 @@ export class ExcelDataProcessor {
       epsData,
       epsSheetData,
       clientData,
+      summaryData,
       equityToCashRatioStats,
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss,
@@ -257,13 +259,12 @@ export class ExcelDataProcessor {
    */
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
-    // Data starts from the 3rd row (index 2)
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[16]); // Column Q
-      const gainLossPercentage = this.parseNumber(row[17]); // RAW value from Column R
+      const gainLossPercentage = this.parseNumber(row[17]); // Column R
       return {
-        clientId: row[2], // Client Name is in Column C
+        clientId: String(row[2]), // Client Name is in Column C
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage,
         gainLossValue: totalValue * gainLossPercentage, 
@@ -776,6 +777,10 @@ export class ExcelDataProcessor {
   
   getProcessedData(): ProcessedData | null {
     return this.processedData;
+  }
+
+  getSummaryData(): SummaryData[] | null {
+      return this.processedData?.summaryData || null;
   }
 
   getAllSheetsRawData(): string {
