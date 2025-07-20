@@ -240,7 +240,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                         </ResponsiveContainer>
                     </ChartContainer>
                     <div className="w-full space-y-2">
-                        <Collapsible>
+                        <Collapsible defaultOpen>
                             <CollapsibleTrigger asChild>
                                 <Button variant="ghost" className="w-full justify-start h-8 px-2 text-sm font-headline text-foreground/80 hover:bg-muted/80">
                                    <ListTree className="mr-2"/> Items
@@ -266,7 +266,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                             </CollapsibleContent>
                         </Collapsible>
                          {ratioStats && (
-                            <Collapsible>
+                            <Collapsible defaultOpen>
                                 <CollapsibleTrigger asChild>
                                     <Button variant="ghost" className="w-full justify-start h-8 px-2 text-sm font-headline text-foreground/80 hover:bg-muted/80">
                                        <Info className="mr-2"/> Equity/Cash Ratio Analysis
