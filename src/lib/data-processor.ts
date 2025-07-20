@@ -83,13 +83,6 @@ export interface TopMover {
     percentage: number;
 }
 
-export interface LargestPortfolio {
-    clientId: string;
-    portfolioValue: number;
-    gainLossStatus: 'Gain' | 'Loss' | 'Neutral';
-    absoluteGainLoss: number;
-}
-
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -115,7 +108,6 @@ export interface ProcessedData {
   equityToCashRatioStatsLoss: EquityCashRatioStats;
   topGainers: TopMover[];
   topLosers: TopMover[];
-  top10LargestPortfolios: LargestPortfolio[];
 }
 
 // Error types
@@ -199,7 +191,6 @@ export class ExcelDataProcessor {
     } = this.calculateEquityToCashRatioStats();
     
     const { topGainers, topLosers } = this.calculateTopMovers(summaryData);
-    const top10LargestPortfolios = this.calculateTop10LargestPortfolios(summaryData);
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -220,7 +211,6 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
-      top10LargestPortfolios,
     };
   }
   
@@ -700,28 +690,6 @@ export class ExcelDataProcessor {
         .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
 
     return { topGainers, topLosers };
-  }
-  
-  private calculateTop10LargestPortfolios(summaryData: SummaryData[]): LargestPortfolio[] {
-    const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
-    
-    const sortedByValue = [...clients].sort((a, b) => b.totalValue - a.totalValue);
-
-    return sortedByValue.slice(0, 10).map(client => {
-        let gainLossStatus: 'Gain' | 'Loss' | 'Neutral' = 'Neutral';
-        if (client.gainLossPercentage > 0) {
-            gainLossStatus = 'Gain';
-        } else if (client.gainLossPercentage < 0) {
-            gainLossStatus = 'Loss';
-        }
-
-        return {
-            clientId: client.clientId,
-            portfolioValue: client.totalValue,
-            gainLossStatus,
-            absoluteGainLoss: client.gainLossValue,
-        };
-    });
   }
 
 
