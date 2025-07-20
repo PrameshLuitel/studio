@@ -4,11 +4,11 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
-import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover } from '@/lib/data-processor';
+import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover, LargestPortfolio } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
@@ -61,6 +61,37 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
         </CardHeader>
         <CardContent>
            <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[31.5rem]" />
+        </CardContent>
+    </Card>
+);
+
+const LargestPortfoliosCard = ({ portfolios }: { portfolios: LargestPortfolio[] }) => (
+    <Card className="glassmorphic col-span-1">
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+                <Trophy className="text-accent"/> Top 10 Largest Portfolios
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            <ScrollArea className="h-96">
+                <div className="space-y-1 pr-3 -mr-3">
+                    {portfolios.map((p, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
+                            <div className="flex-1 min-w-0 pr-2">
+                                <p className="font-medium text-foreground/90 truncate">{p.clientId}</p>
+                                <p className="text-xs text-muted-foreground">{formatCurrency(p.portfolioValue)}</p>
+                            </div>
+                            <div className={cn(
+                                "font-mono font-semibold flex items-center gap-1 whitespace-nowrap text-right shrink-0",
+                                p.gainLossStatus === 'Gain' ? 'text-green-500' : p.gainLossStatus === 'Loss' ? 'text-red-500' : 'text-muted-foreground'
+                            )}>
+                               <span>{p.gainLossStatus}</span>
+                               <span className="text-xs text-muted-foreground/80">({formatCurrency(p.absoluteGainLoss)})</span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </ScrollArea>
         </CardContent>
     </Card>
 );
@@ -318,8 +349,7 @@ export const DashboardView = () => {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
-      topGainersAbsolute,
-      topLosersAbsolute,
+      top10LargestPortfolios,
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
@@ -343,8 +373,7 @@ export const DashboardView = () => {
         equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss,
         topGainers: data.topGainers || [],
         topLosers: data.topLosers || [],
-        topGainersAbsolute: data.topGainersAbsolute || [],
-        topLosersAbsolute: data.topLosersAbsolute || [],
+        top10LargestPortfolios: data.top10LargestPortfolios || [],
     };
   }, [dashboardData]);
 
@@ -369,7 +398,7 @@ export const DashboardView = () => {
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart 
             title="Asset Allocation" 
             data={assetAllocation} 
@@ -377,6 +406,7 @@ export const DashboardView = () => {
             ratioStats={equityToCashRatioStats}
         />
         <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <LargestPortfoliosCard portfolios={top10LargestPortfolios} />
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -423,10 +453,3 @@ export const DashboardView = () => {
     </div>
   );
 };
-
-    
-
-    
-
-    
-
