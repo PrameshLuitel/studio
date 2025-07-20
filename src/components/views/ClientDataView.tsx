@@ -1,13 +1,13 @@
 
 'use client';
 
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, LabelList } from 'recharts';
+import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { formatCurrency, ClientDetails, SummaryData } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit, Filter, ArrowUpDown } from 'lucide-react';
+import { formatCurrency, ClientDetails } from '@/lib/data-processor';
+import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit, Filter, ArrowUpDown, PieChart as PieChartIcon } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -60,6 +60,42 @@ const formatValue = (item: { header: string; value: any }) => {
     return String(item.value);
 };
 
+const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
+
+const ActiveShape = (props: any) => {
+    const RADIAN = Math.PI / 180;
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload, percent, value } = props;
+    const sin = Math.sin(-RADIAN * midAngle);
+    const cos = Math.cos(-RADIAN * midAngle);
+  
+    return (
+      <g>
+        <text x={cx} y={cy} dy={-15} textAnchor="middle" fill="hsl(var(--foreground))" className="text-lg font-headline">
+            {payload.name}
+        </text>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill="hsl(var(--muted-foreground))" className="font-mono">
+            {formatCurrency(value)}
+        </text>
+         <text x={cx} y={cy} dy={30} textAnchor="middle" fill={fill} className="text-base font-bold font-mono">
+          {`( ${(percent * 100).toFixed(2)}% )`}
+        </text>
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius + 8}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+          style={{
+             filter: `drop-shadow(0px 4px 12px ${fill})`,
+             WebkitFilter: `drop-shadow(0px 4px 12px ${fill})`
+          }}
+        />
+      </g>
+    );
+};
+
 const renderClientDetails = (details: ClientDetails, activeIndex: number | null, setActiveIndex: (index: number | null) => void) => {
     const sectorData = details.sectorAllocations
       .filter(s => s.value > 0)
@@ -90,57 +126,50 @@ const renderClientDetails = (details: ClientDetails, activeIndex: number | null,
         groupedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
     );
-    
-    const CustomBarLabel = (props: any) => {
-        const { x, y, width, value, index } = props;
-        if (index !== activeIndex || width < 80) return null;
 
-        return (
-            <text x={x + width - 10} y={y + 18} fill="hsl(var(--primary-foreground))" textAnchor="end" className="text-sm font-bold transition-opacity duration-300">
-                {formatCurrency(value)}
-            </text>
-        );
-    };
+    const handlePieEnter = useCallback((_: any, index: number) => {
+        setActiveIndex(index);
+    }, [setActiveIndex]);
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 mt-6 p-4">
             <Card className="glassmorphic lg:col-span-3">
                 <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
+                    <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={{}} className="h-96 w-full">
-                        <ResponsiveContainer>
-                            <BarChart 
-                                layout="vertical" 
-                                data={sectorData} 
-                                margin={{ left: 10, right: 20 }}
-                                onMouseMove={(state) => {
-                                    if (state.isTooltipActive) {
-                                        setActiveIndex(state.activeTooltipIndex ?? null);
-                                    } else {
-                                        setActiveIndex(null);
-                                    }
-                                }}
-                                onMouseLeave={() => setActiveIndex(null)}
-                            >
-                                <XAxis type="number" hide />
-                                <YAxis 
-                                    dataKey="name" 
-                                    type="category" 
-                                    width={120}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    className="text-xs truncate"
-                                    />
+                         <ResponsiveContainer>
+                            <PieChart>
+                                <Pie 
+                                    data={sectorData} 
+                                    dataKey="value" 
+                                    nameKey="name" 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    innerRadius={90} 
+                                    outerRadius={140} 
+                                    labelLine={false} 
+                                    activeIndex={activeIndex !== null ? activeIndex : undefined}
+                                    activeShape={<ActiveShape />}
+                                    onMouseEnter={handlePieEnter}
+                                    onMouseLeave={() => setActiveIndex(null)}
+                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                                        if (index === activeIndex) return null;
+                                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                                        return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold pointer-events-none">{`${(percent * 100).toFixed(0)}%`}</text> : null;
+                                    }}>
+                                    {sectorData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
                                 <Tooltip 
                                     cursor={{ fill: 'hsl(var(--primary) / 0.5)' }}
                                     content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
-                                    />
-                                <Bar dataKey="value" name="Allocation" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]}>
-                                  <LabelList dataKey="value" content={<CustomBarLabel />} />
-                                </Bar>
-                            </BarChart>
+                                />
+                            </PieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
                 </CardContent>
@@ -309,10 +338,10 @@ export const ClientDataView = () => {
                                                     "cursor-pointer",
                                                     selectedClient === client.clientId && "bg-primary/10"
                                                 )}
-                                                onClick={() => handleClientRowClick(client.clientId)}
                                             >
                                                 <TableCell 
                                                     className="font-medium hover:text-primary hover:underline"
+                                                    onClick={() => handleClientRowClick(client.clientId)}
                                                 >
                                                     {client.clientId}
                                                 </TableCell>
