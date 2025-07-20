@@ -359,7 +359,7 @@ export const ClientDataView = () => {
                                     <SortableHeader tkey="initialInvestment" label="Initial Investment" />
                                     <SortableHeader tkey="totalValue" label="Portfolio Value" />
                                     <SortableHeader tkey="gainLossValue" label="Gain/Loss" />
-                                    <SortableHeader tkey="portfolioGainLoss" label="Portfolio Gain/loss" />
+                                    <SortableHeader tkey="portfolioGainLoss" label="Portfolio Gain/loss %" />
                                     <SortableHeader tkey="gainLossPercentage" label="Overall Holding Growth" />
                                     <SortableHeader tkey="expiryDate" label="Expiry Date" />
                                 </TableRow>
@@ -398,7 +398,7 @@ export const ClientDataView = () => {
                                                     "text-right font-mono",
                                                     (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
-                                                    {typeof client.portfolioGainLoss === 'number' ? `${client.portfolioGainLoss > 0 ? '+' : ''}${formatCurrency(client.portfolioGainLoss)}` : 'N/A'}
+                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss * 100).toFixed(2)}%` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",

@@ -272,7 +272,7 @@ export class ExcelDataProcessor {
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue * gainLossPercentage,
-        portfolioGainLoss,
+        portfolioGainLoss: portfolioGainLoss / 100, // Storing as decimal
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
@@ -358,7 +358,7 @@ export class ExcelDataProcessor {
   } {
     return summaryData.reduce((acc, client) => {
       if (String(client.clientId).includes('Grand Total')) return acc;
-      const gainLoss = client.gainLossPercentage || 0;
+      const gainLoss = client.gainLossValue || 0;
       if (gainLoss > 0) acc.gain++;
       else if (gainLoss < 0) acc.loss++;
       else acc.neutral++;
