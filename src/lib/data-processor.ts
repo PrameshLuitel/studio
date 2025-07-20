@@ -259,9 +259,10 @@ export class ExcelDataProcessor {
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
     const headers = jsonData[1] as string[];
-    const clientNameIndex = headers.findIndex(h => h === 'Client Name');
-    const totalValueIndex = headers.findIndex(h => h === 'Present value');
-    const gainLossPercentageIndex = headers.findIndex(h => h === 'Unrealised gain / (loss) %');
+    
+    const clientNameIndex = 2; // Column C
+    const totalValueIndex = 16; // Column Q
+    const gainLossPercentageIndex = 17; // Column R
     const expiryDateIndex = headers.findIndex(h => h === 'Expiry');
 
 
