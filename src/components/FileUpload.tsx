@@ -19,23 +19,23 @@ export const FileUpload = () => {
   useEffect(() => {
     workerRef.current = new Worker(new URL('../workers/data.worker.ts', import.meta.url));
 
-    workerRef.current.onmessage = (event: MessageEvent<{ processedData: ProcessedData, error?: string }>) => {
+    workerRef.current.onmessage = (event: MessageEvent<{ processedData: ProcessedData | null, error?: string }>) => {
       const { processedData, error } = event.data;
       
-      if (error) {
+      setIsLoading(false);
+
+      if (error || !processedData) {
         console.error(error);
         toast({
           variant: 'destructive',
           title: 'Processing Error',
-          description: error,
+          description: error || 'An unknown error occurred during processing.',
         });
-        setIsLoading(false);
         return;
       }
 
       try {
-        const processor = new ExcelDataProcessor();
-        processor.setProcessedData(processedData);
+        const processor = ExcelDataProcessor.fromProcessedData(processedData);
         setExcelProcessor(processor);
         if (uploadedFile) {
             setFileName(uploadedFile.name);
@@ -50,8 +50,6 @@ export const FileUpload = () => {
             title: 'Processing Error',
             description,
           });
-      } finally {
-        setIsLoading(false);
       }
     };
 

@@ -128,19 +128,31 @@ export class ExcelDataProcessor {
   constructor(workbook?: XLSX.WorkBook) {
     if (workbook) {
       this.workbook = workbook;
+      // When creating from a workbook, we also create the necessary data for client-side lookups
+      const clientData = this.processClientDataSheet();
+      if (this.workbook && clientData) {
+          const portfolioSheet = XLSX.utils.aoa_to_sheet([clientData.headers, ...clientData.data]);
+          if (!this.workbook.Sheets['Portfolio']) {
+            XLSX.utils.book_append_sheet(this.workbook, portfolioSheet, 'Portfolio');
+          }
+      }
     }
   }
 
-  public setProcessedData(data: ProcessedData): void {
-      this.processedData = data;
-      // We don't have the raw workbook on the main thread,
-      // but we can reconstruct the essential parts needed for client-side interactions.
+  public static fromProcessedData(data: ProcessedData): ExcelDataProcessor {
+      const processor = new ExcelDataProcessor();
+      processor.processedData = data;
+      // Reconstruct a minimal workbook for client-side interactions like `getDataForClient`
       if (data.clientData) {
-          this.workbook = XLSX.utils.book_new();
+          processor.workbook = XLSX.utils.book_new();
           const portfolioSheet = XLSX.utils.aoa_to_sheet([data.clientData.headers, ...data.clientData.data]);
-          XLSX.utils.book_append_sheet(this.workbook, portfolioSheet, 'Portfolio');
-          // This is a simplification. If other sheets are needed for client-side logic, they must also be reconstructed.
+          XLSX.utils.book_append_sheet(processor.workbook, portfolioSheet, 'Portfolio');
+          
+          // Reconstruct sector holding summary for client details view
+          const sectorSheet = XLSX.utils.aoa_to_sheet([]); // Placeholder, will be populated
+          XLSX.utils.book_append_sheet(processor.workbook, sectorSheet, 'Sector Holding Summary');
       }
+      return processor;
   }
 
   /**
