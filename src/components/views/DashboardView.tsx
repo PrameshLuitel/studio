@@ -65,30 +65,6 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
     </Card>
 );
 
-const TopMoversAbsoluteCard = ({ gainers, losers }: { gainers: TopMover[], losers: TopMover[] }) => (
-    <Card className="glassmorphic h-full">
-        <Tabs defaultValue="gainers">
-            <CardHeader>
-                 <CardTitle className="font-headline flex items-center justify-between">
-                    <span className="flex items-center gap-2"><ShieldAlert className="text-accent" />Top Movers (Absolute)</span>
-                    <TabsList className="grid w-auto grid-cols-2 h-8 text-xs">
-                        <TabsTrigger value="gainers">Gainers</TabsTrigger>
-                        <TabsTrigger value="losers">Losers</TabsTrigger>
-                    </TabsList>
-                 </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <TabsContent value="gainers">
-                    <MoverList movers={gainers} isGainer={true} scrollHeight="h-[31.5rem]" />
-                </TabsContent>
-                <TabsContent value="losers">
-                    <MoverList movers={losers} isGainer={false} scrollHeight="h-[31.5rem]" />
-                </TabsContent>
-            </CardContent>
-        </Tabs>
-    </Card>
-);
-
 const LoadingSkeleton = () => (
     <div className="grid gap-6">
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
@@ -393,7 +369,7 @@ export const DashboardView = () => {
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <AllocationPieChart 
             title="Asset Allocation" 
             data={assetAllocation} 
@@ -401,7 +377,6 @@ export const DashboardView = () => {
             ratioStats={equityToCashRatioStats}
         />
         <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
-        <TopMoversAbsoluteCard gainers={topGainersAbsolute} losers={topLosersAbsolute} />
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -454,3 +429,4 @@ export const DashboardView = () => {
     
 
     
+
