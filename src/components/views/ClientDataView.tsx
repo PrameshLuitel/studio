@@ -297,14 +297,17 @@ export const ClientDataView = () => {
                             <TableBody>
                                 {filteredAndSortedClients.map((client) => (
                                     <TableRow 
-                                        key={client.clientId} 
-                                        onClick={() => handleClientRowClick(client.clientId)}
+                                        key={client.clientId}
                                         className={cn(
-                                            "cursor-pointer",
-                                            selectedClient === client.clientId ? "bg-primary/10 hover:bg-primary/20" : ""
+                                            selectedClient === client.clientId ? "bg-primary/10" : ""
                                         )}
                                     >
-                                        <TableCell className="font-medium">{client.clientId}</TableCell>
+                                        <TableCell 
+                                            className="font-medium cursor-pointer hover:text-primary hover:underline"
+                                            onClick={() => handleClientRowClick(client.clientId)}
+                                        >
+                                            {client.clientId}
+                                        </TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
                                         <TableCell className={cn(
                                             "text-right font-mono",
@@ -316,7 +319,7 @@ export const ClientDataView = () => {
                                             "text-right font-mono",
                                              client.gainLossPercentage > 0 ? "text-green-500" : client.gainLossPercentage < 0 ? "text-red-500" : "text-muted-foreground"
                                         )}>
-                                            {client.gainLossPercentage.toFixed(2)}%
+                                            {(client.gainLossPercentage * 100).toFixed(2)}%
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -331,7 +334,7 @@ export const ClientDataView = () => {
                             <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed w-full">
                                 <User className="mx-auto h-12 w-12 mb-4 text-primary/50" />
                                 <h3 className="font-headline text-lg text-foreground">Select a Client</h3>
-                                <p className="mt-2 text-sm">Click on a row in the table above to see their detailed portfolio information.</p>
+                                <p className="mt-2 text-sm">Click on a client's name in the table above to see their detailed portfolio information.</p>
                             </div>
                         </div>
                     )}
