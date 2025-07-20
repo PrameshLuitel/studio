@@ -3,11 +3,11 @@
 
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon } from 'lucide-react';
+import { formatCurrency, ClientDetails, SummaryData } from '@/lib/data-processor';
+import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -100,7 +100,7 @@ interface ClientDetailsViewProps {
     details: ClientDetails;
 }
 
-const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ details }) => {
+const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
     const sectorData = useMemo(() => details.sectorAllocations
@@ -229,7 +229,7 @@ export const ClientDataView = () => {
   }, [excelProcessor, selectedClient]);
 
   const filteredAndSortedClients = useMemo(() => {
-    let clients = [...allClients];
+    let clients: SummaryData[] = [...allClients];
 
     if (searchQuery) {
         clients = clients.filter(c => c.clientId.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -261,6 +261,18 @@ export const ClientDataView = () => {
             break;
         case 'gain-asc':
             clients.sort((a, b) => a.gainLossPercentage - b.gainLossPercentage);
+            break;
+        case 'investment-desc':
+            clients.sort((a, b) => (b.initialInvestment || 0) - (a.initialInvestment || 0));
+            break;
+        case 'investment-asc':
+            clients.sort((a, b) => (a.initialInvestment || 0) - (b.initialInvestment || 0));
+            break;
+        case 'expiry-desc':
+            clients.sort((a, b) => (b.expiryDate?.getTime() || 0) - (a.expiryDate?.getTime() || 0));
+            break;
+        case 'expiry-asc':
+            clients.sort((a, b) => (a.expiryDate?.getTime() || 0) - (b.expiryDate?.getTime() || 0));
             break;
     }
 
@@ -308,6 +320,10 @@ export const ClientDataView = () => {
                                 <SelectItem value="value-asc">Value (Low-High)</SelectItem>
                                 <SelectItem value="gain-desc">Gain % (High-Low)</SelectItem>
                                 <SelectItem value="gain-asc">Gain % (Low-High)</SelectItem>
+                                <SelectItem value="investment-desc">Investment (High-Low)</SelectItem>
+                                <SelectItem value="investment-asc">Investment (Low-High)</SelectItem>
+                                <SelectItem value="expiry-desc">Expiry Date (Newest)</SelectItem>
+                                <SelectItem value="expiry-asc">Expiry Date (Oldest)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -323,15 +339,17 @@ export const ClientDataView = () => {
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                                 <TableRow>
                                     <TableHead>Client Name</TableHead>
+                                    <TableHead className="text-right">Initial Investment</TableHead>
                                     <TableHead className="text-right">Portfolio Value</TableHead>
                                     <TableHead className="text-right">Gain/Loss</TableHead>
                                     <TableHead className="text-right">Gain/Loss %</TableHead>
+                                    <TableHead className="text-right">Expiry Date</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredAndSortedClients.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">
+                                        <TableCell colSpan={6} className="h-24 text-center">
                                             No clients found.
                                         </TableCell>
                                     </TableRow>
@@ -350,6 +368,7 @@ export const ClientDataView = () => {
                                                 >
                                                     {client.clientId}
                                                 </TableCell>
+                                                <TableCell className="text-right font-mono">{client.initialInvestment ? formatCurrency(client.initialInvestment) : 'N/A'}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
@@ -363,11 +382,14 @@ export const ClientDataView = () => {
                                                 )}>
                                                     {(client.gainLossPercentage).toFixed(2)}%
                                                 </TableCell>
+                                                <TableCell className="text-right font-mono">
+                                                  {client.expiryDate ? format(client.expiryDate, 'dd MMM yyyy') : 'N/A'}
+                                                </TableCell>
                                             </TableRow>
                                             {selectedClient === client.clientId && clientDetails && (
                                                 <TableRow className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={4} className="p-0">
-                                                       <ClientDetailsView details={clientDetails} />
+                                                    <TableCell colSpan={6} className="p-0">
+                                                       <ClientDetailsComponent details={clientDetails} />
                                                     </TableCell>
                                                 </TableRow>
                                             )}

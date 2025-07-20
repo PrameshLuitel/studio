@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 // Type definitions for each worksheet
 export interface SummaryData {
   clientId: string;
+  initialInvestment?: number;
   totalValue: number;
   gainLossPercentage: number;
   gainLossValue: number;
@@ -265,10 +266,11 @@ export class ExcelDataProcessor {
       const gainLossPercentage = this.parseNumber(row[17]); // Column R
       return {
         clientId: String(row[2]), // Client Name is in Column C
+        initialInvestment: this.parseNumber(row[5]), // Column F
         totalValue: totalValue,
-        gainLossPercentage: gainLossPercentage,
-        gainLossValue: totalValue * gainLossPercentage, 
-        expiryDate: this.parseDate(row[20]), // Column U
+        gainLossPercentage: gainLossPercentage, 
+        gainLossValue: totalValue * gainLossPercentage,
+        expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -376,7 +378,7 @@ export class ExcelDataProcessor {
     if (!clientData) return buckets;
   
     const { headers, data } = clientData;
-    const expiryDateIndex = 20; // Column U
+    const expiryDateIndex = 4; // Column E
     const aumIndex = 16; // Column Q (Present value is AUM)
   
     if (expiryDateIndex === -1 || aumIndex === -1) {
