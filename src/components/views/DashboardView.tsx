@@ -163,11 +163,12 @@ const ActiveShape = (props: any) => {
 };
 
 
-const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: { 
+const AllocationPieChart = ({ title, data, icon: Icon, ratioStats, listHeight = 'h-48' }: { 
     title: string; 
     data: SectorAllocation[]; 
     icon: React.ElementType;
     ratioStats?: EquityCashRatioStats | null;
+    listHeight?: string;
 }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -247,7 +248,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <ScrollArea className="h-48">
+                                <ScrollArea className={listHeight}>
                                     <ul className="space-y-1 p-1">
                                         {topItems.map((item, index) => (
                                             <li 
@@ -404,21 +405,22 @@ export const DashboardView = () => {
             data={assetAllocation} 
             icon={Banknote} 
             ratioStats={equityToCashRatioStats}
+            listHeight="h-24"
         />
-        <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} listHeight="h-48" />
         <LargestPortfoliosCard portfolios={largestPortfolios} />
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
+        <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} listHeight="h-24" />
         <TopMoversList movers={topGainers} title="Top Gainers (%)" icon={ArrowUpCircle} isGainer={true} />
-        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
+        <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} listHeight="h-48" />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
+        <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} listHeight="h-24" />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
-        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
+        <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} listHeight="h-48" />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -453,3 +455,4 @@ export const DashboardView = () => {
     </div>
   );
 };
+
