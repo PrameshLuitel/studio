@@ -268,7 +268,7 @@ export class ExcelDataProcessor {
       const portfolioGainLoss = this.parseNumber(row[17]); // Column R
       return {
         clientId: String(row[2]), // Client Name is in Column C
-        initialInvestment: this.parseNumber(row[5]), // Column F
+        initialInvestment: this.parseNumber(row[22]), // Column W
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue * gainLossPercentage,
