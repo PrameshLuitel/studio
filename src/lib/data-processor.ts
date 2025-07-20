@@ -310,7 +310,7 @@ export class ExcelDataProcessor {
         clientId: row[clientNameIndex],
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage * 100, 
-        gainLossValue: totalValue * gainLossPercentage,
+        gainLossValue: totalValue * (gainLossPercentage / 100),
         expiryDate: expiryDateIndex !== -1 ? this.parseDate(row[expiryDateIndex]) : undefined,
       };
     }).filter(Boolean) as SummaryData[];
@@ -574,6 +574,14 @@ export class ExcelDataProcessor {
       }
 
       const headers = sheetData[1] as string[]; // Headers from Row 2
+      const gainLossHeaderName = "gain/(loss) in portfolio";
+      const gainLossIndex = this.getColumnIndex(headers, gainLossHeaderName);
+
+      if (gainLossIndex === -1) {
+          console.warn(`Column '${gainLossHeaderName}' not found in 'Sector Holding Summary'. Cannot calculate allocations by gain/loss.`);
+          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+      }
+
       const gainAllocation: { [sector: string]: number } = {};
       const lossAllocation: { [sector: string]: number } = {};
 
@@ -591,7 +599,7 @@ export class ExcelDataProcessor {
         const row = sheetData[rowIndex] as any[];
         if (!row || row.length === 0 || !row[1] || String(row[1]).includes('Grand Total')) continue;
 
-        const gainLossValue = this.parseNumber(row[17]); // Column R
+        const gainLossValue = this.parseNumber(row[gainLossIndex]);
 
         let targetAllocation: { [sector: string]: number } | null = null;
         if (gainLossValue > 0) {
@@ -769,7 +777,7 @@ export class ExcelDataProcessor {
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) * 100 : 0;
-    const gainLoss = totalValue * (gainLossPercentage / 10000); // Because we multiplied by 100 earlier
+    const gainLoss = totalValue * (gainLossPercentage / 100);
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 
