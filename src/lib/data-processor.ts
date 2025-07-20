@@ -10,6 +10,7 @@ export interface SummaryData {
   totalValue: number;
   gainLossPercentage: number;
   gainLossValue: number;
+  portfolioGainLoss?: number;
   expiryDate?: Date; // Added for expiry calculation
   [key: string]: any;
 }
@@ -264,12 +265,14 @@ export class ExcelDataProcessor {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[16]); // Column Q
       const gainLossPercentage = this.parseNumber(row[21]); // Column V
+      const portfolioGainLoss = this.parseNumber(row[17]); // Column R
       return {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: this.parseNumber(row[5]), // Column F
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue * gainLossPercentage,
+        portfolioGainLoss,
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
@@ -810,3 +813,5 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
+
+    

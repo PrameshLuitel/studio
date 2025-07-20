@@ -212,7 +212,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 };
 
-type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'gainLossValue' | 'gainLossPercentage' | 'expiryDate';
+type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'gainLossValue' | 'portfolioGainLoss' | 'gainLossPercentage' | 'expiryDate';
 type SortDirection = 'asc' | 'desc';
 
 export const ClientDataView = () => {
@@ -335,8 +335,10 @@ export const ClientDataView = () => {
                                 <SelectItem value="initialInvestment-asc">Investment (Low-High)</SelectItem>
                                 <SelectItem value="totalValue-desc">Value (High-Low)</SelectItem>
                                 <SelectItem value="totalValue-asc">Value (Low-High)</SelectItem>
-                                <SelectItem value="gainLossPercentage-desc">Gain % (High-Low)</SelectItem>
-                                <SelectItem value="gainLossPercentage-asc">Gain % (Low-High)</SelectItem>
+                                <SelectItem value="gainLossPercentage-desc">Growth (High-Low)</SelectItem>
+                                <SelectItem value="gainLossPercentage-asc">Growth (Low-High)</SelectItem>
+                                <SelectItem value="portfolioGainLoss-desc">Portfolio Gain (High-Low)</SelectItem>
+                                <SelectItem value="portfolioGainLoss-asc">Portfolio Gain (Low-High)</SelectItem>
                                 <SelectItem value="expiryDate-desc">Expiry Date (Newest)</SelectItem>
                                 <SelectItem value="expiryDate-asc">Expiry Date (Oldest)</SelectItem>
                             </SelectContent>
@@ -357,14 +359,15 @@ export const ClientDataView = () => {
                                     <SortableHeader tkey="initialInvestment" label="Initial Investment" />
                                     <SortableHeader tkey="totalValue" label="Portfolio Value" />
                                     <SortableHeader tkey="gainLossValue" label="Gain/Loss" />
-                                    <SortableHeader tkey="gainLossPercentage" label="Gain/Loss %" />
+                                    <SortableHeader tkey="portfolioGainLoss" label="Portfolio Gain/loss" />
+                                    <SortableHeader tkey="gainLossPercentage" label="Overall Holding Growth" />
                                     <SortableHeader tkey="expiryDate" label="Expiry Date" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredAndSortedClients.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
+                                        <TableCell colSpan={7} className="h-24 text-center">
                                             No clients found.
                                         </TableCell>
                                     </TableRow>
@@ -393,6 +396,12 @@ export const ClientDataView = () => {
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
+                                                    (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
+                                                )}>
+                                                    {typeof client.portfolioGainLoss === 'number' ? `${client.portfolioGainLoss > 0 ? '+' : ''}${formatCurrency(client.portfolioGainLoss)}` : 'N/A'}
+                                                </TableCell>
+                                                <TableCell className={cn(
+                                                    "text-right font-mono",
                                                     client.gainLossPercentage > 0 ? "text-green-500" : client.gainLossPercentage < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
                                                     {(client.gainLossPercentage * 100).toFixed(2)}%
@@ -403,7 +412,7 @@ export const ClientDataView = () => {
                                             </TableRow>
                                             {selectedClient === client.clientId && clientDetails && (
                                                 <TableRow className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={6} className="p-0">
+                                                    <TableCell colSpan={7} className="p-0">
                                                        <ClientDetailsComponent details={clientDetails} />
                                                     </TableCell>
                                                 </TableRow>
@@ -421,3 +430,6 @@ export const ClientDataView = () => {
   );
 };
 
+
+
+    
