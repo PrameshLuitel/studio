@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails, SummaryData } from '@/lib/data-processor';
-import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet } from 'lucide-react';
+import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet, ChevronsUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -55,7 +55,7 @@ const formatValue = (item: { header: string; value: any }) => {
         return item.value.toLocaleString();
     }
     if (item.value instanceof Date) {
-        return format(item.value, 'dd MMM yyyy');
+        return format(item.value, 'dd/MM/yyyy');
     }
     return String(item.value);
 };
@@ -212,11 +212,15 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 };
 
+type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'gainLossValue' | 'gainLossPercentage' | 'expiryDate';
+type SortDirection = 'asc' | 'desc';
+
 export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortOption, setSortOption] = useState('name-asc');
+  const [sortKey, setSortKey] = useState<SortKey>('clientId');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [filterOption, setFilterOption] = useState('all');
 
   const { allClients, clientDetails } = useMemo(() => {
@@ -243,51 +247,58 @@ export const ClientDataView = () => {
         clients = clients.filter(c => c.gainLossValue === 0);
     }
 
-    switch (sortOption) {
-        case 'name-asc':
-            clients.sort((a, b) => a.clientId.localeCompare(b.clientId));
-            break;
-        case 'name-desc':
-            clients.sort((a, b) => b.clientId.localeCompare(a.clientId));
-            break;
-        case 'value-desc':
-            clients.sort((a, b) => b.totalValue - a.totalValue);
-            break;
-        case 'value-asc':
-            clients.sort((a, b) => a.totalValue - b.totalValue);
-            break;
-        case 'gain-desc':
-            clients.sort((a, b) => b.gainLossPercentage - a.gainLossPercentage);
-            break;
-        case 'gain-asc':
-            clients.sort((a, b) => a.gainLossPercentage - b.gainLossPercentage);
-            break;
-        case 'investment-desc':
-            clients.sort((a, b) => (b.initialInvestment || 0) - (a.initialInvestment || 0));
-            break;
-        case 'investment-asc':
-            clients.sort((a, b) => (a.initialInvestment || 0) - (b.initialInvestment || 0));
-            break;
-        case 'expiry-desc':
-            clients.sort((a, b) => (b.expiryDate?.getTime() || 0) - (a.expiryDate?.getTime() || 0));
-            break;
-        case 'expiry-asc':
-            clients.sort((a, b) => (a.expiryDate?.getTime() || 0) - (b.expiryDate?.getTime() || 0));
-            break;
-    }
+    clients.sort((a, b) => {
+        const aVal = a[sortKey];
+        const bVal = b[sortKey];
+
+        let compare = 0;
+        if (aVal === undefined || aVal === null) compare = -1;
+        else if (bVal === undefined || bVal === null) compare = 1;
+        else if (typeof aVal === 'string' && typeof bVal === 'string') {
+            compare = aVal.localeCompare(bVal);
+        } else if (aVal instanceof Date && bVal instanceof Date) {
+            compare = aVal.getTime() - bVal.getTime();
+        } else {
+            compare = (aVal as number) - (bVal as number);
+        }
+        
+        return sortDirection === 'asc' ? compare : -compare;
+    });
 
     return clients;
-  }, [allClients, searchQuery, filterOption, sortOption]);
+  }, [allClients, searchQuery, filterOption, sortKey, sortDirection]);
 
   const handleClientRowClick = (clientName: string) => {
     setSelectedClient(prev => prev === clientName ? null : clientName);
   };
+  
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+        setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+        setSortKey(key);
+        setSortDirection('asc');
+    }
+  };
+
+  const SortableHeader = ({ tkey, label }: { tkey: SortKey, label: string }) => (
+      <TableHead className="cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort(tkey)}>
+          <div className="flex items-center gap-2">
+            {label}
+            {sortKey === tkey ? (
+                sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+            ) : (
+                <ChevronsUpDown className="h-3 w-3 text-muted-foreground" />
+            )}
+          </div>
+      </TableHead>
+  );
 
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
         <Card className="glassmorphic flex-shrink-0">
             <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="relative">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -297,7 +308,7 @@ export const ClientDataView = () => {
                             className="pl-10 w-full"
                         />
                     </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:col-span-2">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Select onValueChange={setFilterOption} value={filterOption}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filter by status" />
@@ -309,21 +320,25 @@ export const ClientDataView = () => {
                                 <SelectItem value="neutral">Neutral</SelectItem>
                             </SelectContent>
                         </Select>
-                        <Select onValueChange={setSortOption} value={sortOption}>
+                        <Select onValueChange={(v) => {
+                            const [key, dir] = v.split('-') as [SortKey, SortDirection];
+                            setSortKey(key);
+                            setSortDirection(dir);
+                        }} value={`${sortKey}-${sortDirection}`}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Sort by" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                                <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                                <SelectItem value="value-desc">Value (High-Low)</SelectItem>
-                                <SelectItem value="value-asc">Value (Low-High)</SelectItem>
-                                <SelectItem value="gain-desc">Gain % (High-Low)</SelectItem>
-                                <SelectItem value="gain-asc">Gain % (Low-High)</SelectItem>
-                                <SelectItem value="investment-desc">Investment (High-Low)</SelectItem>
-                                <SelectItem value="investment-asc">Investment (Low-High)</SelectItem>
-                                <SelectItem value="expiry-desc">Expiry Date (Newest)</SelectItem>
-                                <SelectItem value="expiry-asc">Expiry Date (Oldest)</SelectItem>
+                                <SelectItem value="clientId-asc">Name (A-Z)</SelectItem>
+                                <SelectItem value="clientId-desc">Name (Z-A)</SelectItem>
+                                <SelectItem value="initialInvestment-desc">Investment (High-Low)</SelectItem>
+                                <SelectItem value="initialInvestment-asc">Investment (Low-High)</SelectItem>
+                                <SelectItem value="totalValue-desc">Value (High-Low)</SelectItem>
+                                <SelectItem value="totalValue-asc">Value (Low-High)</SelectItem>
+                                <SelectItem value="gainLossPercentage-desc">Gain % (High-Low)</SelectItem>
+                                <SelectItem value="gainLossPercentage-asc">Gain % (Low-High)</SelectItem>
+                                <SelectItem value="expiryDate-desc">Expiry Date (Newest)</SelectItem>
+                                <SelectItem value="expiryDate-asc">Expiry Date (Oldest)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -338,12 +353,12 @@ export const ClientDataView = () => {
                         <Table>
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                                 <TableRow>
-                                    <TableHead>Client Name</TableHead>
-                                    <TableHead className="text-right">Initial Investment</TableHead>
-                                    <TableHead className="text-right">Portfolio Value</TableHead>
-                                    <TableHead className="text-right">Gain/Loss</TableHead>
-                                    <TableHead className="text-right">Gain/Loss %</TableHead>
-                                    <TableHead className="text-right">Expiry Date</TableHead>
+                                    <SortableHeader tkey="clientId" label="Client Name" />
+                                    <SortableHeader tkey="initialInvestment" label="Initial Investment" />
+                                    <SortableHeader tkey="totalValue" label="Portfolio Value" />
+                                    <SortableHeader tkey="gainLossValue" label="Gain/Loss" />
+                                    <SortableHeader tkey="gainLossPercentage" label="Gain/Loss %" />
+                                    <SortableHeader tkey="expiryDate" label="Expiry Date" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -383,7 +398,7 @@ export const ClientDataView = () => {
                                                     {(client.gainLossPercentage).toFixed(2)}%
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">
-                                                  {client.expiryDate ? format(client.expiryDate, 'dd MMM yyyy') : 'N/A'}
+                                                  {client.expiryDate ? format(client.expiryDate, 'dd/MM/yyyy') : 'N/A'}
                                                 </TableCell>
                                             </TableRow>
                                             {selectedClient === client.clientId && clientDetails && (
