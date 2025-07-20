@@ -247,7 +247,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                                <ScrollArea className="h-24">
+                                <ScrollArea className="h-48">
                                     <ul className="space-y-1 p-1">
                                         {topItems.map((item, index) => (
                                             <li 
