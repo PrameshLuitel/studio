@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 const StatCard = ({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType, className?: string }) => (
@@ -102,10 +103,10 @@ const renderClientDetails = (details: ClientDetails, activeIndex: number | null,
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 mt-6">
             <Card className="glassmorphic lg:col-span-3">
                 <CardHeader>
-                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations</CardTitle>
+                    <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <ChartContainer config={{}} className="h-96 w-full">
@@ -196,21 +197,18 @@ export const ClientDataView = () => {
   const filteredAndSortedClients = useMemo(() => {
     let clients = [...allClients];
 
-    // Filter by search query
     if (searchQuery) {
         clients = clients.filter(c => c.clientId.toLowerCase().includes(searchQuery.toLowerCase()));
     }
 
-    // Filter by gain/loss status
     if (filterOption === 'gain') {
-        clients = clients.filter(c => c.gainLossPercentage > 0);
+        clients = clients.filter(c => c.gainLossValue > 0);
     } else if (filterOption === 'loss') {
-        clients = clients.filter(c => c.gainLossPercentage < 0);
+        clients = clients.filter(c => c.gainLossValue < 0);
     } else if (filterOption === 'neutral') {
-        clients = clients.filter(c => c.gainLossPercentage === 0);
+        clients = clients.filter(c => c.gainLossValue === 0);
     }
 
-    // Sort
     switch (sortOption) {
         case 'name-asc':
             clients.sort((a, b) => a.clientId.localeCompare(b.clientId));
@@ -232,30 +230,28 @@ export const ClientDataView = () => {
             break;
     }
 
-    return clients.map(c => c.clientId);
+    return clients;
   }, [allClients, searchQuery, filterOption, sortOption]);
 
-  const handleClientChange = (clientName: string) => {
+  const handleClientRowClick = (clientName: string) => {
     setSelectedClient(clientName);
   };
 
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
-      <Card className="glassmorphic flex-shrink-0">
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 items-center">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search for a client..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 w-full"
-                    />
-                </div>
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div className="flex items-center gap-2 sm:col-span-1">
-                        <Filter className="text-primary h-5 w-5"/>
+        <Card className="glassmorphic flex-shrink-0">
+            <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search clients..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 w-full"
+                        />
+                    </div>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:col-span-2">
                         <Select onValueChange={setFilterOption} value={filterOption}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filter by status" />
@@ -267,9 +263,6 @@ export const ClientDataView = () => {
                                 <SelectItem value="neutral">Neutral</SelectItem>
                             </SelectContent>
                         </Select>
-                    </div>
-                     <div className="flex items-center gap-2 sm:col-span-1">
-                        <ArrowUpDown className="text-primary h-5 w-5"/>
                         <Select onValueChange={setSortOption} value={sortOption}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Sort by" />
@@ -284,43 +277,67 @@ export const ClientDataView = () => {
                             </SelectContent>
                         </Select>
                     </div>
-                     <div className="flex items-center gap-2 sm:col-span-1">
-                        <Briefcase className="text-primary h-5 w-5" />
-                        <Select onValueChange={handleClientChange} value={selectedClient || ''}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a client..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {filteredAndSortedClients.map(name => (
-                              <SelectItem key={name} value={name}>
-                                {name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                    </div>
                 </div>
-            </div>
-          </CardContent>
-      </Card>
+            </CardContent>
+        </Card>
       
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="pr-4 pb-4">
-              {selectedClient && clientDetails ? (
-                  renderClientDetails(clientDetails, activeIndex, setActiveIndex)
-              ) : (
-                  <div className="flex items-center justify-center h-full min-h-[60vh]">
-                      <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
-                          <User className="mx-auto h-12 w-12 mb-4 text-primary/50" />
-                          <h3 className="font-headline text-lg text-foreground">Select a Client</h3>
-                          <p className="mt-2 text-sm">Choose a client from the dropdown above to see their detailed portfolio information.</p>
-                      </div>
-                  </div>
-              )}
-          </div>
-        </ScrollArea>
-      </div>
+        <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-full">
+                <div className="pr-4 pb-4">
+                    <Card className="glassmorphic">
+                        <Table>
+                            <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                                <TableRow>
+                                    <TableHead>Client Name</TableHead>
+                                    <TableHead className="text-right">Portfolio Value</TableHead>
+                                    <TableHead className="text-right">Gain/Loss</TableHead>
+                                    <TableHead className="text-right">Gain/Loss %</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredAndSortedClients.map((client) => (
+                                    <TableRow 
+                                        key={client.clientId} 
+                                        onClick={() => handleClientRowClick(client.clientId)}
+                                        className={cn(
+                                            "cursor-pointer",
+                                            selectedClient === client.clientId ? "bg-primary/10 hover:bg-primary/20" : ""
+                                        )}
+                                    >
+                                        <TableCell className="font-medium">{client.clientId}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
+                                        <TableCell className={cn(
+                                            "text-right font-mono",
+                                            client.gainLossValue > 0 ? "text-green-500" : client.gainLossValue < 0 ? "text-red-500" : "text-muted-foreground"
+                                        )}>
+                                            {client.gainLossValue > 0 ? '+' : ''}{formatCurrency(client.gainLossValue)}
+                                        </TableCell>
+                                        <TableCell className={cn(
+                                            "text-right font-mono",
+                                             client.gainLossPercentage > 0 ? "text-green-500" : client.gainLossPercentage < 0 ? "text-red-500" : "text-muted-foreground"
+                                        )}>
+                                            {client.gainLossPercentage.toFixed(2)}%
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </Card>
+
+                    {selectedClient && clientDetails ? (
+                        renderClientDetails(clientDetails, activeIndex, setActiveIndex)
+                    ) : (
+                         <div className="flex items-center justify-center mt-6">
+                            <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed w-full">
+                                <User className="mx-auto h-12 w-12 mb-4 text-primary/50" />
+                                <h3 className="font-headline text-lg text-foreground">Select a Client</h3>
+                                <p className="mt-2 text-sm">Click on a row in the table above to see their detailed portfolio information.</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </ScrollArea>
+        </div>
     </div>
   );
 };
