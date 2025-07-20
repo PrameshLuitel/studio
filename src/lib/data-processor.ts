@@ -115,8 +115,6 @@ export interface ProcessedData {
   equityToCashRatioStatsLoss: EquityCashRatioStats;
   topGainers: TopMover[];
   topLosers: TopMover[];
-  topGainersAbsolute: TopMover[];
-  topLosersAbsolute: TopMover[];
   largestPortfolios: LargestPortfolio[];
 }
 
@@ -201,8 +199,8 @@ export class ExcelDataProcessor {
     } = this.calculateEquityToCashRatioStats();
     
     const { topGainers, topLosers } = this.calculateTopMovers(summaryData);
-    const { topGainersAbsolute, topLosersAbsolute } = this.calculateTopMoversAbsolute(summaryData);
     const largestPortfolios = this.calculateLargestPortfolios(summaryData);
+
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -223,8 +221,6 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
-      topGainersAbsolute,
-      topLosersAbsolute,
       largestPortfolios,
     };
   }
@@ -262,35 +258,31 @@ export class ExcelDataProcessor {
    */
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
-    if (jsonData.length < 3) return [];
-    
     const headers = jsonData[1] as string[];
-    const presentValueIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'present value');
-    const gainLossPercentIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'unrealised gain / (loss) %');
-    const expiryDateIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'expiry');
-    const clientNameIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'client name');
-    
-    if (presentValueIndex === -1 || gainLossPercentIndex === -1 || clientNameIndex === -1) {
-        console.warn('One or more required columns not found in Portfolio sheet for summary processing.');
-        return [];
+    const clientNameIndex = headers.findIndex(h => h === 'Client Name');
+    const totalValueIndex = headers.findIndex(h => h === 'Present value');
+    const gainLossPercentageIndex = headers.findIndex(h => h === 'Unrealised gain / (loss) %');
+    const expiryDateIndex = headers.findIndex(h => h === 'Expiry');
+
+
+    if (clientNameIndex === -1 || totalValueIndex === -1 || gainLossPercentageIndex === -1) {
+        throw new ExcelProcessingError('Required columns (Client Name, Present value, Unrealised gain / (loss) %) not found in Portfolio sheet.');
     }
 
+    // Data starts from the 3rd row (index 2)
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[clientNameIndex]) return null;
-      
-      const totalValue = this.parseNumber(row[presentValueIndex]);
-      const gainLossPercentage = this.parseNumber(row[gainLossPercentIndex]) * 100;
-      
+      const totalValue = this.parseNumber(row[totalValueIndex]);
+      const gainLossPercentage = this.parseNumber(row[gainLossPercentageIndex]);
       return {
         clientId: row[clientNameIndex],
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage,
-        gainLossValue: totalValue * (gainLossPercentage / 100),
+        gainLossValue: totalValue * gainLossPercentage,
         expiryDate: expiryDateIndex !== -1 ? this.parseDate(row[expiryDateIndex]) : undefined,
       };
     }).filter(Boolean) as SummaryData[];
   }
-
 
   /**
    * Process Sector Holding Summary worksheet
@@ -395,8 +387,8 @@ export class ExcelDataProcessor {
     if (!clientData) return buckets;
   
     const { headers, data } = clientData;
-    const expiryDateIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'expiry');
-    const aumIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'present value');
+    const expiryDateIndex = headers.findIndex(h => h === 'Expiry');
+    const aumIndex = headers.findIndex(h => h === 'Present value');
   
     if (expiryDateIndex === -1 || aumIndex === -1) {
       console.warn('Required columns for expiry bucketing not found.');
@@ -540,71 +532,72 @@ export class ExcelDataProcessor {
       .sort((a, b) => b.allocation - a.allocation);
   }
 
-    private calculateSectorAllocationsByGainLoss(): {
-      sectorAllocationGain: SectorAllocation[],
-      sectorAllocationLoss: SectorAllocation[]
-    } {
-        const sheetData = this.getSheetData('Sector Holding Summary');
-        if (sheetData.length < 3) {
-            return { sectorAllocationGain: [], sectorAllocationLoss: [] };
-        }
+  private calculateSectorAllocationsByGainLoss(): {
+    sectorAllocationGain: SectorAllocation[],
+    sectorAllocationLoss: SectorAllocation[]
+  } {
+      const sheetData = this.getSheetData('Sector Holding Summary');
+      if (sheetData.length < 3) {
+          return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+      }
 
-        const headers = sheetData[1] as string[]; // Headers from Row 2
-        const gainLossValueIndex = headers.findIndex(h => h && h.trim().toLowerCase() === 'gain/(loss) in portfolio');
-        const gainAllocation: { [sector: string]: number } = {};
-        const lossAllocation: { [sector: string]: number } = {};
+      const headers = sheetData[1] as string[]; // Headers from Row 2
+      const gainAllocation: { [sector: string]: number } = {};
+      const lossAllocation: { [sector: string]: number } = {};
+      const gainLossHeaderName = "gain/(loss) in portfolio";
+      const gainLossIndex = headers.findIndex(h => h && h.trim().toLowerCase() === gainLossHeaderName);
 
-        if (gainLossValueIndex === -1) {
-            console.warn(`Column 'gain/(loss) in portfolio' not found in 'Sector Holding Summary'.`);
-            return { sectorAllocationGain: [], sectorAllocationLoss: [] };
+
+      // Initialize allocations from headers (C to P, indices 2 to 15)
+      for (let i = 2; i <= 15; i++) {
+        const sector = headers[i];
+        if (sector) {
+          gainAllocation[sector] = 0;
+          lossAllocation[sector] = 0;
         }
+      }
+      
+      // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
+      for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
+        const row = sheetData[rowIndex] as any[];
+        if (!row || row.length === 0 || !row[1] || String(row[1]).includes('Grand Total')) continue;
         
-        // Initialize allocations from headers (C to P, indices 2 to 15)
-        for (let i = 2; i <= 15; i++) {
-          const sector = headers[i];
-          if (sector) {
-            gainAllocation[sector] = 0;
-            lossAllocation[sector] = 0;
-          }
+        if (gainLossIndex === -1) {
+            console.warn("gain/(loss) in portfolio column not found in Sector Holding Summary");
+            continue;
         }
-        
-        // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
-        for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
-          const row = sheetData[rowIndex] as any[];
-          if (!row || row.length === 0 || !row[1] || String(row[1]).includes('Grand Total')) continue;
 
-          const gainLossValue = this.parseNumber(row[gainLossValueIndex]);
+        const gainLossValue = this.parseNumber(row[gainLossIndex]);
 
-          let targetAllocation: { [sector: string]: number } | null = null;
-          if (gainLossValue > 0) {
-              targetAllocation = gainAllocation;
-          } else if (gainLossValue < 0) {
-              targetAllocation = lossAllocation;
-          }
-
-          if (targetAllocation) {
-              for (let colIndex = 2; colIndex <= 15; colIndex++) { // Columns C to P
-                  const sector = headers[colIndex];
-                  if (sector) {
-                      targetAllocation[sector] += this.parseNumber(row[colIndex]);
-                  }
-              }
-          }
+        let targetAllocation: { [sector: string]: number } | null = null;
+        if (gainLossValue > 0) {
+            targetAllocation = gainAllocation;
+        } else if (gainLossValue < 0) {
+            targetAllocation = lossAllocation;
         }
-        
-        const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
-            return Object.entries(allocation)
-                .map(([sector, value]) => ({ sector, allocation: value }))
-                .filter(item => item.allocation > 0)
-                .sort((a, b) => b.allocation - a.allocation);
-        };
 
-        return {
-            sectorAllocationGain: formatAndSort(gainAllocation),
-            sectorAllocationLoss: formatAndSort(lossAllocation)
-        };
-    }
+        if (targetAllocation) {
+            for (let colIndex = 2; colIndex <= 15; colIndex++) { // Columns C to P
+                const sector = headers[colIndex];
+                if (sector) {
+                    targetAllocation[sector] += this.parseNumber(row[colIndex]);
+                }
+            }
+        }
+      }
+      
+      const formatAndSort = (allocation: { [sector: string]: number }): SectorAllocation[] => {
+          return Object.entries(allocation)
+              .map(([sector, value]) => ({ sector, allocation: value }))
+              .filter(item => item.allocation > 0)
+              .sort((a, b) => b.allocation - a.allocation);
+      };
 
+      return {
+          sectorAllocationGain: formatAndSort(gainAllocation),
+          sectorAllocationLoss: formatAndSort(lossAllocation)
+      };
+  }
 
    private calculateEquityToCashRatioStats() {
     const sheetData = this.getSheetData('Portfolio');
@@ -695,29 +688,10 @@ export class ExcelDataProcessor {
 
     return { topGainers, topLosers };
   }
-
-  private calculateTopMoversAbsolute(summaryData: SummaryData[]): { topGainersAbsolute: TopMover[], topLosersAbsolute: TopMover[] } {
-    const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
-
-    const sortedByAbsoluteValue = [...clients].sort((a, b) => b.gainLossValue - a.gainLossValue);
-    
-    const topGainersAbsolute: TopMover[] = sortedByAbsoluteValue
-        .filter(c => c.gainLossValue > 0)
-        .slice(0, 10)
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
-
-    const topLosersAbsolute: TopMover[] = sortedByAbsoluteValue
-        .filter(c => c.gainLossValue < 0)
-        .slice(-10)
-        .reverse()
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
-        
-    return { topGainersAbsolute, topLosersAbsolute };
-  }
-
+  
   private calculateLargestPortfolios(summaryData: SummaryData[]): LargestPortfolio[] {
     const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
-    
+
     return [...clients]
         .sort((a, b) => b.totalValue - a.totalValue)
         .slice(0, 10)
@@ -765,7 +739,7 @@ export class ExcelDataProcessor {
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
-    const gainLoss = totalValue * (gainLossPercentage / 100);
+    const gainLoss = totalValue * gainLossPercentage;
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 

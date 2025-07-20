@@ -43,7 +43,7 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
                     )}>
                        <div className="flex flex-col items-end -space-y-1">
                          <span>{formatCurrency(mover.value)}</span>
-                         <span className="text-xs text-muted-foreground/80">{mover.percentage.toFixed(2)}%</span>
+                         <span className="text-xs text-muted-foreground/80">{(mover.percentage * 100).toFixed(2)}%</span>
                        </div>
                     </div>
                 </div>
@@ -84,7 +84,7 @@ const LargestPortfoliosCard = ({ portfolios }: { portfolios: LargestPortfolio[] 
                                     "text-xs font-mono",
                                     p.gainLossValue >= 0 ? 'text-green-500' : 'text-red-500'
                                 )}>
-                                    {p.gainLossValue >= 0 ? '+' : ''}{formatCurrency(p.gainLossValue)} ({(p.gainLossPercentage).toFixed(2)}%)
+                                    {p.gainLossValue >= 0 ? '+' : ''}{formatCurrency(p.gainLossValue)} ({(p.gainLossPercentage * 100).toFixed(2)}%)
                                 </span>
                             </div>
                         </div>
