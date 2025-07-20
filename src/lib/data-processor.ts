@@ -83,6 +83,13 @@ export interface TopMover {
     percentage: number;
 }
 
+export interface LargestPortfolio {
+    clientId: string;
+    totalValue: number;
+    gainLossValue: number;
+    gainLossPercentage: number;
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -108,8 +115,7 @@ export interface ProcessedData {
   equityToCashRatioStatsLoss: EquityCashRatioStats;
   topGainers: TopMover[];
   topLosers: TopMover[];
-  topGainersAbsolute: TopMover[];
-  topLosersAbsolute: TopMover[];
+  largestPortfolios: LargestPortfolio[];
 }
 
 // Error types
@@ -193,7 +199,7 @@ export class ExcelDataProcessor {
     } = this.calculateEquityToCashRatioStats();
     
     const { topGainers, topLosers } = this.calculateTopMovers(summaryData);
-    const { topGainersAbsolute, topLosersAbsolute } = this.calculateTopMoversAbsolute(summaryData);
+    const largestPortfolios = this.calculateLargestPortfolios(summaryData);
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
@@ -214,8 +220,7 @@ export class ExcelDataProcessor {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
-      topGainersAbsolute,
-      topLosersAbsolute,
+      largestPortfolios,
     };
   }
   
@@ -255,14 +260,14 @@ export class ExcelDataProcessor {
     // Data starts from the 3rd row (index 2)
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
-      const totalValue = this.parseNumber(row[16]);
-      const gainLossPercentage = this.parseNumber(row[17]) * 100; // Column R, multiplied by 100
+      const totalValue = this.parseNumber(row[16]); // Column Q
+      const gainLossPercentage = this.parseNumber(row[17]); // RAW value from Column R
       return {
         clientId: row[2], // Client Name is in Column C
-        totalValue: totalValue, // Column Q (Present value)
-        gainLossPercentage: gainLossPercentage,   // Direct value from Column R
-        gainLossValue: totalValue * (gainLossPercentage / 100), // Correct calculation for absolute value
-        expiryDate: this.parseDate(row[20]), // Column U (New expiry date column)
+        totalValue: totalValue,
+        gainLossPercentage: gainLossPercentage,
+        gainLossValue: totalValue * gainLossPercentage, 
+        expiryDate: this.parseDate(row[20]), // Column U
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -537,12 +542,21 @@ export class ExcelDataProcessor {
         }
       }
       
+      const portfolioSheet = this.getSheetData('Portfolio');
+      const portfolioHeaders = portfolioSheet[1] as string[];
+      const gainLossIndex = portfolioHeaders.findIndex(h => h?.trim().toLowerCase() === "gain/(loss) in portfolio");
+
+
       // Iterate over each client row, starting from the 3rd row (index 2) up to the second to last row
       for (let rowIndex = 2; rowIndex < sheetData.length -1; rowIndex++) {
         const row = sheetData[rowIndex] as any[];
         if (!row || row.length === 0 || !row[1] || String(row[1]).includes('Grand Total')) continue;
 
-        const gainLossValue = this.parseNumber(row[17]); // Column R
+        const clientName = row[1];
+        const portfolioRow = portfolioSheet.find(pRow => pRow[2] === clientName);
+        if (!portfolioRow || gainLossIndex === -1) continue;
+
+        const gainLossValue = this.parseNumber(portfolioRow[gainLossIndex]);
 
         let targetAllocation: { [sector: string]: number } | null = null;
         if (gainLossValue > 0) {
@@ -663,26 +677,19 @@ export class ExcelDataProcessor {
 
     return { topGainers, topLosers };
   }
-
-  private calculateTopMoversAbsolute(summaryData: SummaryData[]): { topGainersAbsolute: TopMover[], topLosersAbsolute: TopMover[] } {
+  
+  private calculateLargestPortfolios(summaryData: SummaryData[]): LargestPortfolio[] {
     const clients = summaryData.filter(c => c.clientId && !c.clientId.includes('Grand Total'));
 
-    const sortedByAbsoluteValue = [...clients].sort((a, b) => b.gainLossValue - a.gainLossValue);
-    
-    const topGainersAbsolute: TopMover[] = sortedByAbsoluteValue
-        .filter(c => c.gainLossValue > 0)
-        .slice(0, 10)
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
+    const sortedByValue = [...clients].sort((a, b) => b.totalValue - a.totalValue);
 
-    const topLosersAbsolute: TopMover[] = sortedByAbsoluteValue
-        .filter(c => c.gainLossValue < 0)
-        .slice(-10)
-        .reverse()
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
-        
-    return { topGainersAbsolute, topLosersAbsolute };
+    return sortedByValue.slice(0, 10).map(c => ({
+        clientId: c.clientId,
+        totalValue: c.totalValue,
+        gainLossValue: c.gainLossValue,
+        gainLossPercentage: c.gainLossPercentage,
+    }));
   }
-
 
    /**
    * Get all client names from Portfolio sheet, column C.
@@ -719,7 +726,7 @@ export class ExcelDataProcessor {
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) : 0;
-    const gainLoss = totalValue * (gainLossPercentage / 100);
+    const gainLoss = totalValue * gainLossPercentage;
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 
