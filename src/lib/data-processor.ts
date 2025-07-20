@@ -263,7 +263,7 @@ export class ExcelDataProcessor {
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[16]); // Column Q
-      const gainLossPercentage = this.parseNumber(row[17]); // Column R
+      const gainLossPercentage = this.parseNumber(row[21]); // Column V
       return {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: this.parseNumber(row[5]), // Column F
