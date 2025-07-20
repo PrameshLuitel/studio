@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails } from '@/lib/data-processor';
-import { BarChartHorizontal, User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, ArrowDown, ArrowUp, Hash, Percent, Calendar as CalendarIcon, FileText, Building, CheckCircle, XCircle, Library, FileDigit, Filter, ArrowUpDown, PieChart as PieChartIcon } from 'lucide-react';
+import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -96,10 +96,16 @@ const ActiveShape = (props: any) => {
     );
 };
 
-const renderClientDetails = (details: ClientDetails, activeIndex: number | null, setActiveIndex: (index: number | null) => void) => {
-    const sectorData = details.sectorAllocations
+interface ClientDetailsViewProps {
+    details: ClientDetails;
+}
+
+const ClientDetailsView: React.FC<ClientDetailsViewProps> = ({ details }) => {
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+    const sectorData = useMemo(() => details.sectorAllocations
       .filter(s => s.value > 0)
-      .map(s => ({ name: s.sector, value: s.value }));
+      .map(s => ({ name: s.sector, value: s.value })), [details.sectorAllocations]);
       
     const groupedHeaders = [
         'Portfolio A/C No.',
@@ -117,22 +123,22 @@ const renderClientDetails = (details: ClientDetails, activeIndex: number | null,
 
     const excludedHeaders = ['Client Name', 'S.N.', ...groupedHeaders];
 
-    const individualCardsData = details.portfolioData.filter(item => 
+    const individualCardsData = useMemo(() => details.portfolioData.filter(item => 
         !excludedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
-    );
+    ), [details.portfolioData]);
     
-    const groupedCardData = details.portfolioData.filter(item => 
+    const groupedCardData = useMemo(() => details.portfolioData.filter(item => 
         groupedHeaders.includes(item.header) &&
         item.value !== undefined && item.value !== null && item.value !== ''
-    );
+    ), [details.portfolioData]);
 
     const handlePieEnter = useCallback((_: any, index: number) => {
         setActiveIndex(index);
-    }, [setActiveIndex]);
+    }, []);
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 mt-6 p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 p-4">
             <Card className="glassmorphic lg:col-span-3">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
@@ -210,7 +216,6 @@ export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [sortOption, setSortOption] = useState('name-asc');
   const [filterOption, setFilterOption] = useState('all');
 
@@ -362,7 +367,7 @@ export const ClientDataView = () => {
                                             {selectedClient === client.clientId && clientDetails && (
                                                 <TableRow className="bg-background/50 dark:bg-black/20">
                                                     <TableCell colSpan={4} className="p-0">
-                                                        {renderClientDetails(clientDetails, activeIndex, setActiveIndex)}
+                                                       <ClientDetailsView details={clientDetails} />
                                                     </TableCell>
                                                 </TableRow>
                                             )}
