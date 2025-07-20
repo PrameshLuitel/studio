@@ -395,7 +395,7 @@ export const ClientDataView = () => {
                                                     "text-right font-mono",
                                                     client.gainLossPercentage > 0 ? "text-green-500" : client.gainLossPercentage < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
-                                                    {(client.gainLossPercentage).toFixed(2)}%
+                                                    {(client.gainLossPercentage * 100).toFixed(2)}%
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">
                                                   {client.expiryDate ? format(client.expiryDate, 'dd/MM/yyyy') : 'N/A'}
@@ -420,3 +420,4 @@ export const ClientDataView = () => {
     </div>
   );
 };
+
