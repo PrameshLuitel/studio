@@ -31,11 +31,16 @@ export const FileUpload = () => {
           title: 'Processing Error',
           description: error || 'An unknown error occurred during processing.',
         });
+        setUploadedFile(null); // Reset file input
         return;
       }
 
       try {
-        const processor = ExcelDataProcessor.fromProcessedData(processedData);
+        // Since the worker has done all processing, we just need to pass the result.
+        // We can create a new processor instance and set its data.
+        const processor = new ExcelDataProcessor();
+        processor.setProcessedData(processedData);
+
         setExcelProcessor(processor);
         if (uploadedFile) {
             setFileName(uploadedFile.name);

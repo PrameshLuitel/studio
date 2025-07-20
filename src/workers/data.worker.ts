@@ -1,16 +1,15 @@
 
-import * as XLSX from 'xlsx';
+'use client';
+
 import { ExcelDataProcessor, ExcelProcessingError, ProcessedData } from '../lib/data-processor';
 
 self.onmessage = async (event: MessageEvent<{ file: File }>) => {
   const { file } = event.data;
 
   try {
-    const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-    
-    const processor = new ExcelDataProcessor(workbook);
-    const processedData = processor.processWorkbook();
+    const processor = new ExcelDataProcessor();
+    await processor.loadExcelFile(file);
+    const processedData = processor.getProcessedData();
     
     self.postMessage({ processedData });
 
