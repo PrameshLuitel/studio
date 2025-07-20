@@ -275,22 +275,43 @@ export class ExcelDataProcessor {
     return undefined;
   }
   
+  private getColumnIndex(headers: string[], name: string): number {
+    const index = headers.findIndex(h => h && h.trim().toLowerCase() === name.toLowerCase());
+    if (index === -1) {
+        console.warn(`Column '${name}' not found.`);
+    }
+    return index;
+  }
+
   /**
    * Process Portfolio worksheet
    */
   private processSummarySheet(): SummaryData[] {
     const jsonData = this.getSheetData('Portfolio');
-    // Data starts from the 3rd row (index 2)
+    if (jsonData.length < 3) return [];
+
+    const headers = (jsonData[1] as string[]).map(h => h ? String(h).trim() : '');
+    const clientNameIndex = this.getColumnIndex(headers, 'Client Name');
+    const totalValueIndex = this.getColumnIndex(headers, 'Present value');
+    const gainLossPercIndex = this.getColumnIndex(headers, 'Unrealised gain / (loss) %');
+    const expiryDateIndex = this.getColumnIndex(headers, 'Expiry');
+
+    if (clientNameIndex === -1 || totalValueIndex === -1 || gainLossPercIndex === -1) {
+        throw new ExcelProcessingError("One or more required columns are missing in the 'Portfolio' sheet: Client Name, Present value, or Unrealised gain / (loss) %.");
+    }
+    
     return jsonData.slice(2).map((row: any) => {
-      if (!row || row.length === 0 || !row[2]) return null;
-      const totalValue = this.parseNumber(row[16]);
-      const gainLossPercentage = this.parseNumber(row[17]) * 100; // Column R
+      if (!row || row.length === 0 || !row[clientNameIndex]) return null;
+      
+      const totalValue = this.parseNumber(row[totalValueIndex]);
+      const gainLossPercentage = this.parseNumber(row[gainLossPercIndex]);
+
       return {
-        clientId: row[2], // Client Name is in Column C
-        totalValue: totalValue, // Column Q (Present value)
-        gainLossPercentage: gainLossPercentage,   // Direct value from Column R
-        gainLossValue: totalValue * (gainLossPercentage / 100), // Correct calculation for absolute value
-        expiryDate: this.parseDate(row[20]), // Column U (New expiry date column)
+        clientId: row[clientNameIndex],
+        totalValue: totalValue,
+        gainLossPercentage: gainLossPercentage * 100, 
+        gainLossValue: totalValue * gainLossPercentage,
+        expiryDate: expiryDateIndex !== -1 ? this.parseDate(row[expiryDateIndex]) : undefined,
       };
     }).filter(Boolean) as SummaryData[];
   }
@@ -398,8 +419,8 @@ export class ExcelDataProcessor {
     if (!clientData) return buckets;
   
     const { headers, data } = clientData;
-    const expiryDateIndex = 20; // Column U
-    const aumIndex = 16; // Column Q (Present value is AUM)
+    const expiryDateIndex = this.getColumnIndex(headers, 'Expiry');
+    const aumIndex = this.getColumnIndex(headers, 'Present value');
   
     if (expiryDateIndex === -1 || aumIndex === -1) {
       console.warn('Required columns for expiry bucketing not found.');
@@ -735,19 +756,20 @@ export class ExcelDataProcessor {
     if (!this.workbook || !this.processedData?.clientData) return null;
     
     const clientData = this.processedData.clientData;
-    const clientNameIndex = clientData.headers.findIndex(h => h === 'Client Name');
+    const headers = clientData.headers;
+    const clientNameIndex = this.getColumnIndex(headers, 'Client Name');
     if (clientNameIndex === -1) return null;
 
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column Q
-    const gainLossPercentageIndex = clientData.headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
-    const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
+    const totalValueIndex = this.getColumnIndex(headers, 'Present value');
+    const gainLossPercentageIndex = this.getColumnIndex(headers, 'Unrealised gain / (loss) %');
+    const expiryDateIndex = this.getColumnIndex(headers, 'Expiry');
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
     const gainLossPercentage = gainLossPercentageIndex !== -1 ? this.parseNumber(clientRowPortfolio[gainLossPercentageIndex]) * 100 : 0;
-    const gainLoss = totalValue * (gainLossPercentage / 100);
+    const gainLoss = totalValue * (gainLossPercentage / 10000); // Because we multiplied by 100 earlier
     const expiryDate = expiryDateIndex !== -1 ? this.parseDate(clientRowPortfolio[expiryDateIndex]) : undefined;
 
 
