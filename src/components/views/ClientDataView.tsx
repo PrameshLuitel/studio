@@ -295,9 +295,9 @@ export const ClientDataView = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredAndSortedClients.map((client) => (
+                                {filteredAndSortedClients.map((client, index) => (
                                     <TableRow 
-                                        key={client.clientId}
+                                        key={`${client.clientId}-${index}`}
                                         className={cn(
                                             selectedClient === client.clientId ? "bg-primary/10" : ""
                                         )}
