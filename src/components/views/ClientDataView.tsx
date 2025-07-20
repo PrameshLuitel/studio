@@ -103,7 +103,7 @@ const renderClientDetails = (details: ClientDetails, activeIndex: number | null,
     };
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 mt-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 mt-6 p-4">
             <Card className="glassmorphic lg:col-span-3">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><BarChartHorizontal className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
@@ -234,7 +234,7 @@ export const ClientDataView = () => {
   }, [allClients, searchQuery, filterOption, sortOption]);
 
   const handleClientRowClick = (clientName: string) => {
-    setSelectedClient(clientName);
+    setSelectedClient(prev => prev === clientName ? null : clientName);
   };
 
   return (
@@ -286,7 +286,7 @@ export const ClientDataView = () => {
                 <div className="pr-4 pb-4">
                     <Card className="glassmorphic">
                         <Table>
-                            <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                            <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                                 <TableRow>
                                     <TableHead>Client Name</TableHead>
                                     <TableHead className="text-right">Portfolio Value</TableHead>
@@ -295,49 +295,54 @@ export const ClientDataView = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {filteredAndSortedClients.map((client, index) => (
-                                    <TableRow 
-                                        key={`${client.clientId}-${index}`}
-                                        className={cn(
-                                            selectedClient === client.clientId ? "bg-primary/10" : ""
-                                        )}
-                                    >
-                                        <TableCell 
-                                            className="font-medium cursor-pointer hover:text-primary hover:underline"
-                                            onClick={() => handleClientRowClick(client.clientId)}
-                                        >
-                                            {client.clientId}
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
-                                        <TableCell className={cn(
-                                            "text-right font-mono",
-                                            client.gainLossValue > 0 ? "text-green-500" : client.gainLossValue < 0 ? "text-red-500" : "text-muted-foreground"
-                                        )}>
-                                            {client.gainLossValue > 0 ? '+' : ''}{formatCurrency(client.gainLossValue)}
-                                        </TableCell>
-                                        <TableCell className={cn(
-                                            "text-right font-mono",
-                                             client.gainLossPercentage > 0 ? "text-green-500" : client.gainLossPercentage < 0 ? "text-red-500" : "text-muted-foreground"
-                                        )}>
-                                            {(client.gainLossPercentage * 100).toFixed(2)}%
+                                {filteredAndSortedClients.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            No clients found.
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                ) : (
+                                    filteredAndSortedClients.map((client, index) => (
+                                        <React.Fragment key={`${client.clientId}-${index}`}>
+                                            <TableRow 
+                                                className={cn(
+                                                    "cursor-pointer",
+                                                    selectedClient === client.clientId && "bg-primary/10"
+                                                )}
+                                                onClick={() => handleClientRowClick(client.clientId)}
+                                            >
+                                                <TableCell 
+                                                    className="font-medium hover:text-primary hover:underline"
+                                                >
+                                                    {client.clientId}
+                                                </TableCell>
+                                                <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
+                                                <TableCell className={cn(
+                                                    "text-right font-mono",
+                                                    client.gainLossValue > 0 ? "text-green-500" : client.gainLossValue < 0 ? "text-red-500" : "text-muted-foreground"
+                                                )}>
+                                                    {client.gainLossValue > 0 ? '+' : ''}{formatCurrency(client.gainLossValue)}
+                                                </TableCell>
+                                                <TableCell className={cn(
+                                                    "text-right font-mono",
+                                                    client.gainLossPercentage > 0 ? "text-green-500" : client.gainLossPercentage < 0 ? "text-red-500" : "text-muted-foreground"
+                                                )}>
+                                                    {(client.gainLossPercentage).toFixed(2)}%
+                                                </TableCell>
+                                            </TableRow>
+                                            {selectedClient === client.clientId && clientDetails && (
+                                                <TableRow className="bg-background/50 dark:bg-black/20">
+                                                    <TableCell colSpan={4} className="p-0">
+                                                        {renderClientDetails(clientDetails, activeIndex, setActiveIndex)}
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </React.Fragment>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </Card>
-
-                    {selectedClient && clientDetails ? (
-                        renderClientDetails(clientDetails, activeIndex, setActiveIndex)
-                    ) : (
-                         <div className="flex items-center justify-center mt-6">
-                            <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed w-full">
-                                <User className="mx-auto h-12 w-12 mb-4 text-primary/50" />
-                                <h3 className="font-headline text-lg text-foreground">Select a Client</h3>
-                                <p className="mt-2 text-sm">Click on a client's name in the table above to see their detailed portfolio information.</p>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </ScrollArea>
         </div>
