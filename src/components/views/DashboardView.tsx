@@ -4,11 +4,11 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
-import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover } from '@/lib/data-processor';
+import { formatCurrency, SectorAllocation, EquityCashRatioStats, TopMover, LargestPortfolio } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
@@ -31,6 +31,27 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
     </Card>
 );
 
+const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isGainer: boolean, scrollHeight?: string }) => (
+    <ScrollArea className={cn("pr-3 -mr-3", scrollHeight || "h-[34rem]")}>
+        <div className="space-y-1">
+            {movers.map((mover, index) => (
+                 <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
+                    <span className="font-medium text-foreground/90 flex-1 min-w-0 pr-2">{mover.clientId}</span>
+                    <div className={cn(
+                        "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right shrink-0",
+                        isGainer ? 'text-green-500' : 'text-red-500'
+                    )}>
+                       <div className="flex flex-col items-end -space-y-1">
+                         <span>{formatCurrency(mover.value)}</span>
+                         <span className="text-xs text-muted-foreground/80">{mover.percentage.toFixed(2)}%</span>
+                       </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    </ScrollArea>
+);
+
 const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMover[], title: string, icon: React.ElementType, isGainer: boolean }) => (
     <Card className="glassmorphic h-full">
         <CardHeader>
@@ -39,19 +60,32 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
             </CardTitle>
         </CardHeader>
         <CardContent>
+           <MoverList movers={movers} isGainer={isGainer} scrollHeight="h-[31.5rem]" />
+        </CardContent>
+    </Card>
+);
+
+const LargestPortfoliosCard = ({ portfolios }: { portfolios: LargestPortfolio[] }) => (
+    <Card className="glassmorphic h-full">
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+                <Trophy className="text-accent" /> Largest Portfolios
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
             <ScrollArea className="h-[31.5rem] pr-3 -mr-3">
                 <div className="space-y-1">
-                    {movers.map((mover, index) => (
-                         <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
-                            <span className="font-medium text-foreground/90 flex-1 min-w-0 pr-2">{mover.clientId}</span>
-                            <div className={cn(
-                                "font-mono font-semibold flex items-baseline gap-1.5 whitespace-nowrap text-right shrink-0",
-                                isGainer ? 'text-green-500' : 'text-red-500'
-                            )}>
-                               <div className="flex flex-col items-end -space-y-1">
-                                 <span>{formatCurrency(mover.value)}</span>
-                                 <span className="text-xs text-muted-foreground/80">{mover.percentage.toFixed(2)}%</span>
-                               </div>
+                    {portfolios.map((p, index) => (
+                        <div key={index} className="flex justify-between items-center text-sm p-1.5 rounded-md hover:bg-muted/50 transition-colors duration-200">
+                            <span className="font-medium text-foreground/90 flex-1 min-w-0 pr-2">{p.clientId}</span>
+                            <div className="flex flex-col items-end -space-y-1 shrink-0">
+                                <span className="font-mono font-semibold text-primary">{formatCurrency(p.totalValue)}</span>
+                                <span className={cn(
+                                    "text-xs font-mono",
+                                    p.gainLossValue >= 0 ? 'text-green-500' : 'text-red-500'
+                                )}>
+                                    {p.gainLossValue >= 0 ? '+' : ''}{formatCurrency(p.gainLossValue)} ({(p.gainLossPercentage).toFixed(2)}%)
+                                </span>
                             </div>
                         </div>
                     ))}
@@ -60,6 +94,7 @@ const TopMoversList = ({ movers, title, icon: Icon, isGainer }: { movers: TopMov
         </CardContent>
     </Card>
 );
+
 
 const LoadingSkeleton = () => (
     <div className="grid gap-6">
@@ -156,7 +191,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
     
     if (chartData.length === 0) {
         return (
-            <Card className="glassmorphic col-span-1 lg:col-span-2">
+            <Card className="glassmorphic col-span-1">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
                 </CardHeader>
@@ -168,12 +203,12 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
     }
 
     return (
-        <Card className="glassmorphic col-span-1 lg:col-span-2">
+        <Card className="glassmorphic col-span-1">
             <CardHeader>
                 <CardTitle className="font-headline flex items-center gap-2"><Icon className="text-accent"/> {title}</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="flex flex-col gap-4 items-center">
                     <ChartContainer config={{}} className="h-52 w-full">
                         <ResponsiveContainer>
                             <RechartsPieChart>
@@ -208,13 +243,13 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats }: {
                         <Collapsible>
                             <CollapsibleTrigger asChild>
                                 <Button variant="ghost" className="w-full justify-start h-8 px-2 text-sm font-headline text-foreground/80 hover:bg-muted/80">
-                                   <ListTree className="mr-2"/> Top 5 Items
+                                   <ListTree className="mr-2"/> Items
                                 </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <ScrollArea className="h-24">
                                     <ul className="space-y-1 p-1">
-                                        {topItems.slice(0, 5).map((item, index) => (
+                                        {topItems.map((item, index) => (
                                             <li 
                                                 key={item.name} 
                                                 className={cn("flex items-center p-1.5 rounded-md transition-all duration-200 text-base", activeIndex === chartData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
@@ -314,6 +349,7 @@ export const DashboardView = () => {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
+      largestPortfolios
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryChartData = data.yearsToExpiryBuckets 
@@ -337,6 +373,7 @@ export const DashboardView = () => {
         equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss,
         topGainers: data.topGainers || [],
         topLosers: data.topLosers || [],
+        largestPortfolios: data.largestPortfolios || [],
     };
   }, [dashboardData]);
 
@@ -344,7 +381,7 @@ export const DashboardView = () => {
 
   return (
     <div className="grid gap-6 animate-in fade-in-50">
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
         <Card className="glassmorphic">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -359,41 +396,33 @@ export const DashboardView = () => {
             </CardContent>
         </Card>
         <DataCard title="Active Clients" value={(summaryStats.totalClients || 0).toString()} icon={Users} description="Total number of clients" />
-        <Card className="glassmorphic md:col-span-2 lg:col-span-2 xl:col-span-2">
-           <CardHeader>
-             <CardTitle className="text-sm font-medium font-body text-foreground/80">Allocation Overview</CardTitle>
-           </CardHeader>
-           <CardContent>
-            <Tabs defaultValue="asset" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="asset">Asset</TabsTrigger>
-                <TabsTrigger value="sector">Sector</TabsTrigger>
-              </TabsList>
-              <TabsContent value="asset">
-                <AllocationPieChart title="Asset Allocation" data={assetAllocation} icon={Banknote} ratioStats={equityToCashRatioStats}/>
-              </TabsContent>
-              <TabsContent value="sector">
-                <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
-              </TabsContent>
-            </Tabs>
-           </CardContent>
-        </Card>
       </div>
       
-       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <AllocationPieChart 
+            title="Asset Allocation" 
+            data={assetAllocation} 
+            icon={Banknote} 
+            ratioStats={equityToCashRatioStats}
+        />
+        <AllocationPieChart title="Sector-wise Allocation" data={sectorAllocation} icon={PieChartIcon} />
+        <LargestPortfoliosCard portfolios={largestPortfolios} />
+      </div>
+
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Gain)" data={assetAllocationGain} icon={TrendingUp} ratioStats={equityToCashRatioStatsGain} />
         <TopMoversList movers={topGainers} title="Top Gainers (%)" icon={ArrowUpCircle} isGainer={true} />
         <AllocationPieChart title="Sector-wise Allocation (Gain)" data={sectorAllocationGain} icon={ArrowUpCircle} />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AllocationPieChart title="Asset Allocation (Loss)" data={assetAllocationLoss} icon={TrendingDown} ratioStats={equityToCashRatioStatsLoss} />
         <TopMoversList movers={topLosers} title="Top Losers (%)" icon={ArrowDownCircle} isGainer={false} />
         <AllocationPieChart title="Sector-wise Allocation (Loss)" data={sectorAllocationLoss} icon={ArrowDownCircle} />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
-        <Card className="glassmorphic col-span-1 lg:col-span-2">
+        <Card className="glassmorphic col-span-1">
           <CardHeader>
             <CardTitle className="font-headline flex items-center gap-2"><CalendarClock className="text-accent"/> Years to Expiry vs AUM</CardTitle>
           </CardHeader>
