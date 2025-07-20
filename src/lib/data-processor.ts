@@ -128,14 +128,6 @@ export class ExcelDataProcessor {
   constructor(workbook?: XLSX.WorkBook) {
     if (workbook) {
       this.workbook = workbook;
-      // When creating from a workbook, we also create the necessary data for client-side lookups
-      const clientData = this.processClientDataSheet();
-      if (this.workbook && clientData) {
-          const portfolioSheet = XLSX.utils.aoa_to_sheet([clientData.headers, ...clientData.data]);
-          if (!this.workbook.Sheets['Portfolio']) {
-            XLSX.utils.book_append_sheet(this.workbook, portfolioSheet, 'Portfolio');
-          }
-      }
     }
   }
 
@@ -310,7 +302,7 @@ export class ExcelDataProcessor {
         clientId: row[clientNameIndex],
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage * 100, 
-        gainLossValue: totalValue * (gainLossPercentage / 100),
+        gainLossValue: totalValue * gainLossPercentage,
         expiryDate: expiryDateIndex !== -1 ? this.parseDate(row[expiryDateIndex]) : undefined,
       };
     }).filter(Boolean) as SummaryData[];
