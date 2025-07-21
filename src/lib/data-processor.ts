@@ -787,7 +787,7 @@ export class ExcelDataProcessor {
             const marketRate = this.parseNumber(row[10]); // Market Rate is in Column K (index 10)
             const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
             const gain = this.parseNumber(row[13]); // Gain is in Column N (index 13)
-            const equityWeight = totalValue > 0 ? (marketValue / totalValue) * 100 : 0;
+            const equityWeight = totalValue > 0 ? (marketValue / totalValue) : 0;
             
             if (stockName && quantity > 0 && marketValue > 0) {
                 return { 
