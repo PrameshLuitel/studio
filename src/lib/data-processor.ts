@@ -381,19 +381,12 @@ export class ExcelDataProcessor {
     if (!clientData) return buckets;
   
     const { headers, data } = clientData;
-    const expiryDateIndex = headers.findIndex(h => h?.trim().toLowerCase() === 'expiry'); // Column E = 4, but lets find it
-    const aumIndex = headers.findIndex(h => h?.trim().toLowerCase() === 'present value'); // Column X = 23, but lets find it
+    const expiryDateIndex = 20; // Column U
+    const aumIndex = 23; // Column X (Present value is AUM)
   
-    if (expiryDateIndex === -1 || aumIndex === -1) {
-      console.warn('Required columns for expiry bucketing not found. Trying hardcoded indices.');
-      const hardcodedExpiryIndex = 4; // Column E
-      const hardcodedAumIndex = 23; // Column X
-      
-      if(headers.length <= Math.max(hardcodedExpiryIndex, hardcodedAumIndex)){
-         console.error('Cannot use hardcoded indices, headers length is too short.');
-         return buckets;
-      }
-      Object.assign(clientData, {expiryDateIndex: hardcodedExpiryIndex, aumIndex: hardcodedAumIndex});
+    if (headers.length <= Math.max(expiryDateIndex, aumIndex)) {
+        console.error('Cannot calculate expiry buckets, headers length is too short for required columns U and X.');
+        return buckets;
     }
   
     const now = new Date();
