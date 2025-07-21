@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as XLSX from 'xlsx';
@@ -274,7 +275,7 @@ export class ExcelDataProcessor {
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue - initialInvestment,
-        portfolioGainLoss: portfolioGainLoss / 100, // Storing as decimal
+        portfolioGainLoss: portfolioGainLoss, // Storing as is
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
