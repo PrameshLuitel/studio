@@ -60,6 +60,8 @@ export interface StockAllocation {
     quantity: number;
     marketRate: number;
     marketValue: number;
+    gain: number;
+    equityWeight: number; // Placeholder for now
 }
 
 export interface ClientDetails {
@@ -784,9 +786,17 @@ export class ExcelDataProcessor {
             const quantity = this.parseNumber(row[8]); // Quantity is in Column I (index 8)
             const marketRate = this.parseNumber(row[10]); // Market Rate is in Column K (index 10)
             const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
+            const gain = this.parseNumber(row[13]); // Gain is in Column N (index 13)
             
             if (stockName && quantity > 0 && marketValue > 0) {
-                return { stock: stockName, quantity, marketRate, marketValue };
+                return { 
+                    stock: stockName, 
+                    quantity, 
+                    marketRate, 
+                    marketValue,
+                    gain,
+                    equityWeight: 0, // Placeholder
+                };
             }
             return null;
         })

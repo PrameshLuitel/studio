@@ -103,7 +103,7 @@ interface ClientDetailsViewProps {
     details: ClientDetails;
 }
 
-type StockSortKey = 'stock' | 'quantity' | 'marketRate' | 'marketValue';
+type StockSortKey = 'stock' | 'quantity' | 'marketRate' | 'marketValue' | 'gain' | 'equityWeight';
 type StockSortDirection = 'asc' | 'desc';
 
 const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) => {
@@ -267,6 +267,8 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     <StockSortableHeader tkey="quantity" label="Quantity" className="text-right" />
                                     <StockSortableHeader tkey="marketRate" label="Market Rate" className="text-right" />
                                     <StockSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
+                                    <StockSortableHeader tkey="gain" label="Gain" className="text-right" />
+                                    <StockSortableHeader tkey="equityWeight" label="Stock's Equity Weight" className="text-right" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -276,10 +278,12 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                         <TableCell className="text-right font-mono">{stock.quantity.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketValue)}</TableCell>
+                                        <TableCell className={cn("text-right font-mono", stock.gain >= 0 ? 'text-green-500' : 'text-red-500')}>{formatCurrency(stock.gain)}</TableCell>
+                                        <TableCell className="text-right font-mono">{(stock.equityWeight).toFixed(2)}%</TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">No stock data for this client.</TableCell>
+                                        <TableCell colSpan={6} className="h-24 text-center">No stock data for this client.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -505,7 +509,7 @@ export const ClientDataView = () => {
                                                     "text-right font-mono",
                                                     (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
-                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss * 100).toFixed(2)}%` : 'N/A'}
+                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss).toFixed(2)}%` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
