@@ -215,6 +215,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                 <TableRow>
                                     <TableHead>Stock</TableHead>
                                     <TableHead className="text-right">Quantity</TableHead>
+                                    <TableHead className="text-right">Market Rate</TableHead>
                                     <TableHead className="text-right">Market Value</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -223,11 +224,12 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     <TableRow key={stock.stock}>
                                         <TableCell className="font-medium">{stock.stock}</TableCell>
                                         <TableCell className="text-right font-mono">{stock.quantity.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketValue)}</TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center">No stock data for this client.</TableCell>
+                                        <TableCell colSpan={4} className="h-24 text-center">No stock data for this client.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
