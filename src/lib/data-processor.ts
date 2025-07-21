@@ -83,6 +83,7 @@ export interface TopMover {
     clientId: string;
     value: number;
     percentage: number;
+    totalValue: number;
 }
 
 export interface LargestPortfolio {
@@ -675,13 +676,23 @@ export class ExcelDataProcessor {
     const topGainers: TopMover[] = sortedByPercentage
         .filter(c => c.gainLossPercentage > 0)
         .slice(0, 10)
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
+        .map(c => ({ 
+            clientId: c.clientId, 
+            value: c.gainLossValue, 
+            percentage: c.gainLossPercentage,
+            totalValue: c.totalValue
+        }));
 
     const topLosers: TopMover[] = sortedByPercentage
         .filter(c => c.gainLossPercentage < 0)
         .slice(-10)
         .reverse()
-        .map(c => ({ clientId: c.clientId, value: c.gainLossValue, percentage: c.gainLossPercentage }));
+        .map(c => ({ 
+            clientId: c.clientId, 
+            value: c.gainLossValue, 
+            percentage: c.gainLossPercentage,
+            totalValue: c.totalValue
+        }));
 
     return { topGainers, topLosers };
   }

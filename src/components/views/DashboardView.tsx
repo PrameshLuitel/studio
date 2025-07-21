@@ -42,8 +42,11 @@ const MoverList = ({ movers, isGainer, scrollHeight }: { movers: TopMover[], isG
                         isGainer ? 'text-green-500' : 'text-red-500'
                     )}>
                        <div className="flex flex-col items-end -space-y-1">
-                         <span>{formatCurrency(mover.value)}</span>
-                         <span className="text-xs text-muted-foreground/80">{(mover.percentage * 100).toFixed(2)}%</span>
+                         <span className="text-primary text-xs font-normal">{formatCurrency(mover.totalValue)}</span>
+                         <div className="flex items-baseline gap-1">
+                            <span>{formatCurrency(mover.value)}</span>
+                            <span className="text-xs text-muted-foreground/80">({(mover.percentage * 100).toFixed(2)}%)</span>
+                         </div>
                        </div>
                     </div>
                 </div>
