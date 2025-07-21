@@ -7,7 +7,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
-import { formatCurrency, ClientDetails, SummaryData } from '@/lib/data-processor';
+import { formatCurrency, ClientDetails, SummaryData, StockAllocation } from '@/lib/data-processor';
 import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet, ChevronsUpDown, ArrowDown, ArrowUp, BarChart, ListTree, AreaChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
@@ -103,8 +103,13 @@ interface ClientDetailsViewProps {
     details: ClientDetails;
 }
 
+type StockSortKey = 'stock' | 'quantity' | 'marketRate' | 'marketValue';
+type StockSortDirection = 'asc' | 'desc';
+
 const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    const [stockSortKey, setStockSortKey] = useState<StockSortKey>('marketValue');
+    const [stockSortDirection, setStockSortDirection] = useState<StockSortDirection>('desc');
 
     const sectorData = useMemo(() => details.sectorAllocations
       .filter(s => s.value > 0)
@@ -147,6 +152,51 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     const topSectors = useMemo(() => {
         return [...sectorData].sort((a, b) => b.value - a.value);
     }, [sectorData]);
+
+    const sortedStockAllocations = useMemo(() => {
+        const sorted = [...details.stockAllocations].sort((a, b) => {
+            const aVal = a[stockSortKey];
+            const bVal = b[stockSortKey];
+
+            if (typeof aVal === 'string' && typeof bVal === 'string') {
+                return aVal.localeCompare(bVal);
+            }
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                return aVal - bVal;
+            }
+            return 0;
+        });
+
+        if (stockSortDirection === 'desc') {
+            return sorted.reverse();
+        }
+        return sorted;
+    }, [details.stockAllocations, stockSortKey, stockSortDirection]);
+
+    const handleStockSort = (key: StockSortKey) => {
+        if (stockSortKey === key) {
+            setStockSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setStockSortKey(key);
+            setStockSortDirection('desc');
+        }
+    };
+
+    const StockSortableHeader = ({ tkey, label, className }: { tkey: StockSortKey; label: string; className?: string }) => (
+        <TableHead
+            className={cn("cursor-pointer hover:bg-muted/50 transition-colors", className)}
+            onClick={() => handleStockSort(tkey)}
+        >
+            <div className="flex items-center gap-2">
+                {label}
+                {stockSortKey === tkey ? (
+                    stockSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                ) : (
+                    <ChevronsUpDown className="h-3 w-3 text-muted-foreground/50" />
+                )}
+            </div>
+        </TableHead>
+    );
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-50 p-4">
@@ -213,14 +263,14 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                         <Table>
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                                 <TableRow>
-                                    <TableHead>Stock</TableHead>
-                                    <TableHead className="text-right">Quantity</TableHead>
-                                    <TableHead className="text-right">Market Rate</TableHead>
-                                    <TableHead className="text-right">Market Value</TableHead>
+                                    <StockSortableHeader tkey="stock" label="Stock" />
+                                    <StockSortableHeader tkey="quantity" label="Quantity" className="text-right" />
+                                    <StockSortableHeader tkey="marketRate" label="Market Rate" className="text-right" />
+                                    <StockSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {details.stockAllocations.length > 0 ? details.stockAllocations.map(stock => (
+                                {sortedStockAllocations.length > 0 ? sortedStockAllocations.map(stock => (
                                     <TableRow key={stock.stock}>
                                         <TableCell className="font-medium">{stock.stock}</TableCell>
                                         <TableCell className="text-right font-mono">{stock.quantity.toLocaleString()}</TableCell>
