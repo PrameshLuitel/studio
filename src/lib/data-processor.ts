@@ -263,7 +263,7 @@ export class ExcelDataProcessor {
     const jsonData = this.getSheetData('Portfolio');
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
-      const totalValue = this.parseNumber(row[16]); // Column Q
+      const totalValue = this.parseNumber(row[23]); // Column X
       const gainLossPercentage = this.parseNumber(row[21]); // Column V
       const portfolioGainLoss = this.parseNumber(row[17]); // Column R
       return {
@@ -342,7 +342,7 @@ export class ExcelDataProcessor {
   }
 
   /**
-   * Calculate total AUM from column Q
+   * Calculate total AUM from column X
    */
   private calculateTotalAUM(summaryData: SummaryData[]): number {
     return summaryData.reduce((total, client) => total + (client.totalValue || 0), 0);
@@ -382,7 +382,7 @@ export class ExcelDataProcessor {
   
     const { headers, data } = clientData;
     const expiryDateIndex = 4; // Column E
-    const aumIndex = 16; // Column Q (Present value is AUM)
+    const aumIndex = 23; // Column X (Present value is AUM)
   
     if (expiryDateIndex === -1 || aumIndex === -1) {
       console.warn('Required columns for expiry bucketing not found.');
@@ -726,7 +726,7 @@ export class ExcelDataProcessor {
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
     if (!clientRowPortfolio) return null;
 
-    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column Q
+    const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column X
     const gainLossPercentageIndex = clientData.headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
     const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
     

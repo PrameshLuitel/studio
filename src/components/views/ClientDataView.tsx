@@ -429,7 +429,3 @@ export const ClientDataView = () => {
     </div>
   );
 };
-
-
-
-    
