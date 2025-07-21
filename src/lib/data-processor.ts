@@ -13,6 +13,7 @@ export interface SummaryData {
   gainLossValue: number;
   portfolioGainLoss?: number;
   expiryDate?: Date; // Added for expiry calculation
+  periodInvested?: { years: number; months: number };
   [key: string]: any;
 }
 
@@ -281,6 +282,20 @@ export class ExcelDataProcessor {
       const portfolioGainLoss = this.parseNumber(row[17]); // RAW value from Column R
       const gainLossPercentage = initialInvestment > 0 ? (totalValue - initialInvestment) / initialInvestment : 0;
       
+      const pmsOpeningDate = this.parseDate(row[24]); // Column Y for "Period Invested"
+      let periodInvested: { years: number; months: number } | undefined = undefined;
+      if (pmsOpeningDate) {
+        const now = new Date();
+        const diffTime = now.getTime() - pmsOpeningDate.getTime();
+        if (diffTime > 0) {
+            const totalMonths = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 30.44));
+            periodInvested = {
+                years: Math.floor(totalMonths / 12),
+                months: totalMonths % 12,
+            };
+        }
+      }
+
       return {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: initialInvestment,
@@ -289,6 +304,7 @@ export class ExcelDataProcessor {
         gainLossValue: totalValue - initialInvestment,
         portfolioGainLoss: portfolioGainLoss,
         expiryDate: this.parseDate(row[4]), // Column E
+        periodInvested,
       };
     }).filter(Boolean) as SummaryData[];
   }

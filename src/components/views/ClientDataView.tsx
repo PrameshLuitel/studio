@@ -349,7 +349,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 };
 
-type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'gainLossValue' | 'portfolioGainLoss' | 'gainLossPercentage' | 'expiryDate';
+type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'gainLossValue' | 'portfolioGainLoss' | 'gainLossPercentage' | 'expiryDate' | 'periodInvested';
 type SortDirection = 'asc' | 'desc';
 
 export const ClientDataView = () => {
@@ -391,6 +391,11 @@ export const ClientDataView = () => {
         let compare = 0;
         if (aVal === undefined || aVal === null) compare = -1;
         else if (bVal === undefined || bVal === null) compare = 1;
+        else if (sortKey === 'periodInvested') {
+            const aMonths = (a.periodInvested?.years || 0) * 12 + (a.periodInvested?.months || 0);
+            const bMonths = (b.periodInvested?.years || 0) * 12 + (b.periodInvested?.months || 0);
+            compare = aMonths - bMonths;
+        }
         else if (typeof aVal === 'string' && typeof bVal === 'string') {
             compare = aVal.localeCompare(bVal);
         } else if (aVal instanceof Date && bVal instanceof Date) {
@@ -478,6 +483,8 @@ export const ClientDataView = () => {
                                 <SelectItem value="portfolioGainLoss-asc">Portfolio Gain (Low-High)</SelectItem>
                                 <SelectItem value="expiryDate-desc">Expiry Date (Newest)</SelectItem>
                                 <SelectItem value="expiryDate-asc">Expiry Date (Oldest)</SelectItem>
+                                <SelectItem value="periodInvested-desc">Period Invested (Longest)</SelectItem>
+                                <SelectItem value="periodInvested-asc">Period Invested (Shortest)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -499,12 +506,13 @@ export const ClientDataView = () => {
                                     <SortableHeader tkey="portfolioGainLoss" label="Portfolio Gain/loss %" />
                                     <SortableHeader tkey="gainLossPercentage" label="Overall Holding Growth" />
                                     <SortableHeader tkey="expiryDate" label="Expiry Date" />
+                                    <SortableHeader tkey="periodInvested" label="Period Invested" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {filteredAndSortedClients.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="h-24 text-center">
+                                        <TableCell colSpan={8} className="h-24 text-center">
                                             No clients found.
                                         </TableCell>
                                     </TableRow>
@@ -546,10 +554,13 @@ export const ClientDataView = () => {
                                                 <TableCell className="text-right font-mono">
                                                   {client.expiryDate ? format(client.expiryDate, 'dd/MM/yyyy') : 'N/A'}
                                                 </TableCell>
+                                                <TableCell className="text-right font-mono">
+                                                    {client.periodInvested ? `${client.periodInvested.years}y ${client.periodInvested.months}m` : 'N/A'}
+                                                </TableCell>
                                             </TableRow>
                                             {selectedClient === client.clientId && clientDetails && (
                                                 <TableRow className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={7} className="p-0">
+                                                    <TableCell colSpan={8} className="p-0">
                                                        <ClientDetailsComponent details={clientDetails} />
                                                     </TableCell>
                                                 </TableRow>
