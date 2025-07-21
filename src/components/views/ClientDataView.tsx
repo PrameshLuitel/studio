@@ -281,7 +281,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                         <TableCell className={cn("text-right font-mono", stock.gain >= 0 ? 'text-green-500' : 'text-red-500')}>
                                             {stock.gain.toFixed(2)}%
                                         </TableCell>
-                                        <TableCell className="text-right font-mono">{(stock.equityWeight).toFixed(2)}%</TableCell>
+                                        <TableCell className="text-right font-mono">{stock.equityWeight.toFixed(2)}%</TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>
@@ -511,7 +511,7 @@ export const ClientDataView = () => {
                                                     "text-right font-mono",
                                                     (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
-                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss * 100).toFixed(2)}%` : 'N/A'}
+                                                    {typeof client.portfolioGainLoss === 'number' ? `${client.portfolioGainLoss.toFixed(2)}%` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
