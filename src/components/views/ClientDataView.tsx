@@ -278,7 +278,9 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                         <TableCell className="text-right font-mono">{stock.quantity.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketValue)}</TableCell>
-                                        <TableCell className={cn("text-right font-mono", stock.gain >= 0 ? 'text-green-500' : 'text-red-500')}>{formatCurrency(stock.gain)}</TableCell>
+                                        <TableCell className={cn("text-right font-mono", stock.gain >= 0 ? 'text-green-500' : 'text-red-500')}>
+                                            {stock.gain.toFixed(2)}%
+                                        </TableCell>
                                         <TableCell className="text-right font-mono">{(stock.equityWeight).toFixed(2)}%</TableCell>
                                     </TableRow>
                                 )) : (
@@ -330,8 +332,8 @@ export const ClientDataView = () => {
   const { excelProcessor } = useContext(AppContext);
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('clientId');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [sortKey, setSortKey] = useState<SortKey>('totalValue');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [filterOption, setFilterOption] = useState('all');
 
   const { allClients, clientDetails } = useMemo(() => {
@@ -509,7 +511,7 @@ export const ClientDataView = () => {
                                                     "text-right font-mono",
                                                     (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
-                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss).toFixed(2)}%` : 'N/A'}
+                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss * 100).toFixed(2)}%` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
@@ -540,3 +542,4 @@ export const ClientDataView = () => {
     </div>
   );
 };
+
