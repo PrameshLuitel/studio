@@ -64,7 +64,7 @@ export const AskGiclView = () => {
     
     const creatorKeywords = ['creator', 'created', 'built', 'made', 'developer', 'master', 'pramesh', 'luitel'];
     if (creatorKeywords.some(keyword => lowerQuery.includes(keyword))) {
-        return "Master Pramesh Luitel Created Me";
+        return "created by pramesh luitel";
     }
 
     const formatAllocations = (title: string, allocations: SectorAllocation[] | undefined): string => {
