@@ -176,6 +176,7 @@ export class ExcelDataProcessor {
       'Portfolio',
       'Sector Holding Summary',
       'EPS',
+      'Holding Statement',
     ];
 
     const availableSheets = this.workbook.SheetNames;
@@ -273,9 +274,10 @@ export class ExcelDataProcessor {
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[23]); // Column X
-      const gainLossPercentage = this.parseNumber(row[21]); // Column V
-      const portfolioGainLoss = this.parseNumber(row[17]); // RAW value from Column R
       const initialInvestment = this.parseNumber(row[22]); // Column W
+      const portfolioGainLoss = this.parseNumber(row[17]); // RAW value from Column R
+      const gainLossPercentage = initialInvestment > 0 ? (totalValue - initialInvestment) / initialInvestment : 0;
+      
       return {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: initialInvestment,
@@ -748,7 +750,7 @@ export class ExcelDataProcessor {
     if (!clientRowPortfolio) return null;
 
     const totalValueIndex = clientData.headers.findIndex(h => h === 'Present value'); // Column X
-    const gainLossPercentageIndex = clientData.headers.findIndex(h => h === 'Unrealised gain / (loss) %'); // Column R
+    const gainLossPercentageIndex = clientData.headers.findIndex(h => h.trim().toLowerCase() === 'unrealised gain / (loss) %'); // Column R
     const expiryDateIndex = clientData.headers.findIndex(h => h === 'Expiry'); // Column E
     
     const totalValue = totalValueIndex !== -1 ? this.parseNumber(clientRowPortfolio[totalValueIndex]) : 0;
@@ -763,8 +765,6 @@ export class ExcelDataProcessor {
     const clientRowSector = sectorSheet.find(row => row[1] === clientName);
     
     let sectorAllocations: { sector: string; value: number }[] = [];
-    let stockAllocations: StockAllocation[] = [];
-
     if (clientRowSector) {
         for (let i = 2; i <= 15; i++) { // Columns C to P
             const sector = sectorHeaders[i];
@@ -773,19 +773,23 @@ export class ExcelDataProcessor {
                 sectorAllocations.push({ sector, value });
             }
         }
-
-        // Columns Q onwards are for stocks
-        // Q: stock name, R: quantity, S: Market Value
-        for (let i = 16; i < sectorHeaders.length; i += 3) {
-            const stockName = clientRowSector[i];
-            const quantity = this.parseNumber(clientRowSector[i+1]);
-            const marketValue = this.parseNumber(clientRowSector[i+2]);
-            if(stockName && quantity > 0 && marketValue > 0) {
-                stockAllocations.push({ stock: stockName, quantity, marketValue });
-            }
-        }
     }
     
+    const holdingSheet = this.getSheetData('Holding Statement');
+    const stockAllocations: StockAllocation[] = holdingSheet
+        .filter(row => row[4] === clientName) // Client Name is in Column E (index 4)
+        .map(row => {
+            const stockName = String(row[2]); // Stock Name is in Column C (index 2)
+            const quantity = this.parseNumber(row[8]); // Quantity is in Column I (index 8)
+            const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
+            
+            if (stockName && quantity > 0 && marketValue > 0) {
+                return { stock: stockName, quantity, marketValue };
+            }
+            return null;
+        })
+        .filter(Boolean) as StockAllocation[];
+
     const portfolioData = clientData.headers.map((header, index) => ({
         header,
         value: clientRowPortfolio[index],
