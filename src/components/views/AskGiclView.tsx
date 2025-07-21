@@ -89,6 +89,24 @@ export const AskGiclView = () => {
         }
         return `The total Assets Under Management (AUM) is ${formatCurrency(data.totalAUM)}.`;
     }
+    
+    const clientNameMatch = lowerQuery.match(/for (.+)/);
+    if ((lowerQuery.includes('market value') || lowerQuery.includes('cash balance')) && clientNameMatch && clientNameMatch[1]) {
+        const clientName = clientNameMatch[1].trim();
+        const clientDetails = excelProcessor?.getDataForClient(clientName);
+        if (clientDetails) {
+            if(lowerQuery.includes('market value')) {
+                const marketValue = clientDetails.portfolioData.find(d => d.header.toLowerCase().includes('market value'))?.value;
+                return marketValue ? `The Market Value for ${clientDetails.name} is ${formatCurrency(marketValue)}.` : `Market Value not found for ${clientDetails.name}.`;
+            }
+            if(lowerQuery.includes('cash balance')) {
+                 const cashBalance = clientDetails.portfolioData.find(d => d.header.toLowerCase().includes('cash balance'))?.value;
+                return cashBalance ? `The Cash Balance for ${clientDetails.name} is ${formatCurrency(cashBalance)}.` : `Cash Balance not found for ${clientDetails.name}.`;
+            }
+        }
+        return `Could not find client: ${clientName}`;
+    }
+
 
     if (lowerQuery.includes('how many clients') || lowerQuery.startsWith('clients')) {
         return `There are a total of ${data.totalPMSClients} clients.`;
@@ -106,7 +124,6 @@ export const AskGiclView = () => {
     }
     
     if (lowerQuery.includes('sector allocation') || lowerQuery.includes('sector-wise allocation')) {
-        const clientNameMatch = lowerQuery.match(/for (.+)/);
         if (clientNameMatch && clientNameMatch[1]) {
             const clientName = clientNameMatch[1].trim();
             const clientDetails = excelProcessor?.getDataForClient(clientName);
@@ -158,6 +175,8 @@ export const AskGiclView = () => {
 - Show me asset allocation.
 - Show me sector allocation for clients in gain.
 - What is the AUM for [Client Name]?
+- What is the Market Value for [Client Name]?
+- What is the Cash Balance for [Client Name]?
 - Show me sector allocation for [Client Name].
 - What is the years to expiry breakdown?
 - Who has the highest equity to cash ratio?`;
