@@ -746,7 +746,7 @@ export class ExcelDataProcessor {
     if (!this.workbook || !this.processedData?.clientData) return null;
     
     const clientData = this.processedData.clientData;
-    const clientNameIndex = clientData.headers.findIndex(h => h === 'Client Name');
+    const clientNameIndex = clientData.headers.findIndex(h => h === 'Client Name'); // Column C in Portfolio
     if (clientNameIndex === -1) return null;
 
     const clientRowPortfolio = clientData.data.find(row => row[clientNameIndex] === clientName);
@@ -787,7 +787,10 @@ export class ExcelDataProcessor {
             const marketRate = this.parseNumber(row[10]); // Market Rate is in Column K (index 10)
             const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
             const gain = this.parseNumber(row[13]); // Gain is in Column N (index 13)
-            const equityWeight = 0; // Placeholder as requested
+            
+            // a = marketValue (from holding statement, Column M)
+            // b = totalValue (from portfolio sheet, Column X)
+            const equityWeight = totalValue > 0 ? marketValue / totalValue : 0;
             
             if (stockName && quantity > 0 && marketValue > 0) {
                 return { 
