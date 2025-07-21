@@ -111,9 +111,18 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     const [stockSortKey, setStockSortKey] = useState<StockSortKey>('marketValue');
     const [stockSortDirection, setStockSortDirection] = useState<StockSortDirection>('desc');
 
-    const sectorData = useMemo(() => details.sectorAllocations
-      .filter(s => s.value > 0)
-      .map(s => ({ name: s.sector, value: s.value })), [details.sectorAllocations]);
+    const sectorData = useMemo(() => {
+        const validSectors = details.sectorAllocations.filter(s => s.value > 0);
+        const totalAllocation = validSectors.reduce((acc, curr) => acc + curr.value, 0);
+        
+        if (totalAllocation === 0) return [];
+        
+        return validSectors.map(s => ({ 
+            name: s.sector, 
+            value: s.value,
+            percentage: s.value / totalAllocation
+        }));
+    }, [details.sectorAllocations]);
       
     const groupedHeaders = [
         'Portfolio A/C No.',
@@ -221,14 +230,29 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     activeShape={<ActiveShape />}
                                     onMouseEnter={handlePieEnter}
                                     onMouseLeave={() => setActiveIndex(null)}
-                                    >
+                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+                                        if (index === activeIndex || percent < 0.05) return null;
+                                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
+                                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
+                                        return <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold pointer-events-none">{`${(percent * 100).toFixed(0)}%`}</text>;
+                                    }}
+                                >
                                     {sectorData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Pie>
                                 <Tooltip 
                                     cursor={{ fill: 'hsl(var(--primary) / 0.5)' }}
-                                    content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                                    content={<ChartTooltipContent formatter={(value, name, props) => {
+                                        const { percentage } = props.payload || {};
+                                        return (
+                                            <div>
+                                                <div className="font-semibold">{formatCurrency(Number(value))}</div>
+                                                {percentage && <div className="text-sm text-muted-foreground">({(percentage * 100).toFixed(2)}%)</div>}
+                                            </div>
+                                        );
+                                    }} />}
                                 />
                             </PieChart>
                         </ResponsiveContainer>
@@ -245,7 +269,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     >
                                         <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[sectorData.findIndex(s => s.name === item.name) % COLORS.length] }} />
                                         <span className="font-medium text-foreground/90 flex-1 text-sm">{item.name}</span>
-                                        <span className="font-mono text-muted-foreground text-sm">{formatCurrency(item.value)}</span>
+                                        <span className="font-mono text-muted-foreground text-sm">{(item.percentage * 100).toFixed(2)}%</span>
                                     </li>
                                 ))}
                             </ul>
