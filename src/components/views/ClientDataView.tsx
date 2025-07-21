@@ -8,13 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails, SummaryData } from '@/lib/data-processor';
-import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet, ChevronsUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet, ChevronsUpDown, ArrowDown, ArrowUp, BarChart, ListTree, AreaChart } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 
 const StatCard = ({ title, value, icon: Icon, className }: { title: string; value: string; icon: React.ElementType, className?: string }) => (
@@ -138,14 +140,22 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
         setActiveIndex(index);
     }, []);
 
+    const onPieLeave = useCallback(() => {
+        setActiveIndex(null);
+    }, []);
+    
+    const topSectors = useMemo(() => {
+        return [...sectorData].sort((a, b) => b.value - a.value);
+    }, [sectorData]);
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 p-4">
-            <Card className="glassmorphic lg:col-span-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-50 p-4">
+            <Card className="glassmorphic">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <ChartContainer config={{}} className="h-96 w-full">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ChartContainer config={{}} className="h-64 w-full md:col-span-1">
                          <ResponsiveContainer>
                             <PieChart>
                                 <Pie 
@@ -154,20 +164,14 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     nameKey="name" 
                                     cx="50%" 
                                     cy="50%" 
-                                    innerRadius={90} 
-                                    outerRadius={140} 
+                                    innerRadius={60} 
+                                    outerRadius={90} 
                                     labelLine={false} 
                                     activeIndex={activeIndex !== null ? activeIndex : undefined}
                                     activeShape={<ActiveShape />}
                                     onMouseEnter={handlePieEnter}
                                     onMouseLeave={() => setActiveIndex(null)}
-                                    label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
-                                        if (index === activeIndex) return null;
-                                        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-                                        const x = cx + radius * Math.cos(-midAngle * (Math.PI / 180));
-                                        const y = cy + radius * Math.sin(-midAngle * (Math.PI / 180));
-                                        return (percent > 0.05) ? <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" className="text-xs font-bold pointer-events-none">{`${(percent * 100).toFixed(0)}%`}</text> : null;
-                                    }}>
+                                    >
                                     {sectorData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
@@ -179,10 +183,60 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                             </PieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
+                     <div className="w-full space-y-2 md:col-span-1">
+                        <ScrollArea className="h-64">
+                            <ul className="space-y-1 p-1">
+                                {topSectors.map((item, index) => (
+                                    <li 
+                                        key={item.name} 
+                                        className={cn("flex items-center p-1.5 rounded-md transition-all duration-200", activeIndex === sectorData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
+                                        onMouseEnter={() => handlePieEnter(null, sectorData.findIndex(d => d.name === item.name))}
+                                        onMouseLeave={onPieLeave}
+                                    >
+                                        <span className="w-2 h-2 rounded-full mr-2 shrink-0" style={{ backgroundColor: COLORS[sectorData.findIndex(s => s.name === item.name) % COLORS.length] }} />
+                                        <span className="font-medium text-foreground/90 flex-1 text-sm">{item.name}</span>
+                                        <span className="font-mono text-muted-foreground text-sm">{formatCurrency(item.value)}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </ScrollArea>
+                    </div>
                 </CardContent>
             </Card>
-            
-            <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+
+            <Card className="glassmorphic">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-2"><AreaChart className="text-accent"/> Stock Allocation</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <ScrollArea className="h-[17.5rem]">
+                        <Table>
+                            <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                                <TableRow>
+                                    <TableHead>Stock</TableHead>
+                                    <TableHead className="text-right">Quantity</TableHead>
+                                    <TableHead className="text-right">Market Value</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {details.stockAllocations.length > 0 ? details.stockAllocations.map(stock => (
+                                    <TableRow key={stock.stock}>
+                                        <TableCell className="font-medium">{stock.stock}</TableCell>
+                                        <TableCell className="text-right font-mono">{stock.quantity.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-mono">{formatCurrency(stock.marketValue)}</TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={3} className="h-24 text-center">No stock data for this client.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </CardContent>
+            </Card>
+
+            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                  {individualCardsData.map((item, index) => (
                     <StatCard 
                         key={index}
@@ -193,7 +247,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                  ))}
             </div>
             {groupedCardData.length > 0 && (
-                <Card className="glassmorphic lg:col-span-3">
+                <Card className="glassmorphic lg:col-span-2">
                      <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
                     </CardHeader>
@@ -380,10 +434,10 @@ export const ClientDataView = () => {
                                                     "cursor-pointer",
                                                     selectedClient === client.clientId && "bg-primary/10"
                                                 )}
+                                                onClick={() => handleClientRowClick(client.clientId)}
                                             >
                                                 <TableCell 
                                                     className="font-medium hover:text-primary hover:underline"
-                                                    onClick={() => handleClientRowClick(client.clientId)}
                                                 >
                                                     {client.clientId}
                                                 </TableCell>

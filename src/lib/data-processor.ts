@@ -55,6 +55,12 @@ export interface SectorAllocation {
     allocation: number;
 }
 
+export interface StockAllocation {
+    stock: string;
+    quantity: number;
+    marketValue: number;
+}
+
 export interface ClientDetails {
     name: string;
     totalValue: number;
@@ -62,6 +68,7 @@ export interface ClientDetails {
     gainLossPercentage: number;
     expiryDate?: Date;
     sectorAllocations: { sector: string; value: number }[];
+    stockAllocations: StockAllocation[];
     portfolioData: { header: string; value: any }[];
 }
 
@@ -756,12 +763,25 @@ export class ExcelDataProcessor {
     const clientRowSector = sectorSheet.find(row => row[1] === clientName);
     
     let sectorAllocations: { sector: string; value: number }[] = [];
+    let stockAllocations: StockAllocation[] = [];
+
     if (clientRowSector) {
         for (let i = 2; i <= 15; i++) { // Columns C to P
             const sector = sectorHeaders[i];
             const value = this.parseNumber(clientRowSector[i]);
             if (sector && value > 0) {
                 sectorAllocations.push({ sector, value });
+            }
+        }
+
+        // Columns Q onwards are for stocks
+        // Q: stock name, R: quantity, S: Market Value
+        for (let i = 16; i < sectorHeaders.length; i += 3) {
+            const stockName = clientRowSector[i];
+            const quantity = this.parseNumber(clientRowSector[i+1]);
+            const marketValue = this.parseNumber(clientRowSector[i+2]);
+            if(stockName && quantity > 0 && marketValue > 0) {
+                stockAllocations.push({ stock: stockName, quantity, marketValue });
             }
         }
     }
@@ -778,6 +798,7 @@ export class ExcelDataProcessor {
         gainLossPercentage,
         expiryDate,
         sectorAllocations,
+        stockAllocations,
         portfolioData,
     };
   }
