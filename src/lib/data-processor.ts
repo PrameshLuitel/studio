@@ -267,7 +267,7 @@ export class ExcelDataProcessor {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[23]); // Column X
       const gainLossPercentage = this.parseNumber(row[21]); // Column V
-      const portfolioGainLoss = this.parseNumber(row[17]); // Column R
+      const portfolioGainLoss = this.parseNumber(row[17]); // Column R, raw value
       const initialInvestment = this.parseNumber(row[22]); // Column W
       return {
         clientId: String(row[2]), // Client Name is in Column C
@@ -275,7 +275,7 @@ export class ExcelDataProcessor {
         totalValue: totalValue,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue - initialInvestment,
-        portfolioGainLoss: portfolioGainLoss, // Storing as is
+        portfolioGainLoss: portfolioGainLoss,
         expiryDate: this.parseDate(row[4]), // Column E
       };
     }).filter(Boolean) as SummaryData[];
