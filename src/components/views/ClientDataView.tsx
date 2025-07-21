@@ -511,7 +511,7 @@ export const ClientDataView = () => {
                                                     "text-right font-mono",
                                                     (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
-                                                    {typeof client.portfolioGainLoss === 'number' ? `${client.portfolioGainLoss.toFixed(2)}%` : 'N/A'}
+                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss * 100).toFixed(2)}%` : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
