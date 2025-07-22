@@ -14,6 +14,7 @@ import { formatCurrency } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
 import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss';
 type SortDirection = 'asc' | 'desc';
@@ -24,6 +25,7 @@ export const StockDataView = () => {
     const [selectedStock, setSelectedStock] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('totalMarketValue');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+    const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
 
     const stockData = useMemo(() => {
         if (!excelProcessor || !excelProcessor.isDataLoaded()) return [];
@@ -80,6 +82,10 @@ export const StockDataView = () => {
             </div>
         </TableHead>
     );
+    
+    const toggleCollapsible = (stockName: string) => {
+        setOpenCollapsible(prev => prev === stockName ? null : stockName);
+    }
 
     if (!excelProcessor || !excelProcessor.isDataLoaded()) {
         return (
@@ -167,22 +173,63 @@ export const StockDataView = () => {
                             <TableBody>
                                 {filteredAndSortedStocks.length > 0 ? (
                                     filteredAndSortedStocks.map((stock) => (
-                                        <TableRow key={stock.stockName}>
-                                            <TableCell className="font-medium">{stock.stockName}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatCurrency(stock.totalMarketValue)}</TableCell>
-                                            <TableCell className="text-right font-mono">{formatCurrency(stock.totalPurchaseValue)}</TableCell>
-                                            <TableCell className={cn("text-right font-mono", stock.totalGainLoss >= 0 ? 'text-green-500' : 'text-red-500')}>
-                                                <div className="flex flex-col items-end">
-                                                    <span>{stock.totalGainLoss >= 0 ? '+' : ''}{formatCurrency(stock.totalGainLoss)}</span>
-                                                    {stock.totalPurchaseValue !== 0 && (
-                                                        <span className="text-xs text-muted-foreground">
-                                                            ({((stock.totalGainLoss / stock.totalPurchaseValue) * 100).toFixed(2)}%)
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
+                                       <Collapsible asChild key={stock.stockName} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)}>
+                                         <>
+                                            <CollapsibleTrigger asChild>
+                                                <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-primary/10">
+                                                    <TableCell className="font-medium">{stock.stockName}</TableCell>
+                                                    <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
+                                                    <TableCell className="text-right font-mono">{formatCurrency(stock.totalMarketValue)}</TableCell>
+                                                    <TableCell className="text-right font-mono">{formatCurrency(stock.totalPurchaseValue)}</TableCell>
+                                                    <TableCell className={cn("text-right font-mono", stock.totalGainLoss >= 0 ? 'text-green-500' : 'text-red-500')}>
+                                                        <div className="flex flex-col items-end">
+                                                            <span>{stock.totalGainLoss >= 0 ? '+' : ''}{formatCurrency(stock.totalGainLoss)}</span>
+                                                            {stock.totalPurchaseValue !== 0 && (
+                                                                <span className="text-xs text-muted-foreground">
+                                                                    ({((stock.totalGainLoss / stock.totalPurchaseValue) * 100).toFixed(2)}%)
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent asChild>
+                                               <tr className="bg-background/50 dark:bg-black/20">
+                                                    <TableCell colSpan={5} className="p-2">
+                                                        <div className="p-2 bg-muted/50 rounded-md">
+                                                            <h4 className="font-semibold px-2 py-1">Client Holdings for {stock.stockName}</h4>
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow>
+                                                                        <TableHead>Client Name</TableHead>
+                                                                        <TableHead className="text-right">Purchase Value</TableHead>
+                                                                        <TableHead className="text-right">Market Value</TableHead>
+                                                                        <TableHead className="text-right">Gain/Loss (%)</TableHead>
+                                                                        <TableHead className="text-right">EPS</TableHead>
+                                                                        <TableHead className="text-right">P/E Ratio</TableHead>
+                                                                        <TableHead className="text-right">Stock's Weight in Portfolio</TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {stock.clientHoldings.map((holding) => (
+                                                                        <TableRow key={holding.clientName}>
+                                                                            <TableCell>{holding.clientName}</TableCell>
+                                                                            <TableCell className="text-right font-mono">{formatCurrency(holding.purchaseValue)}</TableCell>
+                                                                            <TableCell className="text-right font-mono">{formatCurrency(holding.marketValue)}</TableCell>
+                                                                            <TableCell className={cn("text-right font-mono", holding.gainLossPercentage >= 0 ? 'text-green-500' : 'text-red-500')}>{holding.gainLossPercentage.toFixed(2)}%</TableCell>
+                                                                            <TableCell className="text-right font-mono">{holding.eps.toFixed(2)}</TableCell>
+                                                                            <TableCell className="text-right font-mono">{holding.peRatio.toFixed(2)}</TableCell>
+                                                                            <TableCell className="text-right font-mono">{holding.stockWeightInPortfolio.toFixed(2)}%</TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                </TableBody>
+                                                            </Table>
+                                                        </div>
+                                                    </TableCell>
+                                               </tr>
+                                            </CollapsibleContent>
+                                          </>
+                                       </Collapsible>
                                     ))
                                 ) : (
                                     <TableRow>
