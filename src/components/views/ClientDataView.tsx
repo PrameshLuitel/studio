@@ -159,7 +159,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     }, []);
     
     const topSectors = useMemo(() => {
-        return [...sectorData].sort((a, b) => b.value - a.value);
+        return [...sectorData].sort((a, b) => b.value - a.value).slice(0, 4);
     }, [sectorData]);
 
     const sortedStockAllocations = useMemo(() => {
@@ -273,6 +273,17 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     </li>
                                 ))}
                             </ul>
+                             <div className="p-2 border-t mt-2">
+                                <h4 className="font-semibold text-sm mb-1">Equity to Cash Ratio</h4>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Equity:</span>
+                                    <span className="font-mono font-medium">{details.equityPercentage.toFixed(2)}%</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Cash:</span>
+                                    <span className="font-mono font-medium">{details.cashPercentage.toFixed(2)}%</span>
+                                </div>
+                            </div>
                         </ScrollArea>
                     </div>
                 </CardContent>

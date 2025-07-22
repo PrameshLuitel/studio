@@ -74,6 +74,8 @@ export interface ClientDetails {
     sectorAllocations: { sector: string; value: number }[];
     stockAllocations: StockAllocation[];
     portfolioData: { header: string; value: any }[];
+    equityPercentage: number;
+    cashPercentage: number;
 }
 
 export interface EPSSheetData {
@@ -804,11 +806,9 @@ export class ExcelDataProcessor {
             const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
             const gain = this.parseNumber(row[13]); // Gain is in Column N (index 13)
             
-            // a = marketValue (from holding statement, Column M)
-            // b = totalValue (from portfolio sheet, Column X)
             const equityWeight = totalValue > 0 ? marketValue / totalValue : 0;
             
-            if (stockName && quantity > 0 && marketValue > 0) {
+            if (stockName && quantity > 0) {
                 return { 
                     stock: stockName, 
                     quantity, 
@@ -827,6 +827,18 @@ export class ExcelDataProcessor {
         value: clientRowPortfolio[index],
     })).filter(item => item.value !== undefined && item.value !== null && item.value !== '');
 
+    const colF = this.parseNumber(clientRowPortfolio[5]); // 'Initial'
+    const colG = this.parseNumber(clientRowPortfolio[6]); // 'Market Value'
+    const colH = this.parseNumber(clientRowPortfolio[7]); // 'Cash Balance'
+    const colJ = this.parseNumber(clientRowPortfolio[9]); // 'Payable'
+    const colK = this.parseNumber(clientRowPortfolio[10]); // 'Receivable'
+
+    const equityValue = colG;
+    const cashValue = colH + colK - colJ;
+
+    const equityPercentage = colF > 0 ? (equityValue / colF) * 100 : 0;
+    const cashPercentage = colF > 0 ? (cashValue / colF) * 100 : 0;
+
     return {
         name: clientName,
         totalValue,
@@ -836,6 +848,8 @@ export class ExcelDataProcessor {
         sectorAllocations,
         stockAllocations,
         portfolioData,
+        equityPercentage,
+        cashPercentage,
     };
   }
   
