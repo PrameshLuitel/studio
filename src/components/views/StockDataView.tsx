@@ -8,10 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { BarChart, Search, ChevronsUpDown, ArrowUp, ArrowDown, TrendingUp } from 'lucide-react';
+import { BarChart, Search, ChevronsUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import type { StockSummaryData } from '@/lib/data-processor';
 import { formatCurrency } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
+import { Combobox } from '@/components/ui/combobox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss';
 type SortDirection = 'asc' | 'desc';
@@ -19,6 +21,7 @@ type SortDirection = 'asc' | 'desc';
 export const StockDataView = () => {
     const { excelProcessor } = useContext(AppContext);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedStock, setSelectedStock] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('totalMarketValue');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
 
@@ -28,10 +31,16 @@ export const StockDataView = () => {
         return processed?.stockSummaryData || [];
     }, [excelProcessor]);
 
+    const stockOptions = useMemo(() => {
+        return stockData.map(s => ({ label: s.stockName, value: s.stockName }));
+    }, [stockData]);
+
     const filteredAndSortedStocks = useMemo(() => {
         let stocks: StockSummaryData[] = [...stockData];
 
-        if (searchQuery) {
+        if (selectedStock) {
+            stocks = stocks.filter(s => s.stockName === selectedStock);
+        } else if (searchQuery) {
             stocks = stocks.filter(s => s.stockName.toLowerCase().includes(searchQuery.toLowerCase()));
         }
 
@@ -48,7 +57,7 @@ export const StockDataView = () => {
         });
 
         return stocks;
-    }, [stockData, searchQuery, sortKey, sortDirection]);
+    }, [stockData, searchQuery, selectedStock, sortKey, sortDirection]);
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
@@ -91,14 +100,53 @@ export const StockDataView = () => {
         <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
             <Card className="glassmorphic flex-shrink-0">
                 <CardContent className="p-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                            placeholder="Search stocks..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="pl-10 w-full md:w-1/3"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="relative md:col-span-1">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                                placeholder="Search stocks..."
+                                value={searchQuery}
+                                onChange={(e) => {
+                                    setSearchQuery(e.target.value);
+                                    setSelectedStock(''); // Clear dropdown selection when searching
+                                }}
+                                className="pl-10 w-full"
+                            />
+                        </div>
+                        <div className="md:col-span-1">
+                             <Combobox
+                                options={stockOptions}
+                                value={selectedStock}
+                                onChange={(value) => {
+                                    setSelectedStock(value);
+                                    setSearchQuery(''); // Clear search when using dropdown
+                                }}
+                                placeholder="Select a stock..."
+                                searchPlaceholder='Search stocks...'
+                                emptyPlaceholder='No stocks found.'
+                            />
+                        </div>
+                        <div className="md:col-span-1">
+                            <Select onValueChange={(v) => {
+                                const [key, dir] = v.split('-') as [SortKey, SortDirection];
+                                setSortKey(key);
+                                setSortDirection(dir);
+                            }} value={`${sortKey}-${sortDirection}`}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Sort by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="stockName-asc">Name (A-Z)</SelectItem>
+                                    <SelectItem value="stockName-desc">Name (Z-A)</SelectItem>
+                                    <SelectItem value="totalMarketValue-desc">Market Value (High-Low)</SelectItem>
+                                    <SelectItem value="totalMarketValue-asc">Market Value (Low-High)</SelectItem>
+                                    <SelectItem value="totalPurchaseValue-desc">Purchase Value (High-Low)</SelectItem>
+                                    <SelectItem value="totalPurchaseValue-asc">Purchase Value (Low-High)</SelectItem>
+                                    <SelectItem value="totalGainLoss-desc">Gain/Loss (High-Low)</SelectItem>
+                                    <SelectItem value="totalGainLoss-asc">Gain/Loss (Low-High)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
