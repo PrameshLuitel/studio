@@ -834,9 +834,10 @@ export class ExcelDataProcessor {
 
     const equityValue = colG;
     const cashValue = colH + colK - colJ;
+    const denominator = equityValue + cashValue;
 
-    const equityPercentage = totalValue > 0 ? (equityValue / totalValue) * 100 : 0;
-    const cashPercentage = totalValue > 0 ? (cashValue / totalValue) * 100 : 0;
+    const equityPercentage = denominator > 0 ? (equityValue / denominator) * 100 : 0;
+    const cashPercentage = denominator > 0 ? (cashValue / denominator) * 100 : 0;
 
     return {
         name: clientName,
