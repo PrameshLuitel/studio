@@ -827,7 +827,6 @@ export class ExcelDataProcessor {
         value: clientRowPortfolio[index],
     })).filter(item => item.value !== undefined && item.value !== null && item.value !== '');
 
-    const colF = this.parseNumber(clientRowPortfolio[5]); // 'Initial'
     const colG = this.parseNumber(clientRowPortfolio[6]); // 'Market Value'
     const colH = this.parseNumber(clientRowPortfolio[7]); // 'Cash Balance'
     const colJ = this.parseNumber(clientRowPortfolio[9]); // 'Payable'
@@ -836,8 +835,8 @@ export class ExcelDataProcessor {
     const equityValue = colG;
     const cashValue = colH + colK - colJ;
 
-    const equityPercentage = colF > 0 ? (equityValue / colF) * 100 : 0;
-    const cashPercentage = colF > 0 ? (cashValue / colF) * 100 : 0;
+    const equityPercentage = totalValue > 0 ? (equityValue / totalValue) * 100 : 0;
+    const cashPercentage = totalValue > 0 ? (cashValue / totalValue) * 100 : 0;
 
     return {
         name: clientName,
