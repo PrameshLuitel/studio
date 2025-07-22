@@ -213,8 +213,8 @@ export const StockDataView = () => {
                             </TableHeader>
                             
                                 {filteredAndSortedStocks.length > 0 ? (
-                                    filteredAndSortedStocks.map((stock) => (
-                                       <Collapsible asChild key={stock.stockName} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)} >
+                                    filteredAndSortedStocks.map((stock, index) => (
+                                       <Collapsible asChild key={`${stock.stockName}-${index}`} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)} >
                                          <tbody className="border-none">
                                             <CollapsibleTrigger asChild>
                                                 <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-primary/10">
@@ -288,4 +288,3 @@ export const StockDataView = () => {
         </div>
     );
 };
-
