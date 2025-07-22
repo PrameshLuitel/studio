@@ -66,6 +66,7 @@ export interface StockAllocation {
 }
 
 export interface ClientHolding {
+    clientId: string;
     clientName: string;
     purchaseValue: number;
     marketValue: number;
@@ -418,6 +419,7 @@ export class ExcelDataProcessor {
         stockEntry.totalPurchaseValue += purchaseValue;
 
         // Add client holding details
+        const clientId = String(row[3]); // Column D
         const clientName = String(row[4]); // Column E
         const gainLossPercentage = this.parseNumber(row[13]); // Column N
         const eps = this.parseNumber(row[19]); // Column T
@@ -427,6 +429,7 @@ export class ExcelDataProcessor {
         
         if (clientName) {
             stockEntry.clientHoldings.push({
+                clientId,
                 clientName,
                 purchaseValue,
                 marketValue,

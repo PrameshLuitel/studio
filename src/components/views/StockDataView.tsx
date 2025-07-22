@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss';
 type SortDirection = 'asc' | 'desc';
-type ClientHoldingSortKey = 'clientName' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'eps' | 'peRatio' | 'stockWeightInPortfolio';
+type ClientHoldingSortKey = 'clientId' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'eps' | 'peRatio' | 'stockWeightInPortfolio';
 
 export const StockDataView = () => {
     const { excelProcessor } = useContext(AppContext);
@@ -242,7 +242,7 @@ export const StockDataView = () => {
                                                             <Table>
                                                                 <TableHeader>
                                                                     <TableRow>
-                                                                        <ClientHoldingSortableHeader tkey="clientName" label="Client Name" />
+                                                                        <ClientHoldingSortableHeader tkey="clientId" label="Client Name" />
                                                                         <ClientHoldingSortableHeader tkey="purchaseValue" label="Purchase Value" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="gainLossPercentage" label="Gain/Loss (%)" className="text-right" />
@@ -253,7 +253,7 @@ export const StockDataView = () => {
                                                                 </TableHeader>
                                                                 <TableBody>
                                                                     {getSortedClientHoldings(stock.clientHoldings).map((holding) => (
-                                                                        <TableRow key={holding.clientName}>
+                                                                        <TableRow key={holding.clientId}>
                                                                             <TableCell>{holding.clientName}</TableCell>
                                                                             <TableCell className="text-right font-mono">{formatCurrency(holding.purchaseValue)}</TableCell>
                                                                             <TableCell className="text-right font-mono">{formatCurrency(holding.marketValue)}</TableCell>
