@@ -65,6 +65,15 @@ export interface StockAllocation {
     equityWeight: number;
 }
 
+export interface StockSummaryData {
+    stockName: string;
+    marketRate: number;
+    totalMarketValue: number;
+    totalPurchaseValue: number;
+    totalGainLoss: number;
+}
+
+
 export interface ClientDetails {
     name: string;
     totalValue: number;
@@ -128,6 +137,7 @@ export interface ProcessedData {
   epsSheetData: EPSSheetData | null;
   clientData: ClientData | null;
   summaryData: SummaryData[] | null;
+  stockSummaryData: StockSummaryData[] | null;
   equityToCashRatioStats: EquityCashRatioStats;
   equityToCashRatioStatsGain: EquityCashRatioStats;
   equityToCashRatioStatsLoss: EquityCashRatioStats;
@@ -208,6 +218,7 @@ export class ExcelDataProcessor {
     const epsData = this.processEPSSheet();
     const epsSheetData = this.processEPSSheetRaw();
     const clientData = this.processClientDataSheet();
+    const stockSummaryData = this.processStockData();
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
@@ -235,6 +246,7 @@ export class ExcelDataProcessor {
       epsSheetData,
       clientData,
       summaryData,
+      stockSummaryData,
       equityToCashRatioStats,
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss,
@@ -358,6 +370,51 @@ export class ExcelDataProcessor {
           data: data.slice(2) as (string | number | Date)[][],
       };
   }
+
+  private processStockData(): StockSummaryData[] {
+    const holdingData = this.getSheetData('Holding Statement');
+    if (holdingData.length < 2) return [];
+
+    const stockMap = new Map<string, {
+        marketRate: number;
+        totalMarketValue: number;
+        totalPurchaseValue: number;
+        totalGainLoss: number;
+    }>();
+
+    // Data starts from the second row (index 1), headers are not on a fixed row here
+    for (const row of holdingData) {
+        if (!row || !row[1]) continue; // Skip if no stock name in Column B
+        const stockName = String(row[1]);
+
+        // Skip rows that are likely headers or footers
+        if (stockName.toLowerCase().includes('stock name') || stockName.toLowerCase().includes('total')) continue;
+        
+        const marketRate = this.parseNumber(row[10]); // Column K
+        const marketValue = this.parseNumber(row[12]); // Column M
+        const purchaseValue = this.parseNumber(row[11]); // Column L
+
+        if (!stockMap.has(stockName)) {
+            stockMap.set(stockName, {
+                marketRate: marketRate,
+                totalMarketValue: 0,
+                totalPurchaseValue: 0,
+                totalGainLoss: 0,
+            });
+        }
+
+        const stockEntry = stockMap.get(stockName)!;
+        stockEntry.totalMarketValue += marketValue;
+        stockEntry.totalPurchaseValue += purchaseValue;
+        stockEntry.totalGainLoss += (marketValue - purchaseValue);
+    }
+    
+    return Array.from(stockMap.entries()).map(([stockName, data]) => ({
+        stockName,
+        ...data,
+    }));
+  }
+
 
   private processEPSSheetRaw(): EPSSheetData | null {
     const sheetData = this.getSheetData('EPS');
@@ -797,6 +854,9 @@ export class ExcelDataProcessor {
     }
     
     const holdingSheet = this.getSheetData('Holding Statement');
+    const portfolioSummary = this.getSummaryData()?.find(s => s.clientId === clientName);
+    const clientPortfolioValue = portfolioSummary ? portfolioSummary.totalValue : 0;
+
     const stockAllocations: StockAllocation[] = holdingSheet
         .filter(row => row[4] === clientName) // Client Name is in Column E (index 4)
         .map(row => {
@@ -806,7 +866,7 @@ export class ExcelDataProcessor {
             const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
             const gain = this.parseNumber(row[13]); // Gain is in Column N (index 13)
             
-            const equityWeight = totalValue > 0 ? marketValue / totalValue : 0;
+            const equityWeight = clientPortfolioValue > 0 ? (marketValue / clientPortfolioValue) : 0;
             
             if (stockName && quantity > 0) {
                 return { 
