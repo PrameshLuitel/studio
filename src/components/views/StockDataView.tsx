@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { BarChart, Search, ChevronsUpDown, ArrowUp, ArrowDown } from 'lucide-react';
-import type { StockSummaryData } from '@/lib/data-processor';
+import type { StockSummaryData, ClientHolding } from '@/lib/data-processor';
 import { formatCurrency } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
 import { Combobox } from '@/components/ui/combobox';
@@ -18,6 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss';
 type SortDirection = 'asc' | 'desc';
+type ClientHoldingSortKey = 'clientName' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'eps' | 'peRatio' | 'stockWeightInPortfolio';
 
 export const StockDataView = () => {
     const { excelProcessor } = useContext(AppContext);
@@ -26,6 +27,10 @@ export const StockDataView = () => {
     const [sortKey, setSortKey] = useState<SortKey>('totalMarketValue');
     const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
     const [openCollapsible, setOpenCollapsible] = useState<string | null>(null);
+
+    const [clientHoldingSortKey, setClientHoldingSortKey] = useState<ClientHoldingSortKey>('marketValue');
+    const [clientHoldingSortDirection, setClientHoldingSortDirection] = useState<SortDirection>('desc');
+
 
     const stockData = useMemo(() => {
         if (!excelProcessor || !excelProcessor.isDataLoaded()) return [];
@@ -69,6 +74,29 @@ export const StockDataView = () => {
             setSortDirection('desc');
         }
     };
+    
+    const handleClientHoldingSort = (key: ClientHoldingSortKey) => {
+        if (clientHoldingSortKey === key) {
+            setClientHoldingSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setClientHoldingSortKey(key);
+            setClientHoldingSortDirection('desc');
+        }
+    };
+
+    const getSortedClientHoldings = (clientHoldings: ClientHolding[]): ClientHolding[] => {
+        return [...clientHoldings].sort((a, b) => {
+            const aVal = a[clientHoldingSortKey];
+            const bVal = b[clientHoldingSortKey];
+            let compare = 0;
+            if (typeof aVal === 'string' && typeof bVal === 'string') {
+                compare = aVal.localeCompare(bVal);
+            } else {
+                compare = (aVal as number) - (bVal as number);
+            }
+            return clientHoldingSortDirection === 'asc' ? compare : -compare;
+        });
+    };
 
     const SortableHeader = ({ tkey, label, className }: { tkey: SortKey, label: string, className?: string }) => (
         <TableHead className={cn("cursor-pointer hover:bg-muted/50 transition-colors", className)} onClick={() => handleSort(tkey)}>
@@ -76,6 +104,19 @@ export const StockDataView = () => {
                 {label}
                 {sortKey === tkey ? (
                     sortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                ) : (
+                    <ChevronsUpDown className="h-3 w-3 text-muted-foreground/50" />
+                )}
+            </div>
+        </TableHead>
+    );
+
+    const ClientHoldingSortableHeader = ({ tkey, label, className }: { tkey: ClientHoldingSortKey, label: string, className?: string }) => (
+        <TableHead className={cn("cursor-pointer hover:bg-muted/80 transition-colors", className)} onClick={() => handleClientHoldingSort(tkey)}>
+            <div className="flex items-center gap-2">
+                {label}
+                {clientHoldingSortKey === tkey ? (
+                    clientHoldingSortDirection === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                 ) : (
                     <ChevronsUpDown className="h-3 w-3 text-muted-foreground/50" />
                 )}
@@ -173,8 +214,8 @@ export const StockDataView = () => {
                             
                                 {filteredAndSortedStocks.length > 0 ? (
                                     filteredAndSortedStocks.map((stock) => (
-                                       <Collapsible asChild key={stock.stockName} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)} tag="tbody">
-                                         <>
+                                       <Collapsible asChild key={stock.stockName} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)} >
+                                         <tbody className="border-none">
                                             <CollapsibleTrigger asChild>
                                                 <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-primary/10">
                                                     <TableCell className="font-medium">{stock.stockName}</TableCell>
@@ -201,17 +242,17 @@ export const StockDataView = () => {
                                                             <Table>
                                                                 <TableHeader>
                                                                     <TableRow>
-                                                                        <TableHead>Client Name</TableHead>
-                                                                        <TableHead className="text-right">Purchase Value</TableHead>
-                                                                        <TableHead className="text-right">Market Value</TableHead>
-                                                                        <TableHead className="text-right">Gain/Loss (%)</TableHead>
-                                                                        <TableHead className="text-right">EPS</TableHead>
-                                                                        <TableHead className="text-right">P/E Ratio</TableHead>
-                                                                        <TableHead className="text-right">Stock's Weight in Portfolio</TableHead>
+                                                                        <ClientHoldingSortableHeader tkey="clientName" label="Client Name" />
+                                                                        <ClientHoldingSortableHeader tkey="purchaseValue" label="Purchase Value" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="gainLossPercentage" label="Gain/Loss (%)" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="eps" label="EPS" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="peRatio" label="P/E Ratio" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="stockWeightInPortfolio" label="Stock's Weight in Portfolio" className="text-right" />
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
-                                                                    {stock.clientHoldings.map((holding) => (
+                                                                    {getSortedClientHoldings(stock.clientHoldings).map((holding) => (
                                                                         <TableRow key={holding.clientName}>
                                                                             <TableCell>{holding.clientName}</TableCell>
                                                                             <TableCell className="text-right font-mono">{formatCurrency(holding.purchaseValue)}</TableCell>
@@ -219,7 +260,7 @@ export const StockDataView = () => {
                                                                             <TableCell className={cn("text-right font-mono", holding.gainLossPercentage >= 0 ? 'text-green-500' : 'text-red-500')}>{holding.gainLossPercentage.toFixed(2)}%</TableCell>
                                                                             <TableCell className="text-right font-mono">{holding.eps.toFixed(2)}</TableCell>
                                                                             <TableCell className="text-right font-mono">{holding.peRatio.toFixed(2)}</TableCell>
-                                                                            <TableCell className="text-right font-mono">{holding.stockWeightInPortfolio.toFixed(2)}%</TableCell>
+                                                                            <TableCell className="text-right font-mono">{(holding.stockWeightInPortfolio).toFixed(2)}%</TableCell>
                                                                         </TableRow>
                                                                     ))}
                                                                 </TableBody>
@@ -228,7 +269,7 @@ export const StockDataView = () => {
                                                     </TableCell>
                                                </tr>
                                             </CollapsibleContent>
-                                          </>
+                                          </tbody>
                                        </Collapsible>
                                     ))
                                 ) : (
@@ -247,3 +288,4 @@ export const StockDataView = () => {
         </div>
     );
 };
+
