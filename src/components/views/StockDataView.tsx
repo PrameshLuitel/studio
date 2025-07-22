@@ -170,10 +170,10 @@ export const StockDataView = () => {
                                     <SortableHeader tkey="totalGainLoss" label="Total Gain/Loss" className="text-right" />
                                 </TableRow>
                             </TableHeader>
-                            <TableBody>
+                            
                                 {filteredAndSortedStocks.length > 0 ? (
                                     filteredAndSortedStocks.map((stock) => (
-                                       <Collapsible asChild key={stock.stockName} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)}>
+                                       <Collapsible asChild key={stock.stockName} open={openCollapsible === stock.stockName} onOpenChange={() => toggleCollapsible(stock.stockName)} tag="tbody">
                                          <>
                                             <CollapsibleTrigger asChild>
                                                 <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-primary/10">
@@ -232,13 +232,14 @@ export const StockDataView = () => {
                                        </Collapsible>
                                     ))
                                 ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
-                                            No stocks found for your search query.
-                                        </TableCell>
-                                    </TableRow>
+                                    <tbody>
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="h-24 text-center">
+                                                No stocks found for your search query.
+                                            </TableCell>
+                                        </TableRow>
+                                    </tbody>
                                 )}
-                            </TableBody>
                         </Table>
                     </Card>
                 </ScrollArea>
