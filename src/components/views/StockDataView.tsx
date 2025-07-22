@@ -61,7 +61,7 @@ export const StockDataView = () => {
 
     const handleSort = (key: SortKey) => {
         if (sortKey === key) {
-            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+            setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
         } else {
             setSortKey(key);
             setSortDirection('desc');
@@ -173,7 +173,14 @@ export const StockDataView = () => {
                                             <TableCell className="text-right font-mono">{formatCurrency(stock.totalMarketValue)}</TableCell>
                                             <TableCell className="text-right font-mono">{formatCurrency(stock.totalPurchaseValue)}</TableCell>
                                             <TableCell className={cn("text-right font-mono", stock.totalGainLoss >= 0 ? 'text-green-500' : 'text-red-500')}>
-                                                {stock.totalGainLoss >= 0 ? '+' : ''}{formatCurrency(stock.totalGainLoss)}
+                                                <div className="flex flex-col items-end">
+                                                    <span>{stock.totalGainLoss >= 0 ? '+' : ''}{formatCurrency(stock.totalGainLoss)}</span>
+                                                    {stock.totalPurchaseValue !== 0 && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            ({((stock.totalGainLoss / stock.totalPurchaseValue) * 100).toFixed(2)}%)
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
