@@ -5,6 +5,7 @@ import React, { useContext } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { DashboardView } from './views/DashboardView';
 import { ClientDataView } from './views/ClientDataView';
+import { StockDataView } from './views/StockDataView';
 import { EpsView } from './views/EpsView';
 import { AskGiclView } from './views/AskGiclView';
 import { Button } from './ui/button';
@@ -15,6 +16,7 @@ import {
   FileUp,
   BarChartHorizontal,
   MessageCircle,
+  BarChart,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -23,6 +25,7 @@ import { Separator } from './ui/separator';
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'client-data', label: 'Client Data', icon: Table },
+  { id: 'stock-data', label: 'Stock Data', icon: BarChart },
   { id: 'eps', label: 'EPS Viewer', icon: LineChart },
   { id: 'ask-gicl', label: 'Ask Gicl', icon: MessageCircle },
 ];
@@ -36,6 +39,8 @@ export const MainLayout = () => {
         return <DashboardView />;
       case 'client-data':
         return <ClientDataView />;
+      case 'stock-data':
+        return <StockDataView />;
       case 'eps':
         return <EpsView />;
       case 'ask-gicl':
