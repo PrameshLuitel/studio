@@ -86,3 +86,29 @@
   animation: glow 1.5s infinite ease-in-out;
   transition: transform 0.2s ease-in-out;
 }
+
+@keyframes pulse-green {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(4, 120, 87, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(4, 120, 87, 0);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(220, 38, 38, 0);
+  }
+}
+
+.animate-pulse-green {
+  animation: pulse-green 1.5s infinite;
+}
+
+.animate-pulse-red {
+  animation: pulse-red 1.5s infinite;
+}

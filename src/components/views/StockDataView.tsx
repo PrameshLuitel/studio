@@ -255,8 +255,24 @@ export const StockDataView = () => {
                                                     <TableCell className="text-right font-mono">{stock.holdingPercentage.toFixed(2)}%</TableCell>
                                                     <TableCell>
                                                         <div className="flex items-center justify-center gap-2">
-                                                            <Button variant="secondary" size="sm">Buy</Button>
-                                                            <Button variant="secondary" size="sm">Sell</Button>
+                                                            <Button 
+                                                                variant="secondary" 
+                                                                size="sm"
+                                                                className={cn(
+                                                                    stock.buyPrice && stock.marketRate <= stock.buyPrice && 'bg-green-500/80 hover:bg-green-500 text-white animate-pulse-green'
+                                                                )}
+                                                            >
+                                                                Buy
+                                                            </Button>
+                                                            <Button 
+                                                                variant="secondary" 
+                                                                size="sm"
+                                                                className={cn(
+                                                                    stock.sellPrice && stock.marketRate >= stock.sellPrice && 'bg-red-500/80 hover:bg-red-500 text-white animate-pulse-red'
+                                                                )}
+                                                            >
+                                                                Sell
+                                                            </Button>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>

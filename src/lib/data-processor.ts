@@ -57,6 +57,12 @@ export interface SectorAllocation {
     allocation: number;
 }
 
+export interface AlertData {
+    stockName: string;
+    buyPrice?: number;
+    sellPrice?: number;
+}
+
 export interface StockAllocation {
     stock: string;
     sector: string;
@@ -85,6 +91,8 @@ export interface StockSummaryData {
     totalGainLoss: number;
     holdingPercentage: number;
     clientHoldings: ClientHolding[];
+    buyPrice?: number;
+    sellPrice?: number;
 }
 
 
@@ -158,6 +166,7 @@ export interface ProcessedData {
   topGainers: TopMover[];
   topLosers: TopMover[];
   largestPortfolios: LargestPortfolio[];
+  alertData: AlertData[];
 }
 
 // Error types
@@ -208,7 +217,7 @@ export class ExcelDataProcessor {
       'EPS',
       'Holding Statement',
     ];
-
+    // "Alert" sheet is optional
     const availableSheets = this.workbook.SheetNames;
     const missingSheets = requiredSheets.filter(sheet => !availableSheets.includes(sheet));
 
@@ -232,7 +241,8 @@ export class ExcelDataProcessor {
     const epsData = this.processEPSSheet();
     const epsSheetData = this.processEPSSheetRaw();
     const clientData = this.processClientDataSheet();
-    const stockSummaryData = this.processStockData();
+    const alertData = this.processAlertSheet();
+    const stockSummaryData = this.processStockData(alertData);
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
@@ -267,6 +277,7 @@ export class ExcelDataProcessor {
       topGainers,
       topLosers,
       largestPortfolios,
+      alertData
     };
   }
   
@@ -393,8 +404,22 @@ export class ExcelDataProcessor {
           data: data.slice(2) as (string | number | Date)[][],
       };
   }
+  
+  private processAlertSheet(): AlertData[] {
+      const sheetData = this.getSheetData('Alert');
+      if (sheetData.length < 1) return [];
 
-  private processStockData(): StockSummaryData[] {
+      return sheetData.slice(1).map(row => {
+          if (!row || !row[0]) return null;
+          return {
+              stockName: String(row[0]), // Column A: Name
+              buyPrice: this.parseNumber(row[2]), // Column C: Buy
+              sellPrice: this.parseNumber(row[3]), // Column D: Sell
+          }
+      }).filter(Boolean) as AlertData[];
+  }
+
+  private processStockData(alertData: AlertData[]): StockSummaryData[] {
     const holdingData = this.getSheetData('Holding Statement');
     if (holdingData.length < 4) return []; // Data starts from row 4
 
@@ -406,6 +431,11 @@ export class ExcelDataProcessor {
         totalPurchaseValue: number;
         clientHoldings: ClientHolding[];
     }>();
+
+    const alertMap = new Map<string, { buyPrice?: number; sellPrice?: number }>();
+    alertData.forEach(alert => {
+        alertMap.set(alert.stockName.toLowerCase(), { buyPrice: alert.buyPrice, sellPrice: alert.sellPrice });
+    });
 
     // Data starts from the fourth row (index 3)
     for (const row of holdingData.slice(3)) {
@@ -452,15 +482,20 @@ export class ExcelDataProcessor {
         }
     }
     
-    return Array.from(stockMap.entries()).map(([stockName, data]) => ({
-        stockName,
-        marketRate: data.marketRate,
-        totalMarketValue: data.totalMarketValue,
-        totalPurchaseValue: data.totalPurchaseValue,
-        totalGainLoss: data.totalMarketValue - data.totalPurchaseValue,
-        holdingPercentage: totalPortfolioValue > 0 ? (data.totalMarketValue / totalPortfolioValue) * 100 : 0,
-        clientHoldings: data.clientHoldings,
-    }));
+    return Array.from(stockMap.entries()).map(([stockName, data]) => {
+        const alerts = alertMap.get(stockName.toLowerCase());
+        return {
+            stockName,
+            marketRate: data.marketRate,
+            totalMarketValue: data.totalMarketValue,
+            totalPurchaseValue: data.totalPurchaseValue,
+            totalGainLoss: data.totalMarketValue - data.totalPurchaseValue,
+            holdingPercentage: totalPortfolioValue > 0 ? (data.totalMarketValue / totalPortfolioValue) * 100 : 0,
+            clientHoldings: data.clientHoldings,
+            buyPrice: alerts?.buyPrice,
+            sellPrice: alerts?.sellPrice
+        }
+    });
 }
 
 
