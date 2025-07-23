@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss' | 'holdingPercentage';
 type SortDirection = 'asc' | 'desc';
@@ -212,6 +213,7 @@ export const StockDataView = () => {
                                     <SortableHeader tkey="totalPurchaseValue" label="Total Purchase Value" className="text-right" />
                                     <SortableHeader tkey="totalGainLoss" label="Total Gain/Loss" className="text-right" />
                                     <SortableHeader tkey="holdingPercentage" label="% Holding" className="text-right" />
+                                    <TableHead className="text-center">Signal</TableHead>
                                 </TableRow>
                             </TableHeader>
                             
@@ -236,11 +238,17 @@ export const StockDataView = () => {
                                                         </div>
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono">{stock.holdingPercentage.toFixed(2)}%</TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Button variant="secondary" size="sm">Buy</Button>
+                                                            <Button variant="secondary" size="sm">Sell</Button>
+                                                        </div>
+                                                    </TableCell>
                                                 </TableRow>
                                             </CollapsibleTrigger>
                                             <CollapsibleContent asChild>
                                                <tr className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={6} className="p-2">
+                                                    <TableCell colSpan={7} className="p-2">
                                                         <div className="p-2 bg-muted/50 rounded-md">
                                                             <h4 className="font-semibold px-2 py-1">Client Holdings for {stock.stockName}</h4>
                                                             <Table>
@@ -277,7 +285,7 @@ export const StockDataView = () => {
                                 ) : (
                                     <tbody>
                                         <TableRow>
-                                            <TableCell colSpan={6} className="h-24 text-center">
+                                            <TableCell colSpan={7} className="h-24 text-center">
                                                 No stocks found for your search query.
                                             </TableCell>
                                         </TableRow>
