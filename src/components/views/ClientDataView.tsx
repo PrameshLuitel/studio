@@ -208,8 +208,8 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 p-4">
-            <Card className="glassmorphic lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 animate-in fade-in-50 p-4">
+            <Card className="glassmorphic lg:col-span-2">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
@@ -289,7 +289,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <Card className="glassmorphic lg:col-span-2">
+            <Card className="glassmorphic lg:col-span-3">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><AreaChart className="text-accent"/> Stock Allocation</CardTitle>
                 </CardHeader>
@@ -299,6 +299,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                                 <TableRow>
                                     <StockSortableHeader tkey="stock" label="Stock" />
+                                    <TableHead>Sector</TableHead>
                                     <StockSortableHeader tkey="quantity" label="Quantity" className="text-right" />
                                     <StockSortableHeader tkey="marketRate" label="Market Rate" className="text-right" />
                                     <StockSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
@@ -310,6 +311,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                 {sortedStockAllocations.length > 0 ? sortedStockAllocations.map(stock => (
                                     <TableRow key={stock.stock}>
                                         <TableCell className="font-medium">{stock.stock}</TableCell>
+                                        <TableCell>{stock.sector}</TableCell>
                                         <TableCell className="text-right font-mono">{stock.quantity.toLocaleString()}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
                                         <TableCell className="text-right font-mono">{formatCurrency(stock.marketValue)}</TableCell>
@@ -320,7 +322,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     </TableRow>
                                 )) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">No stock data for this client.</TableCell>
+                                        <TableCell colSpan={7} className="h-24 text-center">No stock data for this client.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -329,7 +331,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="lg:col-span-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                  {individualCardsData.map((item, index) => (
                     <StatCard 
                         key={index}
@@ -340,7 +342,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                  ))}
             </div>
             {groupedCardData.length > 0 && (
-                <Card className="glassmorphic lg:col-span-3">
+                <Card className="glassmorphic lg:col-span-5">
                      <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
                     </CardHeader>

@@ -59,6 +59,7 @@ export interface SectorAllocation {
 
 export interface StockAllocation {
     stock: string;
+    sector: string;
     quantity: number;
     marketRate: number;
     marketValue: number;
@@ -910,6 +911,7 @@ export class ExcelDataProcessor {
         .filter(row => row[4] === clientName) // Client Name is in Column E (index 4)
         .map(row => {
             const stockName = String(row[1]); // Stock Name is in Column B (index 1)
+            const sector = String(row[2]); // Sector is in Column C (index 2)
             const quantity = this.parseNumber(row[8]); // Quantity is in Column I (index 8)
             const marketRate = this.parseNumber(row[10]); // Market Rate is in Column K (index 10)
             const marketValue = this.parseNumber(row[12]); // Market Value is in Column M (index 12)
@@ -921,6 +923,7 @@ export class ExcelDataProcessor {
             if (stockName && quantity > 0) {
                 return { 
                     stock: stockName, 
+                    sector,
                     quantity, 
                     marketRate, 
                     marketValue,
