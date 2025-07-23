@@ -208,13 +208,13 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-50 p-4">
-            <Card className="glassmorphic">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 p-4">
+            <Card className="glassmorphic lg:col-span-1">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <ChartContainer config={{}} className="h-64 w-full md:col-span-1">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+                    <ChartContainer config={{}} className="h-64 w-full md:col-span-1 lg:col-span-1">
                          <ResponsiveContainer>
                             <PieChart>
                                 <Pie 
@@ -257,7 +257,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                             </PieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
-                     <div className="w-full space-y-2 md:col-span-1">
+                     <div className="w-full space-y-2 md:col-span-1 lg:col-span-1">
                         <ScrollArea className="h-64">
                             <ul className="space-y-1 p-1">
                                 {topSectors.map((item, index) => (
@@ -289,12 +289,12 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <Card className="glassmorphic">
+            <Card className="glassmorphic lg:col-span-2">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><AreaChart className="text-accent"/> Stock Allocation</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ScrollArea className="h-[17.5rem]">
+                    <ScrollArea className="h-[27rem]">
                         <Table>
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                                 <TableRow>
@@ -329,7 +329,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                  {individualCardsData.map((item, index) => (
                     <StatCard 
                         key={index}
@@ -340,7 +340,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                  ))}
             </div>
             {groupedCardData.length > 0 && (
-                <Card className="glassmorphic lg:col-span-2">
+                <Card className="glassmorphic lg:col-span-3">
                      <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
                     </CardHeader>
