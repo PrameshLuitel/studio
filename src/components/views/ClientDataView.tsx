@@ -213,8 +213,8 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-                    <ChartContainer config={{}} className="h-64 w-full md:col-span-1 lg:col-span-1">
+                <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <ChartContainer config={{}} className="h-64 w-full">
                          <ResponsiveContainer>
                             <PieChart>
                                 <Pie 
@@ -257,7 +257,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                             </PieChart>
                         </ResponsiveContainer>
                     </ChartContainer>
-                     <div className="w-full space-y-2 md:col-span-1 lg:col-span-1">
+                     <div className="w-full space-y-2">
                         <ScrollArea className="h-64">
                             <ul className="space-y-1 p-1">
                                 {topSectors.map((item, index) => (
@@ -303,7 +303,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     <StockSortableHeader tkey="marketRate" label="Market Rate" className="text-right" />
                                     <StockSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
                                     <StockSortableHeader tkey="gain" label="Gain" className="text-right" />
-                                    <StockSortableHeader tkey="equityWeight" label="Stock's Equity Weight" className="text-right" />
+                                    <StockSortableHeader tkey="equityWeight" label="% Eq. Wt." className="text-right" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -490,8 +490,6 @@ export const ClientDataView = () => {
                                 <SelectItem value="totalValue-asc">Value (Low-High)</SelectItem>
                                 <SelectItem value="equityValue-desc">Equity (High-Low)</SelectItem>
                                 <SelectItem value="equityValue-asc">Equity (Low-High)</SelectItem>
-                                <SelectItem value="gainLossPercentage-desc">Growth (High-Low)</SelectItem>
-                                <SelectItem value="gainLossPercentage-asc">Growth (Low-High)</SelectItem>
                                 <SelectItem value="portfolioGainLoss-desc">Portfolio Gain (High-Low)</SelectItem>
                                 <SelectItem value="portfolioGainLoss-asc">Portfolio Gain (Low-High)</SelectItem>
                                 <SelectItem value="expiryDate-desc">Expiry Date (Newest)</SelectItem>
