@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useContext, useMemo, useState } from 'react';
+import React, { useContext, useMemo, useState, useEffect } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,7 +23,7 @@ type SortDirection = 'asc' | 'desc';
 type ClientHoldingSortKey = 'clientId' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'weightedAvgCost' | 'stockWeightInPortfolio';
 
 export const StockDataView = () => {
-    const { excelProcessor } = useContext(AppContext);
+    const { excelProcessor, setTop5Weight, setTop10Weight, setTop20Weight } = useContext(AppContext);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedStock, setSelectedStock] = useState('');
     const [sortKey, setSortKey] = useState<SortKey>('totalMarketValue');
@@ -39,6 +39,20 @@ export const StockDataView = () => {
         const processed = excelProcessor.getProcessedData();
         return processed?.stockSummaryData || [];
     }, [excelProcessor]);
+
+    useEffect(() => {
+        if (stockData.length > 0) {
+            const sortedByWeight = [...stockData].sort((a, b) => b.holdingPercentage - a.holdingPercentage);
+
+            const top5 = sortedByWeight.slice(0, 5).reduce((sum, stock) => sum + stock.holdingPercentage, 0);
+            const top10 = sortedByWeight.slice(0, 10).reduce((sum, stock) => sum + stock.holdingPercentage, 0);
+            const top20 = sortedByWeight.slice(0, 20).reduce((sum, stock) => sum + stock.holdingPercentage, 0);
+
+            setTop5Weight(top5);
+            setTop10Weight(top10);
+            setTop20Weight(top20);
+        }
+    }, [stockData, setTop5Weight, setTop10Weight, setTop20Weight]);
 
     const stockOptions = useMemo(() => {
         return stockData.map(s => ({ label: s.stockName, value: s.stockName }));
@@ -297,6 +311,3 @@ export const StockDataView = () => {
         </div>
     );
 };
-
-
-    

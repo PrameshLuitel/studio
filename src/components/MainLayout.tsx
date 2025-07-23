@@ -31,8 +31,22 @@ const navItems = [
   { id: 'ask-gicl', label: 'Ask Gicl', icon: MessageCircle },
 ];
 
+const WeightButton = ({ title, value }: { title: string, value: number }) => (
+    <div className="flex flex-col items-center">
+        <Button variant="outline" size="sm" className="h-8">
+            {title}
+        </Button>
+        {value > 0 && (
+            <p className="text-xs font-mono font-semibold text-primary mt-1">
+                {value.toFixed(2)}%
+            </p>
+        )}
+    </div>
+);
+
+
 export const MainLayout = () => {
-  const { activeView, setActiveView, resetApp, fileName } = useContext(AppContext);
+  const { activeView, setActiveView, resetApp, fileName, top5Weight, top10Weight, top20Weight } = useContext(AppContext);
 
   const renderView = () => {
     switch (activeView) {
@@ -111,9 +125,9 @@ export const MainLayout = () => {
                <div className="flex items-center gap-4">
                   <Label className="font-semibold text-sm text-muted-foreground">Weight:</Label>
                   <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" className="h-8">Top 5</Button>
-                      <Button variant="outline" size="sm" className="h-8">Top 10</Button>
-                      <Button variant="outline" size="sm" className="h-8">Top 20</Button>
+                      <WeightButton title="Top 5" value={top5Weight} />
+                      <WeightButton title="Top 10" value={top10Weight} />
+                      <WeightButton title="Top 20" value={top20Weight} />
                   </div>
               </div>
           )}
