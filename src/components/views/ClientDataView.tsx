@@ -157,8 +157,15 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
         setActiveIndex(null);
     }, []);
     
-    const topSectors = useMemo(() => {
-        return [...sectorData].sort((a, b) => b.value - a.value).slice(0, 4);
+    const legendItems = useMemo(() => {
+        const sortedSectors = [...sectorData].sort((a, b) => b.value - a.value);
+        if (sortedSectors.length > 8) {
+            const top8 = sortedSectors.slice(0, 8);
+            const otherValue = sortedSectors.slice(8).reduce((acc, curr) => acc + curr.value, 0);
+            const otherPercentage = sortedSectors.slice(8).reduce((acc, curr) => acc + curr.percentage, 0);
+            return [...top8, { name: 'Others', value: otherValue, percentage: otherPercentage }];
+        }
+        return sortedSectors;
     }, [sectorData]);
 
     const sortedStockAllocations = useMemo(() => {
@@ -207,8 +214,8 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 animate-in fade-in-50 p-4">
-            <Card className="glassmorphic lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-50 p-4">
+            <Card className="glassmorphic lg:col-span-1">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
@@ -259,7 +266,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                      <div className="w-full space-y-2">
                         <ScrollArea className="h-64">
                             <ul className="space-y-1 p-1">
-                                {topSectors.map((item, index) => (
+                                {legendItems.map((item, index) => (
                                     <li 
                                         key={item.name} 
                                         className={cn("flex items-center p-1.5 rounded-md transition-all duration-200", activeIndex === sectorData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
@@ -288,7 +295,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <Card className="glassmorphic lg:col-span-3">
+            <Card className="glassmorphic lg:col-span-1">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><AreaChart className="text-accent"/> Stock Allocation</CardTitle>
                 </CardHeader>
@@ -330,7 +337,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <div className="lg:col-span-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                  {individualCardsData.map((item, index) => (
                     <StatCard 
                         key={index}
@@ -341,7 +348,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                  ))}
             </div>
             {groupedCardData.length > 0 && (
-                <Card className="glassmorphic lg:col-span-5">
+                <Card className="glassmorphic lg:col-span-2">
                      <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
                     </CardHeader>
@@ -428,7 +435,7 @@ export const ClientDataView = () => {
   
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
-        setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
         setSortKey(key);
         setSortDirection('asc');
@@ -593,4 +600,5 @@ export const ClientDataView = () => {
   );
 };
 
+    
     
