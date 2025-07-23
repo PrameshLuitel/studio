@@ -149,7 +149,7 @@ export const StockDataView = () => {
         <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
             <Card className="glassmorphic flex-shrink-0">
                 <CardContent className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
@@ -162,6 +162,7 @@ export const StockDataView = () => {
                                 className="pl-10 w-full"
                             />
                         </div>
+                        <div className="grid grid-cols-2 gap-2">
                         <Combobox
                             options={stockOptions}
                             value={selectedStock}
@@ -194,13 +195,6 @@ export const StockDataView = () => {
                                 <SelectItem value="holdingPercentage-asc">% Holding (Low-High)</SelectItem>
                             </SelectContent>
                         </Select>
-                        <div className="flex items-center gap-2 rounded-lg border p-2">
-                            <Label className="font-semibold text-sm">Weight:</Label>
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="sm" className="h-8">Top 5</Button>
-                                <Button variant="outline" size="sm" className="h-8">Top 10</Button>
-                                <Button variant="outline" size="sm" className="h-8">Top 20</Button>
-                            </div>
                         </div>
                     </div>
                 </CardContent>

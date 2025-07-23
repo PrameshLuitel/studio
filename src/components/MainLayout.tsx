@@ -21,6 +21,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
+import { Label } from './ui/label';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -101,9 +102,21 @@ export const MainLayout = () => {
         </nav>
       </TooltipProvider>
       <main className="flex-1 flex flex-col bg-background/50 dark:bg-black/20 rounded-xl overflow-hidden">
-        <header className="px-6 py-3 border-b border-primary/10 font-headline">
-          <h1 className="text-xl font-bold capitalize text-primary">{activeView.replace('-', ' ')}</h1>
-          {fileName && <p className="text-xs text-muted-foreground">Analyzing: {fileName}</p>}
+        <header className="flex items-center justify-between px-6 py-3 border-b border-primary/10 font-headline">
+          <div>
+            <h1 className="text-xl font-bold capitalize text-primary">{activeView.replace('-', ' ')}</h1>
+            {fileName && <p className="text-xs text-muted-foreground">Analyzing: {fileName}</p>}
+          </div>
+          {activeView === 'stock-data' && (
+               <div className="flex items-center gap-4">
+                  <Label className="font-semibold text-sm text-muted-foreground">Weight:</Label>
+                  <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-8">Top 5</Button>
+                      <Button variant="outline" size="sm" className="h-8">Top 10</Button>
+                      <Button variant="outline" size="sm" className="h-8">Top 20</Button>
+                  </div>
+              </div>
+          )}
         </header>
         <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
       </main>
