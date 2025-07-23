@@ -16,7 +16,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss';
+type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss' | 'holdingPercentage';
 type SortDirection = 'asc' | 'desc';
 type ClientHoldingSortKey = 'clientId' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'eps' | 'peRatio' | 'stockWeightInPortfolio';
 
@@ -191,6 +191,8 @@ export const StockDataView = () => {
                                     <SelectItem value="totalPurchaseValue-asc">Purchase Value (Low-High)</SelectItem>
                                     <SelectItem value="totalGainLoss-desc">Gain/Loss (High-Low)</SelectItem>
                                     <SelectItem value="totalGainLoss-asc">Gain/Loss (Low-High)</SelectItem>
+                                    <SelectItem value="holdingPercentage-desc">% Holding (High-Low)</SelectItem>
+                                    <SelectItem value="holdingPercentage-asc">% Holding (Low-High)</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -209,6 +211,7 @@ export const StockDataView = () => {
                                     <SortableHeader tkey="totalMarketValue" label="Total Market Value" className="text-right" />
                                     <SortableHeader tkey="totalPurchaseValue" label="Total Purchase Value" className="text-right" />
                                     <SortableHeader tkey="totalGainLoss" label="Total Gain/Loss" className="text-right" />
+                                    <SortableHeader tkey="holdingPercentage" label="% Holding" className="text-right" />
                                 </TableRow>
                             </TableHeader>
                             
@@ -232,11 +235,12 @@ export const StockDataView = () => {
                                                             )}
                                                         </div>
                                                     </TableCell>
+                                                    <TableCell className="text-right font-mono">{stock.holdingPercentage.toFixed(2)}%</TableCell>
                                                 </TableRow>
                                             </CollapsibleTrigger>
                                             <CollapsibleContent asChild>
                                                <tr className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={5} className="p-2">
+                                                    <TableCell colSpan={6} className="p-2">
                                                         <div className="p-2 bg-muted/50 rounded-md">
                                                             <h4 className="font-semibold px-2 py-1">Client Holdings for {stock.stockName}</h4>
                                                             <Table>
@@ -275,7 +279,7 @@ export const StockDataView = () => {
                                 ) : (
                                     <tbody>
                                         <TableRow>
-                                            <TableCell colSpan={5} className="h-24 text-center">
+                                            <TableCell colSpan={6} className="h-24 text-center">
                                                 No stocks found for your search query.
                                             </TableCell>
                                         </TableRow>

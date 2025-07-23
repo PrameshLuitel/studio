@@ -83,6 +83,7 @@ export interface StockSummaryData {
     totalMarketValue: number;
     totalPurchaseValue: number;
     totalGainLoss: number;
+    holdingPercentage: number;
     clientHoldings: ClientHolding[];
 }
 
@@ -397,6 +398,8 @@ export class ExcelDataProcessor {
     const holdingData = this.getSheetData('Holding Statement');
     if (holdingData.length < 4) return []; // Data starts from row 4
 
+    const totalPortfolioValue = this.parseNumber(holdingData[0]?.[33]); // AH is 34th col, index 33.
+
     const stockMap = new Map<string, {
         marketRate: number;
         totalMarketValue: number;
@@ -457,6 +460,7 @@ export class ExcelDataProcessor {
         totalMarketValue: data.totalMarketValue,
         totalPurchaseValue: data.totalPurchaseValue,
         totalGainLoss: data.totalMarketValue - data.totalPurchaseValue,
+        holdingPercentage: totalPortfolioValue > 0 ? (data.totalMarketValue / totalPortfolioValue) * 100 : 0,
         clientHoldings: data.clientHoldings,
     }));
 }
