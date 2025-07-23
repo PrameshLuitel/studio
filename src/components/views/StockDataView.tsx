@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss' | 'holdingPercentage';
 type SortDirection = 'asc' | 'desc';
-type ClientHoldingSortKey = 'clientId' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'eps' | 'peRatio' | 'stockWeightInPortfolio';
+type ClientHoldingSortKey = 'clientId' | 'purchaseValue' | 'marketValue' | 'gainLossPercentage' | 'weightedAvgCost' | 'stockWeightInPortfolio';
 
 export const StockDataView = () => {
     const { excelProcessor } = useContext(AppContext);
@@ -250,8 +250,7 @@ export const StockDataView = () => {
                                                                         <ClientHoldingSortableHeader tkey="purchaseValue" label="Purchase Value" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="gainLossPercentage" label="Gain/Loss (%)" className="text-right" />
-                                                                        <ClientHoldingSortableHeader tkey="eps" label="EPS" className="text-right" />
-                                                                        <ClientHoldingSortableHeader tkey="peRatio" label="P/E Ratio" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="weightedAvgCost" label="Weighted Avg Cost" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="stockWeightInPortfolio" label="% of Equity Weight" className="text-right" />
                                                                     </TableRow>
                                                                 </TableHeader>
@@ -262,8 +261,7 @@ export const StockDataView = () => {
                                                                             <TableCell className="text-right font-mono">{formatCurrency(holding.purchaseValue)}</TableCell>
                                                                             <TableCell className="text-right font-mono">{formatCurrency(holding.marketValue)}</TableCell>
                                                                             <TableCell className={cn("text-right font-mono", holding.gainLossPercentage >= 0 ? 'text-green-500' : 'text-red-500')}>{holding.gainLossPercentage.toFixed(2)}%</TableCell>
-                                                                            <TableCell className="text-right font-mono">{holding.eps.toFixed(2)}</TableCell>
-                                                                            <TableCell className="text-right font-mono">{holding.peRatio.toFixed(2)}</TableCell>
+                                                                            <TableCell className="text-right font-mono">{formatCurrency(holding.weightedAvgCost)}</TableCell>
                                                                             <TableCell className="text-right font-mono">{(holding.stockWeightInPortfolio).toFixed(2)}%</TableCell>
                                                                         </TableRow>
                                                                     ))}

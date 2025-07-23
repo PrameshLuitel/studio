@@ -73,8 +73,7 @@ export interface ClientHolding {
     purchaseValue: number;
     marketValue: number;
     gainLossPercentage: number;
-    eps: number;
-    peRatio: number;
+    weightedAvgCost: number;
     stockWeightInPortfolio: number;
 }
 
@@ -436,8 +435,7 @@ export class ExcelDataProcessor {
         const clientId = String(row[3]); // Column D
         const clientName = String(row[4]); // Column E
         const gainLossPercentage = this.parseNumber(row[13]); // Column N
-        const eps = this.parseNumber(row[19]); // Column T
-        const peRatio = this.parseNumber(row[20]); // Column U
+        const weightedAvgCost = this.parseNumber(row[9]); // Column J
         const portfolioValueForWeight = this.parseNumber(row[24]); // Column Y
         const stockWeightInPortfolio = portfolioValueForWeight > 0 ? (marketValue / portfolioValueForWeight) * 100 : 0;
         
@@ -448,8 +446,7 @@ export class ExcelDataProcessor {
                 purchaseValue,
                 marketValue,
                 gainLossPercentage,
-                eps,
-                peRatio,
+                weightedAvgCost,
                 stockWeightInPortfolio
             });
         }
@@ -999,5 +996,3 @@ export const formatCurrency = (amount: number): string => {
     maximumFractionDigits: 0
   }).format(amount);
 };
-
-    
