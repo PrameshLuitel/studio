@@ -16,6 +16,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss' | 'holdingPercentage';
 type SortDirection = 'asc' | 'desc';
@@ -148,8 +149,8 @@ export const StockDataView = () => {
         <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
             <Card className="glassmorphic flex-shrink-0">
                 <CardContent className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="relative md:col-span-1">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search stocks..."
@@ -161,41 +162,45 @@ export const StockDataView = () => {
                                 className="pl-10 w-full"
                             />
                         </div>
-                        <div className="md:col-span-1">
-                             <Combobox
-                                options={stockOptions}
-                                value={selectedStock}
-                                onChange={(value) => {
-                                    setSelectedStock(value);
-                                    setSearchQuery(''); // Clear search when using dropdown
-                                }}
-                                placeholder="Select a stock..."
-                                searchPlaceholder='Search stocks...'
-                                emptyPlaceholder='No stocks found.'
-                            />
-                        </div>
-                        <div className="md:col-span-1">
-                            <Select onValueChange={(v) => {
-                                const [key, dir] = v.split('-') as [SortKey, SortDirection];
-                                setSortKey(key);
-                                setSortDirection(dir);
-                            }} value={`${sortKey}-${sortDirection}`}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Sort by" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="stockName-asc">Name (A-Z)</SelectItem>
-                                    <SelectItem value="stockName-desc">Name (Z-A)</SelectItem>
-                                    <SelectItem value="totalMarketValue-desc">Market Value (High-Low)</SelectItem>
-                                    <SelectItem value="totalMarketValue-asc">Market Value (Low-High)</SelectItem>
-                                    <SelectItem value="totalPurchaseValue-desc">Purchase Value (High-Low)</SelectItem>
-                                    <SelectItem value="totalPurchaseValue-asc">Purchase Value (Low-High)</SelectItem>
-                                    <SelectItem value="totalGainLoss-desc">Gain/Loss (High-Low)</SelectItem>
-                                    <SelectItem value="totalGainLoss-asc">Gain/Loss (Low-High)</SelectItem>
-                                    <SelectItem value="holdingPercentage-desc">% Holding (High-Low)</SelectItem>
-                                    <SelectItem value="holdingPercentage-asc">% Holding (Low-High)</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <Combobox
+                            options={stockOptions}
+                            value={selectedStock}
+                            onChange={(value) => {
+                                setSelectedStock(value);
+                                setSearchQuery(''); // Clear search when using dropdown
+                            }}
+                            placeholder="Select a stock..."
+                            searchPlaceholder='Search stocks...'
+                            emptyPlaceholder='No stocks found.'
+                        />
+                        <Select onValueChange={(v) => {
+                            const [key, dir] = v.split('-') as [SortKey, SortDirection];
+                            setSortKey(key);
+                            setSortDirection(dir);
+                        }} value={`${sortKey}-${sortDirection}`}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Sort by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="stockName-asc">Name (A-Z)</SelectItem>
+                                <SelectItem value="stockName-desc">Name (Z-A)</SelectItem>
+                                <SelectItem value="totalMarketValue-desc">Market Value (High-Low)</SelectItem>
+                                <SelectItem value="totalMarketValue-asc">Market Value (Low-High)</SelectItem>
+                                <SelectItem value="totalPurchaseValue-desc">Purchase Value (High-Low)</SelectItem>
+                                <SelectItem value="totalPurchaseValue-asc">Purchase Value (Low-High)</SelectItem>
+                                <SelectItem value="totalGainLoss-desc">Gain/Loss (High-Low)</SelectItem>
+                                <SelectItem value="totalGainLoss-asc">Gain/Loss (Low-High)</SelectItem>
+                                <SelectItem value="holdingPercentage-desc">% Holding (High-Low)</SelectItem>
+                                <SelectItem value="holdingPercentage-asc">% Holding (Low-High)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <div className="flex items-center gap-2 rounded-lg border p-2">
+                            <Label className="font-semibold text-sm">Weight:</Label>
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="sm" className="h-8">Top 5</Button>
+                                <Button variant="outline" size="sm" className="h-8">Top 10</Button>
+                                <Button variant="outline" size="sm" className="h-8">Top 20</Button>
+                            </div>
                         </div>
                     </div>
                 </CardContent>
@@ -298,3 +303,6 @@ export const StockDataView = () => {
         </div>
     );
 };
+
+
+    
