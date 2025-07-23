@@ -308,8 +308,15 @@ export class ExcelDataProcessor {
       const initialInvestment = this.parseNumber(row[22]); // Column W
       const portfolioGainLoss = this.parseNumber(row[17]); // RAW value from Column R
       const gainLossPercentage = initialInvestment > 0 ? (totalValue - initialInvestment) / initialInvestment : 0;
-      const equityValue = this.parseNumber(row[6]); // Column G
       
+      const equityFromG = this.parseNumber(row[6]); // Column G
+      const cashFromH = this.parseNumber(row[7]);
+      const cashFromK = this.parseNumber(row[10]);
+      const cashFromJ = this.parseNumber(row[9]);
+      const cashValue = cashFromH + cashFromK - cashFromJ;
+      const totalEquityCash = equityFromG + cashValue;
+      const equityPercentage = totalEquityCash > 0 ? (equityFromG / totalEquityCash) * 100 : 0;
+
       const pmsOpeningDate = this.parseDate(row[24]); // Column Y for "Period Invested"
       let periodInvested: { years: number; months: number } | undefined = undefined;
       if (pmsOpeningDate) {
@@ -328,7 +335,7 @@ export class ExcelDataProcessor {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: initialInvestment,
         totalValue: totalValue,
-        equityValue: equityValue,
+        equityValue: equityPercentage,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue - initialInvestment,
         portfolioGainLoss: portfolioGainLoss,

@@ -515,7 +515,7 @@ export const ClientDataView = () => {
                                     <SortableHeader tkey="clientId" label="Client Name" />
                                     <SortableHeader tkey="initialInvestment" label="Initial Investment" />
                                     <SortableHeader tkey="totalValue" label="Portfolio Value" />
-                                    <SortableHeader tkey="equityValue" label="Equity" />
+                                    <SortableHeader tkey="equityValue" label="Equity %" />
                                     <SortableHeader tkey="gainLossValue" label="Gain/Loss" />
                                     <SortableHeader tkey="portfolioGainLoss" label="Port +/- %" />
                                     <SortableHeader tkey="gainLossPercentage" label="Cum. Return" />
@@ -547,7 +547,7 @@ export const ClientDataView = () => {
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">{client.initialInvestment ? formatCurrency(client.initialInvestment) : 'N/A'}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
-                                                <TableCell className="text-right font-mono">{formatCurrency(client.equityValue || 0)}</TableCell>
+                                                <TableCell className="text-right font-mono">{typeof client.equityValue === 'number' ? `${client.equityValue.toFixed(2)}%` : 'N/A'}</TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
                                                     client.gainLossValue > 0 ? "text-green-500" : client.gainLossValue < 0 ? "text-red-500" : "text-muted-foreground"
