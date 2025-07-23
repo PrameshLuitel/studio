@@ -248,7 +248,7 @@ export const StockDataView = () => {
                                                                         <ClientHoldingSortableHeader tkey="gainLossPercentage" label="Gain/Loss (%)" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="eps" label="EPS" className="text-right" />
                                                                         <ClientHoldingSortableHeader tkey="peRatio" label="P/E Ratio" className="text-right" />
-                                                                        <ClientHoldingSortableHeader tkey="stockWeightInPortfolio" label="Stock's Weight in Portfolio" className="text-right" />
+                                                                        <ClientHoldingSortableHeader tkey="stockWeightInPortfolio" label="% of Equity Weight" className="text-right" />
                                                                     </TableRow>
                                                                 </TableHeader>
                                                                 <TableBody>
