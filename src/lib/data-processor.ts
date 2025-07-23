@@ -140,7 +140,7 @@ export interface ProcessedData {
     loss: number;
     neutral: number;
   };
-  yearsToExpiryBuckets: { [key: string]: { value: number; count: number } };
+  yearsToExpiryBuckets: { [key: string]: { value: number; count: number; clientNames: string[] } };
   assetAllocation: SectorAllocation[];
   assetAllocationGain: SectorAllocation[];
   assetAllocationLoss: SectorAllocation[];
@@ -507,23 +507,24 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number, count: number } } {
-    const buckets: { [key: string]: { value: number, count: number } } = {
-      '< 6m': { value: 0, count: 0 },
-      '6m - 1y': { value: 0, count: 0 },
-      '1y - 2y': { value: 0, count: 0 },
-      '2y - 3y': { value: 0, count: 0 },
-      '3y - 5y': { value: 0, count: 0 },
+  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number, count: number, clientNames: string[] } } {
+    const buckets: { [key: string]: { value: number, count: number, clientNames: string[] } } = {
+      '< 6m': { value: 0, count: 0, clientNames: [] },
+      '6m - 1y': { value: 0, count: 0, clientNames: [] },
+      '1y - 2y': { value: 0, count: 0, clientNames: [] },
+      '2y - 3y': { value: 0, count: 0, clientNames: [] },
+      '3y - 5y': { value: 0, count: 0, clientNames: [] },
     };
   
     if (!clientData) return buckets;
   
     const { headers, data } = clientData;
+    const clientNameIndex = 2; // Column C
     const expiryDateIndex = 20; // Column U
     const aumIndex = 23; // Column X (Present value is AUM)
   
-    if (headers.length <= Math.max(expiryDateIndex, aumIndex)) {
-        console.error('Cannot calculate expiry buckets, headers length is too short for required columns U and X.');
+    if (headers.length <= Math.max(expiryDateIndex, aumIndex, clientNameIndex)) {
+        console.error('Cannot calculate expiry buckets, headers length is too short for required columns.');
         return buckets;
     }
   
@@ -532,31 +533,27 @@ export class ExcelDataProcessor {
     data.forEach(row => {
       const expiryDateValue = row[expiryDateIndex];
       const aum = this.parseNumber(row[aumIndex]);
+      const clientName = String(row[clientNameIndex]);
   
-      if (!expiryDateValue || aum <= 0) return;
+      if (!expiryDateValue || aum <= 0 || !clientName) return;
   
       const expiryDate = this.parseDate(expiryDateValue);
       if (!expiryDate || expiryDate < now) return; // Ignore past dates
   
       const diffTime = expiryDate.getTime() - now.getTime();
       const diffMonths = diffTime / (1000 * 60 * 60 * 24 * 30.44); // Average months
-  
-      if (diffMonths < 6) {
-        buckets['< 6m'].value += aum;
-        buckets['< 6m'].count++;
-      } else if (diffMonths < 12) {
-        buckets['6m - 1y'].value += aum;
-        buckets['6m - 1y'].count++;
-      } else if (diffMonths < 24) {
-        buckets['1y - 2y'].value += aum;
-        buckets['1y - 2y'].count++;
-      } else if (diffMonths < 36) {
-        buckets['2y - 3y'].value += aum;
-        buckets['2y - 3y'].count++;
-      } else if (diffMonths < 60) {
-        buckets['3y - 5y'].value += aum;
-        buckets['3y - 5y'].value += aum;
-        buckets['3y - 5y'].count++;
+      
+      let bucketKey: keyof typeof buckets | null = null;
+      if (diffMonths < 6) bucketKey = '< 6m';
+      else if (diffMonths < 12) bucketKey = '6m - 1y';
+      else if (diffMonths < 24) bucketKey = '1y - 2y';
+      else if (diffMonths < 36) bucketKey = '2y - 3y';
+      else if (diffMonths < 60) bucketKey = '3y - 5y';
+      
+      if (bucketKey) {
+        buckets[bucketKey].value += aum;
+        buckets[bucketKey].count++;
+        buckets[bucketKey].clientNames.push(clientName);
       }
     });
   

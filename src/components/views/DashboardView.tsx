@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy, X } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -320,6 +320,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats, listHeight = 
 
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
+  const [selectedExpiryBucket, setSelectedExpiryBucket] = useState<string | null>(null);
 
   const dashboardData = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
@@ -347,7 +348,7 @@ export const DashboardView = () => {
       sectorAllocation, 
       sectorAllocationGain, 
       sectorAllocationLoss, 
-      yearsToExpiryChartData,
+      yearsToExpiryBuckets,
       equityToCashRatioStats,
       equityToCashRatioStatsGain,
       equityToCashRatioStatsLoss,
@@ -356,8 +357,8 @@ export const DashboardView = () => {
       largestPortfolios
     } = useMemo(() => {
     const data = dashboardData;
-    const yearsToExpiryChartData = data.yearsToExpiryBuckets 
-        ? Object.entries(data.yearsToExpiryBuckets).map(([name, { value, count }]) => ({ name, value, count })) 
+    const yearsToExpiryBuckets = data.yearsToExpiryBuckets 
+        ? Object.entries(data.yearsToExpiryBuckets).map(([name, { value, count, clientNames }]) => ({ name, value, count, clientNames })) 
         : [];
     return {
         summaryStats: {
@@ -371,7 +372,7 @@ export const DashboardView = () => {
         sectorAllocation: data.sectorAllocation || [],
         sectorAllocationGain: data.sectorAllocationGain || [],
         sectorAllocationLoss: data.sectorAllocationLoss || [],
-        yearsToExpiryChartData,
+        yearsToExpiryBuckets,
         equityToCashRatioStats: data.equityToCashRatioStats,
         equityToCashRatioStatsGain: data.equityToCashRatioStatsGain,
         equityToCashRatioStatsLoss: data.equityToCashRatioStatsLoss,
@@ -380,6 +381,18 @@ export const DashboardView = () => {
         largestPortfolios: data.largestPortfolios || [],
     };
   }, [dashboardData]);
+  
+  const handleBarClick = (data: any) => {
+    if (data && data.name) {
+      setSelectedExpiryBucket(prev => prev === data.name ? null : data.name);
+    }
+  };
+
+  const selectedBucketClients = useMemo(() => {
+    if (!selectedExpiryBucket) return [];
+    const bucket = yearsToExpiryBuckets.find(b => b.name === selectedExpiryBucket);
+    return bucket ? bucket.clientNames : [];
+  }, [selectedExpiryBucket, yearsToExpiryBuckets]);
 
   const gainLoss = summaryStats.clientGainLoss || { gain: 0, loss: 0, neutral: 0 };
 
@@ -432,26 +445,50 @@ export const DashboardView = () => {
             <CardTitle className="font-headline flex items-center gap-2"><CalendarClock className="text-accent"/> Years to Expiry vs AUM</CardTitle>
           </CardHeader>
           <CardContent>
-          <ChartContainer config={{}} className="h-64 w-full">
-              <ResponsiveContainer>
-                <RechartsBarChart data={yearsToExpiryChartData}>
-                    <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <YAxis tickFormatter={(value) => formatCurrency(Number(value))} stroke="hsl(var(--muted-foreground))" fontSize={12} />
-                    <Tooltip 
-                        cursor={{ fill: 'hsl(var(--muted))' }} 
-                        content={<ChartTooltipContent 
-                            formatter={(value, name, props) => (
-                                <div className="flex flex-col gap-0.5">
-                                    <span className="font-semibold">{formatCurrency(Number(value))}</span>
-                                    <span className="text-xs text-muted-foreground">{props.payload.count} clients</span>
-                                </div>
-                            )}
-                         />}
-                    />
-                    <Bar dataKey="value" name="AUM" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} className="recharts-bar-rectangle"/>
-                </RechartsBarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className={cn("h-80 w-full", selectedExpiryBucket ? "md:col-span-2" : "md:col-span-3")}>
+                    <ResponsiveContainer>
+                        <RechartsBarChart 
+                            data={yearsToExpiryBuckets}
+                            onClick={(e) => handleBarClick(e?.activePayload?.[0]?.payload)}
+                        >
+                            <XAxis dataKey="name" tickLine={false} axisLine={false} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <YAxis tickFormatter={(value) => formatCurrency(Number(value))} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                            <Tooltip 
+                                cursor={{ fill: 'hsl(var(--muted))' }} 
+                                content={<ChartTooltipContent 
+                                    formatter={(value, name, props) => (
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-semibold">{formatCurrency(Number(value))}</span>
+                                            <span className="text-xs text-muted-foreground">{props.payload.count} clients</span>
+                                        </div>
+                                    )}
+                                />}
+                            />
+                            <Bar dataKey="value" name="AUM" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} className="recharts-bar-rectangle cursor-pointer"/>
+                        </RechartsBarChart>
+                    </ResponsiveContainer>
+                </div>
+                {selectedExpiryBucket && (
+                  <div className="md:col-span-1 animate-in fade-in-50">
+                    <div className="flex justify-between items-center mb-2">
+                        <h4 className="font-semibold text-foreground">Clients in '{selectedExpiryBucket}' bucket</h4>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedExpiryBucket(null)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                    <ScrollArea className="h-72 border rounded-md bg-muted/30">
+                        <ul className="p-2 space-y-1">
+                           {selectedBucketClients.map((client, index) => (
+                               <li key={index} className="text-sm p-1.5 rounded-md hover:bg-background/50">
+                                   {client}
+                               </li>
+                           ))}
+                        </ul>
+                    </ScrollArea>
+                  </div>
+                )}
+            </div>
           </CardContent>
         </Card>
       </div>
