@@ -360,7 +360,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 };
 
-type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'gainLossValue' | 'portfolioGainLoss' | 'gainLossPercentage' | 'expiryDate' | 'periodInvested';
+type SortKey = 'clientId' | 'initialInvestment' | 'totalValue' | 'equityValue' | 'gainLossValue' | 'portfolioGainLoss' | 'gainLossPercentage' | 'expiryDate' | 'periodInvested';
 type SortDirection = 'asc' | 'desc';
 
 export const ClientDataView = () => {
@@ -488,6 +488,8 @@ export const ClientDataView = () => {
                                 <SelectItem value="initialInvestment-asc">Investment (Low-High)</SelectItem>
                                 <SelectItem value="totalValue-desc">Value (High-Low)</SelectItem>
                                 <SelectItem value="totalValue-asc">Value (Low-High)</SelectItem>
+                                <SelectItem value="equityValue-desc">Equity (High-Low)</SelectItem>
+                                <SelectItem value="equityValue-asc">Equity (Low-High)</SelectItem>
                                 <SelectItem value="gainLossPercentage-desc">Growth (High-Low)</SelectItem>
                                 <SelectItem value="gainLossPercentage-asc">Growth (Low-High)</SelectItem>
                                 <SelectItem value="portfolioGainLoss-desc">Portfolio Gain (High-Low)</SelectItem>
@@ -513,9 +515,10 @@ export const ClientDataView = () => {
                                     <SortableHeader tkey="clientId" label="Client Name" />
                                     <SortableHeader tkey="initialInvestment" label="Initial Investment" />
                                     <SortableHeader tkey="totalValue" label="Portfolio Value" />
+                                    <SortableHeader tkey="equityValue" label="Equity" />
                                     <SortableHeader tkey="gainLossValue" label="Gain/Loss" />
-                                    <SortableHeader tkey="portfolioGainLoss" label="Portfolio Gain/loss %" />
-                                    <SortableHeader tkey="gainLossPercentage" label="Overall Holding Growth" />
+                                    <SortableHeader tkey="portfolioGainLoss" label="Port +/- %" />
+                                    <SortableHeader tkey="gainLossPercentage" label="Cum. Return" />
                                     <SortableHeader tkey="expiryDate" label="Expiry Date" />
                                     <SortableHeader tkey="periodInvested" label="Period Invested" />
                                 </TableRow>
@@ -523,7 +526,7 @@ export const ClientDataView = () => {
                             <TableBody>
                                 {filteredAndSortedClients.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
+                                        <TableCell colSpan={9} className="h-24 text-center">
                                             No clients found.
                                         </TableCell>
                                     </TableRow>
@@ -544,17 +547,19 @@ export const ClientDataView = () => {
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">{client.initialInvestment ? formatCurrency(client.initialInvestment) : 'N/A'}</TableCell>
                                                 <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
+                                                <TableCell className="text-right font-mono">{formatCurrency(client.equityValue || 0)}</TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
                                                     client.gainLossValue > 0 ? "text-green-500" : client.gainLossValue < 0 ? "text-red-500" : "text-muted-foreground"
                                                 )}>
                                                     {client.gainLossValue > 0 ? '+' : ''}{formatCurrency(client.gainLossValue)}
                                                 </TableCell>
-                                                <TableCell className={cn(
-                                                    "text-right font-mono",
-                                                    (client.portfolioGainLoss ?? 0) > 0 ? "text-green-500" : (client.portfolioGainLoss ?? 0) < 0 ? "text-red-500" : "text-muted-foreground"
-                                                )}>
-                                                    {typeof client.portfolioGainLoss === 'number' ? `${(client.portfolioGainLoss * 100).toFixed(2)}%` : 'N/A'}
+                                                <TableCell className={cn("text-right font-mono")}>
+                                                    {typeof client.portfolioGainLoss === 'number' ? 
+                                                    <span className={client.portfolioGainLoss > 0 ? "text-green-500" : client.portfolioGainLoss < 0 ? "text-red-500" : "text-muted-foreground"}>
+                                                        {client.portfolioGainLoss > 0 ? '+' : ''}{(client.portfolioGainLoss * 100).toFixed(2)}%
+                                                    </span>
+                                                    : 'N/A'}
                                                 </TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
@@ -571,7 +576,7 @@ export const ClientDataView = () => {
                                             </TableRow>
                                             {selectedClient === client.clientId && clientDetails && (
                                                 <TableRow className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={8} className="p-0">
+                                                    <TableCell colSpan={9} className="p-0">
                                                        <ClientDetailsComponent details={clientDetails} />
                                                     </TableCell>
                                                 </TableRow>

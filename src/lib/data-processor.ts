@@ -9,6 +9,7 @@ export interface SummaryData {
   clientId: string;
   initialInvestment?: number;
   totalValue: number;
+  equityValue?: number;
   gainLossPercentage: number;
   gainLossValue: number;
   portfolioGainLoss?: number;
@@ -307,6 +308,7 @@ export class ExcelDataProcessor {
       const initialInvestment = this.parseNumber(row[22]); // Column W
       const portfolioGainLoss = this.parseNumber(row[17]); // RAW value from Column R
       const gainLossPercentage = initialInvestment > 0 ? (totalValue - initialInvestment) / initialInvestment : 0;
+      const equityValue = this.parseNumber(row[6]); // Column G
       
       const pmsOpeningDate = this.parseDate(row[24]); // Column Y for "Period Invested"
       let periodInvested: { years: number; months: number } | undefined = undefined;
@@ -326,6 +328,7 @@ export class ExcelDataProcessor {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: initialInvestment,
         totalValue: totalValue,
+        equityValue: equityValue,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue - initialInvestment,
         portfolioGainLoss: portfolioGainLoss,
