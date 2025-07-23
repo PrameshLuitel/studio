@@ -220,6 +220,7 @@ export const StockDataView = () => {
                         <Table>
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm z-10">
                                 <TableRow>
+                                    <TableHead>S.No.</TableHead>
                                     <SortableHeader tkey="stockName" label="Stock Name" />
                                     <SortableHeader tkey="marketRate" label="Market Rate" className="text-right" />
                                     <SortableHeader tkey="totalMarketValue" label="Total Market Value" className="text-right" />
@@ -236,6 +237,7 @@ export const StockDataView = () => {
                                          <tbody className="border-none">
                                             <CollapsibleTrigger asChild>
                                                 <TableRow className="cursor-pointer hover:bg-muted/50 data-[state=open]:bg-primary/10">
+                                                    <TableCell>{index + 1}</TableCell>
                                                     <TableCell className="font-medium">{stock.stockName}</TableCell>
                                                     <TableCell className="text-right font-mono">{formatCurrency(stock.marketRate)}</TableCell>
                                                     <TableCell className="text-right font-mono">{formatCurrency(stock.totalMarketValue)}</TableCell>
@@ -261,7 +263,7 @@ export const StockDataView = () => {
                                             </CollapsibleTrigger>
                                             <CollapsibleContent asChild>
                                                <tr className="bg-background/50 dark:bg-black/20">
-                                                    <TableCell colSpan={7} className="p-2">
+                                                    <TableCell colSpan={8} className="p-2">
                                                         <div className="p-2 bg-muted/50 rounded-md">
                                                             <h4 className="font-semibold px-2 py-1">Client Holdings for {stock.stockName}</h4>
                                                             <Table>
@@ -298,7 +300,7 @@ export const StockDataView = () => {
                                 ) : (
                                     <tbody>
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
+                                            <TableCell colSpan={8} className="h-24 text-center">
                                                 No stocks found for your search query.
                                             </TableCell>
                                         </TableRow>
