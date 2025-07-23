@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useContext, useMemo, useState, useCallback } from 'react';
@@ -103,7 +102,7 @@ interface ClientDetailsViewProps {
     details: ClientDetails;
 }
 
-type StockSortKey = 'stock' | 'quantity' | 'marketRate' | 'marketValue' | 'gain' | 'equityWeight';
+type StockSortKey = 'stock' | 'sector' | 'quantity' | 'marketRate' | 'marketValue' | 'gain' | 'equityWeight';
 type StockSortDirection = 'asc' | 'desc';
 
 const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) => {
@@ -213,7 +212,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <ChartContainer config={{}} className="h-64 w-full">
                          <ResponsiveContainer>
                             <PieChart>
@@ -299,7 +298,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                             <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                                 <TableRow>
                                     <StockSortableHeader tkey="stock" label="Stock" />
-                                    <TableHead>Sector</TableHead>
+                                    <StockSortableHeader tkey="sector" label="Sector" />
                                     <StockSortableHeader tkey="quantity" label="Quantity" className="text-right" />
                                     <StockSortableHeader tkey="marketRate" label="Market Rate" className="text-right" />
                                     <StockSortableHeader tkey="marketValue" label="Market Value" className="text-right" />
@@ -593,3 +592,5 @@ export const ClientDataView = () => {
     </div>
   );
 };
+
+    
