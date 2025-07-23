@@ -447,6 +447,7 @@ export const DashboardView = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className={cn("h-80 w-full", selectedExpiryBucket ? "md:col-span-2" : "md:col-span-3")}>
+                  <ChartContainer config={{}} className="h-full w-full">
                     <ResponsiveContainer>
                         <RechartsBarChart 
                             data={yearsToExpiryBuckets}
@@ -468,6 +469,7 @@ export const DashboardView = () => {
                             <Bar dataKey="value" name="AUM" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} className="recharts-bar-rectangle cursor-pointer"/>
                         </RechartsBarChart>
                     </ResponsiveContainer>
+                  </ChartContainer>
                 </div>
                 {selectedExpiryBucket && (
                   <div className="md:col-span-1 animate-in fade-in-50">
