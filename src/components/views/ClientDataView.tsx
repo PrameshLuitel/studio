@@ -214,7 +214,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
     );
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-in fade-in-50 p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in-50 p-4">
             <Card className="glassmorphic lg:col-span-1">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><PieChartIcon className="text-accent"/> Sector Allocations for {details.name}</CardTitle>
@@ -264,7 +264,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                         </ResponsiveContainer>
                     </ChartContainer>
                      <div className="w-full space-y-2">
-                        <ScrollArea className="h-64">
+                        <ScrollArea className="h-40">
                             <ul className="space-y-1 p-1">
                                 {legendItems.map((item, index) => (
                                     <li 
@@ -279,23 +279,23 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                                     </li>
                                 ))}
                             </ul>
-                             <div className="p-2 border-t mt-2">
-                                <h4 className="font-semibold text-sm mb-1">Equity to Cash Ratio</h4>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Equity:</span>
-                                    <span className="font-mono font-medium">{details.equityPercentage.toFixed(2)}%</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-muted-foreground">Cash:</span>
-                                    <span className="font-mono font-medium">{details.cashPercentage.toFixed(2)}%</span>
-                                </div>
-                            </div>
                         </ScrollArea>
+                        <div className="p-2 border-t mt-2">
+                            <h4 className="font-semibold text-sm mb-1">Equity to Cash Ratio</h4>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Equity:</span>
+                                <span className="font-mono font-medium">{details.equityPercentage.toFixed(2)}%</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Cash:</span>
+                                <span className="font-mono font-medium">{details.cashPercentage.toFixed(2)}%</span>
+                            </div>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            <Card className="glassmorphic lg:col-span-1">
+            <Card className="glassmorphic lg:col-span-2">
                 <CardHeader>
                     <CardTitle className="font-headline flex items-center gap-2"><AreaChart className="text-accent"/> Stock Allocation</CardTitle>
                 </CardHeader>
@@ -337,7 +337,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                 </CardContent>
             </Card>
 
-            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                  {individualCardsData.map((item, index) => (
                     <StatCard 
                         key={index}
@@ -348,7 +348,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                  ))}
             </div>
             {groupedCardData.length > 0 && (
-                <Card className="glassmorphic lg:col-span-2">
+                <Card className="glassmorphic lg:col-span-3">
                      <CardHeader>
                         <CardTitle className="font-headline flex items-center gap-2"><Library className="text-accent" /> Other Information</CardTitle>
                     </CardHeader>
