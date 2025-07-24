@@ -18,7 +18,7 @@ export default function Home() {
       setIsLoading(true);
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5-second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
 
       try {
         const response = await fetch(GOOGLE_DRIVE_URL, { signal: controller.signal });
