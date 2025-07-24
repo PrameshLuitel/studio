@@ -138,6 +138,11 @@ export interface LargestPortfolio {
     gainLossPercentage: number;
 }
 
+export interface BucketClient {
+    clientName: string;
+    value: number;
+}
+
 
 // Processed data interfaces
 export interface ProcessedData {
@@ -149,7 +154,7 @@ export interface ProcessedData {
     loss: number;
     neutral: number;
   };
-  yearsToExpiryBuckets: { [key: string]: { value: number; count: number; clientNames: string[] } };
+  yearsToExpiryBuckets: { [key: string]: { value: number; count: number; clients: BucketClient[] } };
   assetAllocation: SectorAllocation[];
   assetAllocationGain: SectorAllocation[];
   assetAllocationLoss: SectorAllocation[];
@@ -549,13 +554,13 @@ export class ExcelDataProcessor {
   /**
    * Calculate years to expiry buckets from Portfolio sheet
    */
-  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number, count: number, clientNames: string[] } } {
-    const buckets: { [key: string]: { value: number, count: number, clientNames: string[] } } = {
-      '< 6m': { value: 0, count: 0, clientNames: [] },
-      '6m - 1y': { value: 0, count: 0, clientNames: [] },
-      '1y - 2y': { value: 0, count: 0, clientNames: [] },
-      '2y - 3y': { value: 0, count: 0, clientNames: [] },
-      '3y - 5y': { value: 0, count: 0, clientNames: [] },
+  private calculateYearsToExpiryBuckets(clientData: ClientData | null): { [key: string]: { value: number, count: number, clients: BucketClient[] } } {
+    const buckets: { [key: string]: { value: number, count: number, clients: BucketClient[] } } = {
+      '< 6m': { value: 0, count: 0, clients: [] },
+      '6m - 1y': { value: 0, count: 0, clients: [] },
+      '1y - 2y': { value: 0, count: 0, clients: [] },
+      '2y - 3y': { value: 0, count: 0, clients: [] },
+      '3y - 5y': { value: 0, count: 0, clients: [] },
     };
   
     if (!clientData) return buckets;
@@ -595,7 +600,7 @@ export class ExcelDataProcessor {
       if (bucketKey) {
         buckets[bucketKey].value += aum;
         buckets[bucketKey].count++;
-        buckets[bucketKey].clientNames.push(clientName);
+        buckets[bucketKey].clients.push({ clientName, value: aum });
       }
     });
   

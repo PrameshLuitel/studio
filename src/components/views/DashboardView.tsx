@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy, X } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy, X, ChevronsUpDown, ArrowDown, ArrowUp } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
@@ -321,6 +322,7 @@ const AllocationPieChart = ({ title, data, icon: Icon, ratioStats, listHeight = 
 export const DashboardView = () => {
   const { excelProcessor, isLoading } = useContext(AppContext);
   const [selectedExpiryBucket, setSelectedExpiryBucket] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: 'clientName' | 'value'; direction: 'asc' | 'desc' }>({ key: 'value', direction: 'desc' });
 
   const dashboardData = useMemo(() => {
     if (!excelProcessor || !excelProcessor.isDataLoaded()) return null;
@@ -359,7 +361,7 @@ export const DashboardView = () => {
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryBuckets = data.yearsToExpiryBuckets 
-        ? Object.entries(data.yearsToExpiryBuckets).map(([name, { value, count, clientNames }]) => ({ name, value, count, clientNames })) 
+        ? Object.entries(data.yearsToExpiryBuckets).map(([name, { value, count, clients }]) => ({ name, value, count, clients })) 
         : [];
     return {
         summaryStats: {
@@ -386,15 +388,56 @@ export const DashboardView = () => {
   
   const handleBarClick = (data: any) => {
     if (data && data.name) {
-      setSelectedExpiryBucket(prev => prev === data.name ? null : data.name);
+      setSelectedExpiryBucket(prev => {
+          if (prev === data.name) {
+              return null;
+          }
+          setSortConfig({ key: 'value', direction: 'desc' });
+          return data.name;
+      });
     }
   };
 
-  const selectedBucketClients = useMemo(() => {
+  const handleSort = (key: 'clientName' | 'value') => {
+    setSortConfig(prev => ({
+        key,
+        direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const sortedBucketClients = useMemo(() => {
     if (!selectedExpiryBucket) return [];
     const bucket = yearsToExpiryBuckets.find(b => b.name === selectedExpiryBucket);
-    return bucket ? bucket.clientNames : [];
-  }, [selectedExpiryBucket, yearsToExpiryBuckets]);
+    if (!bucket) return [];
+
+    return [...bucket.clients].sort((a, b) => {
+        const { key, direction } = sortConfig;
+        if (a[key] < b[key]) {
+            return direction === 'asc' ? -1 : 1;
+        }
+        if (a[key] > b[key]) {
+            return direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+    });
+  }, [selectedExpiryBucket, yearsToExpiryBuckets, sortConfig]);
+
+  const SortableHeader = ({ tkey, label, className }: { tkey: 'clientName' | 'value', label: string, className?: string }) => (
+    <TableHead
+        className={cn("cursor-pointer hover:bg-muted transition-colors p-2", className)}
+        onClick={() => handleSort(tkey)}
+    >
+        <div className="flex items-center gap-1">
+            {label}
+            {sortConfig.key === tkey ? (
+                sortConfig.direction === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+            ) : (
+                <ChevronsUpDown className="h-3 w-3 text-muted-foreground/50" />
+            )}
+        </div>
+    </TableHead>
+  );
+
 
   const gainLoss = summaryStats.clientGainLoss || { gain: 0, loss: 0, neutral: 0 };
 
@@ -454,7 +497,7 @@ export const DashboardView = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className={cn("h-80 w-full", selectedExpiryBucket ? "md:col-span-2" : "md:col-span-3")}>
+                <div className={cn("h-96 w-full", selectedExpiryBucket ? "md:col-span-2" : "md:col-span-3")}>
                   <ChartContainer config={{}} className="h-full w-full">
                     <ResponsiveContainer>
                         <RechartsBarChart 
@@ -482,20 +525,31 @@ export const DashboardView = () => {
                 {selectedExpiryBucket && (
                   <div className="md:col-span-1 animate-in fade-in-50">
                     <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-semibold text-foreground">Clients in '{selectedExpiryBucket}' bucket</h4>
+                        <h4 className="font-semibold text-foreground">Clients in '{selectedExpiryBucket}'</h4>
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSelectedExpiryBucket(null)}>
                             <X className="h-4 w-4" />
                         </Button>
                     </div>
-                    <ScrollArea className="h-72 border rounded-md bg-muted/30">
-                        <ul className="p-2 space-y-1">
-                           {selectedBucketClients.map((client, index) => (
-                               <li key={index} className="text-sm p-1.5 rounded-md hover:bg-background/50">
-                                   {client}
-                               </li>
-                           ))}
-                        </ul>
-                    </ScrollArea>
+                    <div className="border rounded-md bg-muted/30">
+                        <ScrollArea className="h-80">
+                            <Table>
+                                <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
+                                    <TableRow>
+                                        <SortableHeader tkey="clientName" label="Client Name" />
+                                        <SortableHeader tkey="value" label="Value" className="text-right" />
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                   {sortedBucketClients.map((client, index) => (
+                                       <TableRow key={index} className="hover:bg-background/50">
+                                           <TableCell className="p-2 text-sm">{client.clientName}</TableCell>
+                                           <TableCell className="p-2 text-sm text-right font-mono">{formatCurrency(client.value)}</TableCell>
+                                       </TableRow>
+                                   ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
+                    </div>
                   </div>
                 )}
             </div>
