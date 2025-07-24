@@ -7,7 +7,7 @@ import { AppContext } from '@/contexts/AppContext';
 import { ExcelDataProcessor } from '@/lib/data-processor';
 import { useToast } from '@/hooks/use-toast';
 
-const GOOGLE_DRIVE_URL = 'https://drive.google.com/uc?export=download&id=1iiFLaZ0Wpn0xkT0FdNSEMJZ1dAjWXatN';
+const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1GQFZhuoh8UQl1BrNCCbSyu8ZESHgJPXR/export?format=xlsx';
 
 export default function Home() {
   const { setExcelProcessor, setFileName, setIsLoading, excelProcessor } = useContext(AppContext);
@@ -21,7 +21,7 @@ export default function Home() {
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10-second timeout
 
       try {
-        const response = await fetch(GOOGLE_DRIVE_URL, { signal: controller.signal });
+        const response = await fetch(GOOGLE_SHEETS_URL, { signal: controller.signal });
         clearTimeout(timeoutId);
 
         if (!response.ok) {
