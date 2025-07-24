@@ -248,9 +248,9 @@ export const AskGiclView = () => {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question about your portfolio..."
             className="flex-1"
-            disabled={isLoading}
+            disabled={isLoading || !excelProcessor}
           />
-          <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
+          <Button type="submit" size="icon" disabled={isLoading || !input.trim() || !excelProcessor}>
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </form>

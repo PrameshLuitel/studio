@@ -5,46 +5,54 @@ import React, { useContext, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { ExcelDataProcessor, ExcelProcessingError } from '@/lib/data-processor';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, FileText } from 'lucide-react';
+import { UploadCloud, FileText, Loader2, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes } from 'firebase/storage';
 
-// Define the global gapi and google objects that will be available after the script loads.
-declare global {
-  interface Window {
-    gapi: any;
-    google: any;
-  }
-}
+const PORTFOLIO_FILE_PATH = 'portfolio/portfolio.xlsx';
 
 export const FileUpload = () => {
-  const { setExcelProcessor, setFileName, setIsLoading } = useContext(AppContext);
+  const { setExcelProcessor, setFileName, setIsLoading, resetApp } = useContext(AppContext);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
 
-  const [oauthToken, setOauthToken] = useState<string | null>(null);
+  const processFile = useCallback(async (file: File) => {
+    setIsLoading(true);
+    setIsUploading(true);
+    try {
+        // Upload to Firebase Storage
+        const fileRef = ref(storage, PORTFOLIO_FILE_PATH);
+        await uploadBytes(fileRef, file);
 
-  const processFile = useCallback(async (file: File | Blob, name: string) => {
-      setIsLoading(true);
-      try {
-          const processor = new ExcelDataProcessor();
-          await processor.loadExcelFile(file as File);
-          setExcelProcessor(processor);
-          setFileName(name);
-      } catch (error) {
-          console.error(error);
-          const description = error instanceof ExcelProcessingError 
-              ? error.message 
-              : 'Failed to process the Excel file. Please check the format and try again.';
-          toast({
-              variant: 'destructive',
-              title: 'Processing Error',
-              description,
-          });
-      } finally {
-          setIsLoading(false);
-      }
+        toast({
+            title: 'Upload Successful',
+            description: `${file.name} has been uploaded and is now public.`,
+        });
+
+        // Process the file for the current user
+        const processor = new ExcelDataProcessor();
+        await processor.loadExcelFile(file);
+        setExcelProcessor(processor);
+        setFileName(file.name);
+    } catch (error) {
+        console.error("Upload or processing error:", error);
+        const description = error instanceof ExcelProcessingError
+            ? error.message
+            : 'An error occurred during upload or processing.';
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description,
+        });
+    } finally {
+        setIsLoading(false);
+        setIsUploading(false);
+        setUploadedFile(null);
+    }
   }, [setExcelProcessor, setFileName, setIsLoading, toast]);
 
   const handleFile = useCallback(async (file: File | null) => {
@@ -65,58 +73,11 @@ export const FileUpload = () => {
   
   const handleProcessFile = async () => {
     if (!uploadedFile) return;
-    processFile(uploadedFile, uploadedFile.name);
+    processFile(uploadedFile);
   };
 
-  const handleDrivePicker = () => {
-    const showPicker = () => {
-        const developerKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-        const view = new window.google.picker.View(window.google.picker.ViewId.DOCS);
-        view.setMimeTypes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-
-        const picker = new window.google.picker.PickerBuilder()
-            .enableFeature(window.google.picker.Feature.NAV_HIDDEN)
-            .setAppId(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
-            .setOAuthToken(oauthToken)
-            .addView(view)
-            .setDeveloperKey(developerKey)
-            .setCallback((data: any) => {
-                if (data.action === window.google.picker.Action.PICKED) {
-                    const doc = data.docs[0];
-                    window.gapi.client.drive.files.get({
-                        fileId: doc.id,
-                        alt: 'media'
-                    }).then((res: any) => {
-                        const fileBlob = new Blob([res.body], { type: doc.mimeType });
-                        processFile(fileBlob, doc.name);
-                    }).catch((err: any) => {
-                       console.error("Error downloading file:", err);
-                       toast({ variant: "destructive", title: "Drive Error", description: "Could not download the selected file."});
-                    });
-                }
-            })
-            .build();
-        picker.setVisible(true);
-    };
-
-    const initializePicker = () => {
-        window.gapi.load('picker', showPicker);
-        window.gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
-    };
-
-    if (oauthToken) {
-        initializePicker();
-    } else {
-        const client = window.google.accounts.oauth2.initTokenClient({
-            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-            scope: 'https://www.googleapis.com/auth/drive.readonly',
-            callback: (tokenResponse: any) => {
-                setOauthToken(tokenResponse.access_token);
-                initializePicker();
-            },
-        });
-        client.requestAccessToken();
-    }
+  const handleLogout = () => {
+    resetApp();
   };
 
   const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
@@ -147,10 +108,19 @@ export const FileUpload = () => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto text-center">
+    <div className="w-full max-w-2xl mx-auto text-center relative">
+      <Button 
+        variant="ghost" 
+        size="sm" 
+        onClick={handleLogout} 
+        className="absolute -top-12 right-0 text-muted-foreground"
+      >
+        <LogOut className="mr-2 h-4 w-4" />
+        Logout
+      </Button>
       <h1 className="text-5xl font-headline font-bold text-primary mb-2">Portfolio Pulse</h1>
       <p className="text-lg text-foreground/80 mb-8">
-        Upload your .xlsx portfolio file to begin analysis.
+        Upload a new .xlsx portfolio file to update the public data.
       </p>
       <div
         onDrop={onDrop}
@@ -168,13 +138,19 @@ export const FileUpload = () => {
           accept=".xlsx"
           className="hidden"
           onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+          disabled={isUploading}
         />
-        {uploadedFile ? (
+        {isUploading ? (
+            <div className="flex flex-col items-center gap-4 text-primary">
+              <Loader2 className="h-12 w-12 animate-spin" />
+              <p className="text-lg font-headline">Uploading and processing...</p>
+            </div>
+        ) : uploadedFile ? (
            <div className="flex flex-col items-center gap-4">
             <FileText className="h-16 w-16 text-accent" />
             <p className="text-lg font-medium text-foreground">{uploadedFile.name}</p>
             <div className="flex gap-4 mt-4">
-              <Button onClick={handleProcessFile} size="lg">Analyze Portfolio</Button>
+              <Button onClick={handleProcessFile} size="lg">Upload and Analyze</Button>
               <Button variant="outline" onClick={() => setUploadedFile(null)}>Choose another file</Button>
             </div>
            </div>
@@ -185,15 +161,6 @@ export const FileUpload = () => {
               <label htmlFor="file-upload" className="text-accent cursor-pointer hover:underline">Click to upload</label> or drag and drop
             </h2>
             <p className="text-muted-foreground mt-2 mb-4">.XLSX files only</p>
-            <div className="flex items-center justify-center gap-2">
-                <hr className="flex-grow border-t border-border" />
-                <span className="text-muted-foreground text-xs">OR</span>
-                <hr className="flex-grow border-t border-border" />
-            </div>
-             <Button onClick={handleDrivePicker} variant="outline" className="mt-4">
-                <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.45 13.57L13.57 20.45C13.02 21 12.06 21 11.51 20.45L1.55 10.49C1 9.94 1 8.98 1.55 8.43L8.43 1.55C8.98 1 9.94 1 10.49 1.55L20.45 11.51C21 12.06 21 13.02 20.45 13.57Z"></path><path d="M6 18L18 6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
-                Select from Google Drive
-            </Button>
           </div>
         )}
       </div>

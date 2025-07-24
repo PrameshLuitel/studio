@@ -17,6 +17,7 @@ import {
   BarChartHorizontal,
   MessageCircle,
   BarChart,
+  Upload,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,11 @@ const WeightButton = ({ title, value }: { title: string, value: number }) => (
 
 
 export const MainLayout = () => {
-  const { activeView, setActiveView, resetApp, fileName, top5Weight, top10Weight, top15Weight, top20Weight } = useContext(AppContext);
+  const { activeView, setActiveView, resetApp, fileName, top5Weight, top10Weight, top15Weight, top20Weight, isAuthenticated } = useContext(AppContext);
+
+  const handleUploadNewFile = () => {
+    resetApp(true); // Keep authentication
+  }
 
   const renderView = () => {
     switch (activeView) {
@@ -98,21 +103,23 @@ export const MainLayout = () => {
             ))}
           </div>
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={resetApp}
-                className="text-primary/70 hover:bg-primary/10 hover:text-primary"
-              >
-                <FileUp className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              <p>Upload new file</p>
-            </TooltipContent>
-          </Tooltip>
+          {isAuthenticated && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleUploadNewFile}
+                  className="text-primary/70 hover:bg-primary/10 hover:text-primary"
+                >
+                  <Upload className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Upload new file</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </nav>
       </TooltipProvider>
       <main className="flex-1 flex flex-col bg-background/50 dark:bg-black/20 rounded-xl overflow-hidden">
