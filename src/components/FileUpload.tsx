@@ -69,24 +69,24 @@ export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => 
     processFile(uploadedFile);
   };
 
-  const onDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDragEnter = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
-  const onDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDragLeave = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
-  const onDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDragOver = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const onDrop = (e: React.DragEvent<HTMLLabelElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
@@ -97,13 +97,14 @@ export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => 
   };
 
   return (
-    <div
+    <label
+      htmlFor="file-upload"
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       className={cn(
-        'relative w-full h-80 rounded-2xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center transition-all duration-300 ease-in-out bg-background/50',
+        'relative w-full h-80 rounded-2xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center transition-all duration-300 ease-in-out bg-background/50 cursor-pointer',
         isDragging ? 'border-accent scale-105 bg-accent/10' : ''
       )}
     >
@@ -126,18 +127,18 @@ export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => 
           <p className="text-lg font-medium text-foreground">{uploadedFile.name}</p>
           <div className="flex gap-4 mt-4">
             <Button onClick={handleProcessFile} size="lg">Analyze Portfolio</Button>
-            <Button variant="outline" onClick={() => setUploadedFile(null)}>Choose another file</Button>
+            <Button variant="outline" onClick={(e) => { e.preventDefault(); setUploadedFile(null); }}>Choose another file</Button>
           </div>
          </div>
       ) : (
         <div className="text-center p-4">
           <UploadCloud className="mx-auto h-16 w-16 text-primary/70 mb-4" />
           <h2 className="text-2xl font-headline font-medium text-foreground">
-            <label htmlFor="file-upload" className="text-accent cursor-pointer hover:underline">Click to upload</label> or drag and drop
+            <span className="text-accent">Click to upload</span> or drag and drop
           </h2>
           <p className="text-muted-foreground mt-2 mb-4">.XLSX files only</p>
         </div>
       )}
-    </div>
+    </label>
   );
 };

@@ -121,6 +121,26 @@ export const MainLayout = () => {
               </Tooltip>
             ))}
           </div>
+           {excelProcessor && (
+             <div className="flex flex-col items-center gap-2">
+               <Separator className="bg-primary/10" />
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => resetApp()}
+                      className="text-primary/70 hover:bg-primary/10 hover:text-primary"
+                    >
+                      <UploadCloud className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>Upload New File</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            )}
         </nav>
       </TooltipProvider>
       <main className="flex-1 flex flex-col bg-background/50 dark:bg-black/20 rounded-xl overflow-hidden">
@@ -141,11 +161,6 @@ export const MainLayout = () => {
                       </div>
                   </div>
               )}
-               {excelProcessor && (
-                    <Button variant="outline" size="sm" onClick={() => resetApp()}>
-                        <UploadCloud className="mr-2 h-4 w-4" /> Upload New File
-                    </Button>
-                )}
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
