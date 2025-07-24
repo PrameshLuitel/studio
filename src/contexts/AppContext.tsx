@@ -18,6 +18,8 @@ interface AppContextType {
   setTop5Weight: (weight: number) => void;
   top10Weight: number;
   setTop10Weight: (weight: number) => void;
+  top15Weight: number;
+  setTop15Weight: (weight: number) => void;
   top20Weight: number;
   setTop20Weight: (weight: number) => void;
 }
@@ -31,6 +33,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [top5Weight, setTop5Weight] = useState(0);
   const [top10Weight, setTop10Weight] = useState(0);
+  const [top15Weight, setTop15Weight] = useState(0);
   const [top20Weight, setTop20Weight] = useState(0);
   
   const resetApp = () => {
@@ -40,6 +43,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
     setTop5Weight(0);
     setTop10Weight(0);
+    setTop15Weight(0);
     setTop20Weight(0);
   };
 
@@ -59,6 +63,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setTop5Weight,
         top10Weight,
         setTop10Weight,
+        top15Weight,
+        setTop15Weight,
         top20Weight,
         setTop20Weight,
       }}

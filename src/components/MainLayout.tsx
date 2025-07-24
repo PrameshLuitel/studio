@@ -46,7 +46,7 @@ const WeightButton = ({ title, value }: { title: string, value: number }) => (
 
 
 export const MainLayout = () => {
-  const { activeView, setActiveView, resetApp, fileName, top5Weight, top10Weight, top20Weight } = useContext(AppContext);
+  const { activeView, setActiveView, resetApp, fileName, top5Weight, top10Weight, top15Weight, top20Weight } = useContext(AppContext);
 
   const renderView = () => {
     switch (activeView) {
@@ -127,6 +127,7 @@ export const MainLayout = () => {
                   <div className="flex items-center gap-2">
                       <WeightButton title="Top 5" value={top5Weight} />
                       <WeightButton title="Top 10" value={top10Weight} />
+                      <WeightButton title="Top 15" value={top15Weight} />
                       <WeightButton title="Top 20" value={top20Weight} />
                   </div>
               </div>
