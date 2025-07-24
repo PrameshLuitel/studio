@@ -13,7 +13,7 @@ interface AppContextType {
   setActiveView: (view: string) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  resetApp: () => void;
+  resetApp: (keepAuth?: boolean) => void;
   top5Weight: number;
   setTop5Weight: (weight: number) => void;
   top10Weight: number;
@@ -32,7 +32,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [excelProcessor, setExcelProcessor] = useState<ExcelDataProcessor | null>(null);
   const [activeView, setActiveView] = useState('dashboard');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const [top5Weight, setTop5Weight] = useState(0);
   const [top10Weight, setTop10Weight] = useState(0);
   const [top15Weight, setTop15Weight] = useState(0);

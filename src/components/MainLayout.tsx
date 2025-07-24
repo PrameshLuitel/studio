@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { DashboardView } from './views/DashboardView';
 import { ClientDataView } from './views/ClientDataView';
@@ -13,16 +13,18 @@ import {
   LayoutDashboard,
   Table,
   LineChart,
-  FileUp,
-  BarChartHorizontal,
-  MessageCircle,
   BarChart,
-  Upload,
+  MessageCircle,
+  User,
+  LogOut,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
 import { Label } from './ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { LoginPage } from './LoginPage';
+import { FileUploadDialog } from './FileUpload';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -45,15 +47,42 @@ const WeightButton = ({ title, value }: { title: string, value: number }) => (
     </div>
 );
 
-
 export const MainLayout = () => {
-  const { activeView, setActiveView, resetApp, fileName, top5Weight, top10Weight, top15Weight, top20Weight, isAuthenticated } = useContext(AppContext);
+  const { 
+      activeView, 
+      setActiveView, 
+      fileName, 
+      top5Weight, 
+      top10Weight, 
+      top15Weight, 
+      top20Weight, 
+      isAuthenticated,
+      setIsAuthenticated,
+      excelProcessor,
+  } = useContext(AppContext);
 
-  const handleUploadNewFile = () => {
-    resetApp(true); // Keep authentication
-  }
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  const handleLoginSuccess = () => {
+      setIsLoginOpen(false);
+      setIsUploadOpen(true);
+  };
+  
+  const handleLogout = () => {
+      setIsAuthenticated(false);
+  };
 
   const renderView = () => {
+    if (!excelProcessor) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                 <h1 className="text-5xl font-headline font-bold text-primary mb-2">Portfolio Pulse</h1>
+                <p className="text-lg">No portfolio data loaded.</p>
+                <p className="text-sm mt-2">An authorized user can log in to upload a file.</p>
+            </div>
+        );
+    }
     switch (activeView) {
       case 'dashboard':
         return <DashboardView />;
@@ -76,7 +105,7 @@ export const MainLayout = () => {
         <nav className="flex flex-col items-center justify-between py-4 px-2 bg-primary/5 rounded-xl border border-primary/10">
           <div className="flex flex-col items-center gap-2">
             <div className="p-2 mb-2 bg-primary text-primary-foreground rounded-lg">
-              <BarChartHorizontal />
+              <LayoutDashboard />
             </div>
             <Separator className="bg-primary/10" />
             {navItems.map((item) => (
@@ -92,6 +121,7 @@ export const MainLayout = () => {
                         ? 'bg-accent text-accent-foreground'
                         : 'text-primary/70 hover:bg-primary/10 hover:text-primary'
                     )}
+                    disabled={!excelProcessor}
                   >
                     <item.icon className="h-5 w-5" />
                   </Button>
@@ -102,24 +132,6 @@ export const MainLayout = () => {
               </Tooltip>
             ))}
           </div>
-
-          {isAuthenticated && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleUploadNewFile}
-                  className="text-primary/70 hover:bg-primary/10 hover:text-primary"
-                >
-                  <Upload className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Upload new file</p>
-              </TooltipContent>
-            </Tooltip>
-          )}
         </nav>
       </TooltipProvider>
       <main className="flex-1 flex flex-col bg-background/50 dark:bg-black/20 rounded-xl overflow-hidden">
@@ -128,20 +140,44 @@ export const MainLayout = () => {
             <h1 className="text-xl font-bold capitalize text-primary">{activeView.replace('-', ' ')}</h1>
             {fileName && <p className="text-xs text-muted-foreground">Analyzing: {fileName}</p>}
           </div>
-          {activeView === 'stock-data' && (
-               <div className="flex items-center gap-4">
-                  <Label className="font-semibold text-sm text-muted-foreground">Weight:</Label>
-                  <div className="flex items-center gap-2">
-                      <WeightButton title="Top 5" value={top5Weight} />
-                      <WeightButton title="Top 10" value={top10Weight} />
-                      <WeightButton title="Top 15" value={top15Weight} />
-                      <WeightButton title="Top 20" value={top20Weight} />
+          <div className="flex items-center gap-4">
+              {activeView === 'stock-data' && excelProcessor && (
+                   <div className="flex items-center gap-4">
+                      <Label className="font-semibold text-sm text-muted-foreground">Weight:</Label>
+                      <div className="flex items-center gap-2">
+                          <WeightButton title="Top 5" value={top5Weight} />
+                          <WeightButton title="Top 10" value={top10Weight} />
+                          <WeightButton title="Top 15" value={top15Weight} />
+                          <WeightButton title="Top 20" value={top20Weight} />
+                      </div>
                   </div>
-              </div>
-          )}
+              )}
+              {isAuthenticated ? (
+                  <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/> Logout</Button>
+              ) : (
+                  <Button variant="outline" size="sm" onClick={() => setIsLoginOpen(true)}>
+                      <User className="mr-2 h-4 w-4" /> Admin Login
+                  </Button>
+              )}
+          </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
       </main>
+
+      <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <LoginPage onLoginSuccess={handleLoginSuccess} />
+        </DialogContent>
+      </Dialog>
+      
+      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <DialogTitle className="font-headline text-2xl text-primary">Upload New Portfolio</DialogTitle>
+            </DialogHeader>
+            <FileUploadDialog onUploadSuccess={() => setIsUploadOpen(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

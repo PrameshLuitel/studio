@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Pie, PieChart, ResponsiveContainer, Tooltip, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { formatCurrency, ClientDetails, SummaryData, StockAllocation } from '@/lib/data-processor';
-import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet, ChevronsUpDown, ArrowDown, ArrowUp, BarChart, ListTree, AreaChart } from 'lucide-react';
+import { User, Info, DollarSign, TrendingUp, CalendarClock, Briefcase, Search, Library, FileDigit, Filter, PieChart as PieChartIcon, CheckCircle, XCircle, FileText, Building, Hash, Percent, Calendar as CalendarIcon, Wallet, ChevronsUpDown, ArrowDown, ArrowUp, BarChart, ListTree, AreaChart, UploadCloud } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -455,6 +455,16 @@ export const ClientDataView = () => {
       </TableHead>
   );
 
+  if (!excelProcessor) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 animate-in fade-in-50">
+            <UploadCloud className="h-16 w-16 mb-4" />
+            <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
+            <p className="mt-2 text-sm">Please log in to upload a portfolio file.</p>
+        </div>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col gap-6 animate-in fade-in-50">
         <Card className="glassmorphic flex-shrink-0">
@@ -599,6 +609,3 @@ export const ClientDataView = () => {
     </div>
   );
 };
-
-    
-    

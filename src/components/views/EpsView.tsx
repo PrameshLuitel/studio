@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
-import { LineChart } from 'lucide-react';
+import { LineChart, UploadCloud } from 'lucide-react';
 
 export const EpsView = () => {
   const { excelProcessor } = useContext(AppContext);
@@ -17,6 +17,16 @@ export const EpsView = () => {
     const processed = excelProcessor.getProcessedData();
     return processed ? processed.epsSheetData : null;
   }, [excelProcessor]);
+
+  if (!excelProcessor) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 animate-in fade-in-50">
+            <UploadCloud className="h-16 w-16 mb-4" />
+            <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
+            <p className="mt-2 text-sm">Please log in to upload a portfolio file.</p>
+        </div>
+    );
+  }
 
   if (!epsSheetData || epsSheetData.data.length === 0) {
     return <div className="text-center text-muted-foreground">EPS data not found or is invalid. Please ensure your file has a sheet named 'EPS'.</div>;

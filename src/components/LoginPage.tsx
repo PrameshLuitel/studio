@@ -25,7 +25,6 @@ export const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
     setError('');
     setIsLoading(true);
 
-    // Simulate a network request
     setTimeout(() => {
       if (password === process.env.NEXT_PUBLIC_UPLOAD_PASSWORD) {
         setIsAuthenticated(true);
@@ -33,19 +32,24 @@ export const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
         onLoginSuccess();
       } else {
         setError('Incorrect password. Please try again.');
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: 'Incorrect password. Please try again.'
+        });
       }
       setIsLoading(false);
     }, 500);
   };
 
   return (
-    <div className="w-full max-w-md mx-auto">
-      <Card className="glassmorphic">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-headline text-primary">Portfolio Pulse</CardTitle>
+    <div className="w-full">
+      <Card className="glassmorphic border-none shadow-none">
+        <CardHeader className="text-center px-2">
+          <CardTitle className="text-2xl font-headline text-primary">Admin Access</CardTitle>
           <CardDescription>Enter the password to upload or update the portfolio file.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-2">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="relative">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

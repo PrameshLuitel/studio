@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useContext, useMemo, useState, useEffect } from 'react';
@@ -8,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { BarChart, Search, ChevronsUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { BarChart, Search, ChevronsUpDown, ArrowUp, ArrowDown, UploadCloud } from 'lucide-react';
 import type { StockSummaryData, ClientHolding } from '@/lib/data-processor';
 import { formatCurrency } from '@/lib/data-processor';
 import { cn } from '@/lib/utils';
@@ -16,7 +15,6 @@ import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 
 type SortKey = 'stockName' | 'marketRate' | 'totalMarketValue' | 'totalPurchaseValue' | 'totalGainLoss' | 'holdingPercentage';
 type SortDirection = 'asc' | 'desc';
@@ -53,6 +51,11 @@ export const StockDataView = () => {
             setTop10Weight(top10);
             setTop15Weight(top15);
             setTop20Weight(top20);
+        } else {
+            setTop5Weight(0);
+            setTop10Weight(0);
+            setTop15Weight(0);
+            setTop20Weight(0);
         }
     }, [stockData, setTop5Weight, setTop10Weight, setTop15Weight, setTop20Weight]);
 
@@ -152,13 +155,12 @@ export const StockDataView = () => {
         setOpenCollapsible(prev => prev === stockName ? null : stockName);
     }
 
-    if (!excelProcessor || !excelProcessor.isDataLoaded()) {
+    if (!excelProcessor) {
         return (
-            <div className="flex items-center justify-center h-full">
-                <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
-                    <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
-                    <p className="mt-2 text-sm">Please upload an Excel file to view stock data.</p>
-                </div>
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 animate-in fade-in-50">
+                <UploadCloud className="h-16 w-16 mb-4" />
+                <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
+                <p className="mt-2 text-sm">Please log in to upload a portfolio file.</p>
             </div>
         );
     }
