@@ -13,7 +13,7 @@ interface AppContextType {
   setActiveView: (view: string) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  resetApp: (keepAuth?: boolean) => void;
+  resetApp: () => void;
   top5Weight: number;
   setTop5Weight: (weight: number) => void;
   top10Weight: number;
@@ -22,8 +22,6 @@ interface AppContextType {
   setTop15Weight: (weight: number) => void;
   top20Weight: number;
   setTop20Weight: (weight: number) => void;
-  isAuthenticated: boolean;
-  setIsAuthenticated: (authenticated: boolean) => void;
 }
 
 export const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -37,9 +35,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [top10Weight, setTop10Weight] = useState(0);
   const [top15Weight, setTop15Weight] = useState(0);
   const [top20Weight, setTop20Weight] = useState(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   
-  const resetApp = (keepAuth = false) => {
+  const resetApp = () => {
     setFileName(null);
     setExcelProcessor(null);
     setActiveView('dashboard');
@@ -48,9 +45,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setTop10Weight(0);
     setTop15Weight(0);
     setTop20Weight(0);
-    if (!keepAuth) {
-      setIsAuthenticated(false);
-    }
   };
 
   return (
@@ -73,8 +67,6 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
         setTop15Weight,
         top20Weight,
         setTop20Weight,
-        isAuthenticated,
-        setIsAuthenticated,
       }}
     >
       {children}

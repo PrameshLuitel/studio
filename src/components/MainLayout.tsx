@@ -15,15 +15,12 @@ import {
   LineChart,
   BarChart,
   MessageCircle,
-  User,
-  LogOut,
+  UploadCloud,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
 import { Label } from './ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
-import { LoginPage } from './LoginPage';
 import { FileUploadDialog } from './FileUpload';
 
 const navItems = [
@@ -56,30 +53,22 @@ export const MainLayout = () => {
       top10Weight, 
       top15Weight, 
       top20Weight, 
-      isAuthenticated,
-      setIsAuthenticated,
       excelProcessor,
+      resetApp,
   } = useContext(AppContext);
-
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-
-  const handleLoginSuccess = () => {
-      setIsLoginOpen(false);
-      setIsUploadOpen(true);
-  };
   
-  const handleLogout = () => {
-      setIsAuthenticated(false);
+  const handleUploadSuccess = () => {
+      // The view will automatically update as excelProcessor is now set
   };
 
   const renderView = () => {
     if (!excelProcessor) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
-                 <h1 className="text-5xl font-headline font-bold text-primary mb-2">Portfolio Pulse</h1>
-                <p className="text-lg">No portfolio data loaded.</p>
-                <p className="text-sm mt-2">An authorized user can log in to upload a file.</p>
+             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                <h1 className="text-5xl font-headline font-bold text-primary mb-2">Portfolio Pulse</h1>
+                <div className="max-w-2xl w-full mt-8">
+                    <FileUploadDialog onUploadSuccess={handleUploadSuccess} />
+                </div>
             </div>
         );
     }
@@ -152,32 +141,15 @@ export const MainLayout = () => {
                       </div>
                   </div>
               )}
-              {isAuthenticated ? (
-                  <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/> Logout</Button>
-              ) : (
-                  <Button variant="outline" size="sm" onClick={() => setIsLoginOpen(true)}>
-                      <User className="mr-2 h-4 w-4" /> Admin Login
-                  </Button>
-              )}
+               {excelProcessor && (
+                    <Button variant="outline" size="sm" onClick={() => resetApp()}>
+                        <UploadCloud className="mr-2 h-4 w-4" /> Upload New File
+                    </Button>
+                )}
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
       </main>
-
-      <Dialog open={isLoginOpen} onOpenChange={setIsLoginOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <LoginPage onLoginSuccess={handleLoginSuccess} />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-        <DialogContent className="max-w-2xl">
-            <DialogHeader>
-                <DialogTitle className="font-headline text-2xl text-primary">Upload New Portfolio</DialogTitle>
-            </DialogHeader>
-            <FileUploadDialog onUploadSuccess={() => setIsUploadOpen(false)} />
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

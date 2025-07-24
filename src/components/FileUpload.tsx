@@ -8,10 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, FileText, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes } from 'firebase/storage';
-
-const PORTFOLIO_FILE_PATH = 'portfolio/portfolio.xlsx';
 
 interface FileUploadDialogProps {
   onUploadSuccess: () => void;
@@ -21,31 +17,27 @@ export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => 
   const { setExcelProcessor, setFileName, setIsLoading } = useContext(AppContext);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const processFile = useCallback(async (file: File) => {
     setIsLoading(true);
-    setIsUploading(true);
+    setIsProcessing(true);
     try {
-        const fileRef = ref(storage, PORTFOLIO_FILE_PATH);
-        await uploadBytes(fileRef, file);
-
-        toast({
-            title: 'Upload Successful',
-            description: `${file.name} has been uploaded and is now public.`,
-        });
-
         const processor = new ExcelDataProcessor();
         await processor.loadExcelFile(file);
         setExcelProcessor(processor);
         setFileName(file.name);
+        toast({
+            title: 'Processing Successful',
+            description: `${file.name} has been loaded and analyzed.`,
+        });
         onUploadSuccess();
     } catch (error) {
-        console.error("Upload or processing error:", error);
+        console.error("Processing error:", error);
         const description = error instanceof ExcelProcessingError
             ? error.message
-            : 'An error occurred during upload or processing.';
+            : 'An error occurred during file processing.';
         toast({
             variant: 'destructive',
             title: 'Error',
@@ -53,7 +45,7 @@ export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => 
         });
     } finally {
         setIsLoading(false);
-        setIsUploading(false);
+        setIsProcessing(false);
         setUploadedFile(null);
     }
   }, [setExcelProcessor, setFileName, setIsLoading, toast, onUploadSuccess]);
@@ -121,19 +113,19 @@ export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => 
         accept=".xlsx"
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-        disabled={isUploading}
+        disabled={isProcessing}
       />
-      {isUploading ? (
+      {isProcessing ? (
           <div className="flex flex-col items-center gap-4 text-primary">
             <Loader2 className="h-12 w-12 animate-spin" />
-            <p className="text-lg font-headline">Uploading and processing...</p>
+            <p className="text-lg font-headline">Analyzing portfolio...</p>
           </div>
       ) : uploadedFile ? (
          <div className="flex flex-col items-center gap-4">
           <FileText className="h-16 w-16 text-accent" />
           <p className="text-lg font-medium text-foreground">{uploadedFile.name}</p>
           <div className="flex gap-4 mt-4">
-            <Button onClick={handleProcessFile} size="lg">Upload and Analyze</Button>
+            <Button onClick={handleProcessFile} size="lg">Analyze Portfolio</Button>
             <Button variant="outline" onClick={() => setUploadedFile(null)}>Choose another file</Button>
           </div>
          </div>
