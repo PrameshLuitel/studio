@@ -9,11 +9,43 @@ import { UploadCloud, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
 
+// Define the global gapi and google objects that will be available after the script loads.
+declare global {
+  interface Window {
+    gapi: any;
+    google: any;
+  }
+}
+
 export const FileUpload = () => {
   const { setExcelProcessor, setFileName, setIsLoading } = useContext(AppContext);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { toast } = useToast();
+
+  const [oauthToken, setOauthToken] = useState<string | null>(null);
+
+  const processFile = useCallback(async (file: File | Blob, name: string) => {
+      setIsLoading(true);
+      try {
+          const processor = new ExcelDataProcessor();
+          await processor.loadExcelFile(file as File);
+          setExcelProcessor(processor);
+          setFileName(name);
+      } catch (error) {
+          console.error(error);
+          const description = error instanceof ExcelProcessingError 
+              ? error.message 
+              : 'Failed to process the Excel file. Please check the format and try again.';
+          toast({
+              variant: 'destructive',
+              title: 'Processing Error',
+              description,
+          });
+      } finally {
+          setIsLoading(false);
+      }
+  }, [setExcelProcessor, setFileName, setIsLoading, toast]);
 
   const handleFile = useCallback(async (file: File | null) => {
     if (!file) return;
@@ -33,24 +65,57 @@ export const FileUpload = () => {
   
   const handleProcessFile = async () => {
     if (!uploadedFile) return;
-    setIsLoading(true);
-    try {
-      const processor = new ExcelDataProcessor();
-      await processor.loadExcelFile(uploadedFile);
-      setExcelProcessor(processor);
-      setFileName(uploadedFile.name);
-    } catch (error) {
-      console.error(error);
-      const description = error instanceof ExcelProcessingError 
-        ? error.message 
-        : 'Failed to process the Excel file. Please check the format and try again.';
-      toast({
-        variant: 'destructive',
-        title: 'Processing Error',
-        description,
-      });
-    } finally {
-      setIsLoading(false);
+    processFile(uploadedFile, uploadedFile.name);
+  };
+
+  const handleDrivePicker = () => {
+    const showPicker = () => {
+        const developerKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+        const view = new window.google.picker.View(window.google.picker.ViewId.DOCS);
+        view.setMimeTypes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        const picker = new window.google.picker.PickerBuilder()
+            .enableFeature(window.google.picker.Feature.NAV_HIDDEN)
+            .setAppId(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID)
+            .setOAuthToken(oauthToken)
+            .addView(view)
+            .setDeveloperKey(developerKey)
+            .setCallback((data: any) => {
+                if (data.action === window.google.picker.Action.PICKED) {
+                    const doc = data.docs[0];
+                    window.gapi.client.drive.files.get({
+                        fileId: doc.id,
+                        alt: 'media'
+                    }).then((res: any) => {
+                        const fileBlob = new Blob([res.body], { type: doc.mimeType });
+                        processFile(fileBlob, doc.name);
+                    }).catch((err: any) => {
+                       console.error("Error downloading file:", err);
+                       toast({ variant: "destructive", title: "Drive Error", description: "Could not download the selected file."});
+                    });
+                }
+            })
+            .build();
+        picker.setVisible(true);
+    };
+
+    const initializePicker = () => {
+        window.gapi.load('picker', showPicker);
+        window.gapi.client.load('https://www.googleapis.com/discovery/v1/apis/drive/v3/rest');
+    };
+
+    if (oauthToken) {
+        initializePicker();
+    } else {
+        const client = window.google.accounts.oauth2.initTokenClient({
+            client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+            scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (tokenResponse: any) => {
+                setOauthToken(tokenResponse.access_token);
+                initializePicker();
+            },
+        });
+        client.requestAccessToken();
     }
   };
 
@@ -114,13 +179,22 @@ export const FileUpload = () => {
             </div>
            </div>
         ) : (
-          <label htmlFor="file-upload" className="cursor-pointer text-center p-4">
+          <div className="text-center p-4">
             <UploadCloud className="mx-auto h-16 w-16 text-primary/70 mb-4" />
             <h2 className="text-2xl font-headline font-medium text-foreground">
-              <span className="text-accent">Click to upload</span> or drag and drop
+              <label htmlFor="file-upload" className="text-accent cursor-pointer hover:underline">Click to upload</label> or drag and drop
             </h2>
-            <p className="text-muted-foreground mt-2">.XLSX files only</p>
-          </label>
+            <p className="text-muted-foreground mt-2 mb-4">.XLSX files only</p>
+            <div className="flex items-center justify-center gap-2">
+                <hr className="flex-grow border-t border-border" />
+                <span className="text-muted-foreground text-xs">OR</span>
+                <hr className="flex-grow border-t border-border" />
+            </div>
+             <Button onClick={handleDrivePicker} variant="outline" className="mt-4">
+                <svg className="mr-2 h-4 w-4" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.45 13.57L13.57 20.45C13.02 21 12.06 21 11.51 20.45L1.55 10.49C1 9.94 1 8.98 1.55 8.43L8.43 1.55C8.98 1 9.94 1 10.49 1.55L20.45 11.51C21 12.06 21 13.02 20.45 13.57Z"></path><path d="M6 18L18 6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path></svg>
+                Select from Google Drive
+            </Button>
+          </div>
         )}
       </div>
     </div>

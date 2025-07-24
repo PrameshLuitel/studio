@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { AppProvider } from '@/contexts/AppContext';
 import './globals.css';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Portfolio Pulse',
@@ -30,6 +31,7 @@ export default function RootLayout({
           created by Pramesh Luitel
         </div>
         <Toaster />
+        <Script src="https://apis.google.com/js/api.js" async defer />
       </body>
     </html>
   );
