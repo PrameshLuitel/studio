@@ -70,6 +70,12 @@ export const StockDataView = () => {
         }
 
         stocks.sort((a, b) => {
+            if (sortKey === 'totalGainLoss') {
+                const aPercent = a.totalPurchaseValue !== 0 ? a.totalGainLoss / a.totalPurchaseValue : 0;
+                const bPercent = b.totalPurchaseValue !== 0 ? b.totalGainLoss / b.totalPurchaseValue : 0;
+                return sortDirection === 'asc' ? aPercent - bPercent : bPercent - aPercent;
+            }
+            
             const aVal = a[sortKey];
             const bVal = b[sortKey];
             let compare = 0;
