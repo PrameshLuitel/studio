@@ -262,25 +262,37 @@ export const StockDataView = () => {
                                                     </TableCell>
                                                     <TableCell className="text-right font-mono">{stock.holdingPercentage.toFixed(2)}%</TableCell>
                                                     <TableCell>
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <Button 
-                                                                variant="secondary" 
-                                                                size="sm"
-                                                                className={cn(
-                                                                    stock.buyPrice && stock.marketRate <= stock.buyPrice && 'bg-green-500/80 hover:bg-green-500 text-white animate-pulse-green'
+                                                        <div className="flex items-start justify-center gap-2">
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <Button 
+                                                                    variant="secondary" 
+                                                                    size="sm"
+                                                                    className={cn(
+                                                                        'w-16',
+                                                                        stock.buyPrice && stock.marketRate <= stock.buyPrice && 'bg-green-500/80 hover:bg-green-500 text-white animate-pulse-green'
+                                                                    )}
+                                                                >
+                                                                    Buy
+                                                                </Button>
+                                                                {stock.buyPrice && (
+                                                                    <span className="text-xs font-mono text-muted-foreground">{formatCurrency(stock.buyPrice)}</span>
                                                                 )}
-                                                            >
-                                                                Buy
-                                                            </Button>
-                                                            <Button 
-                                                                variant="secondary" 
-                                                                size="sm"
-                                                                className={cn(
-                                                                    stock.sellPrice && stock.marketRate >= stock.sellPrice && 'bg-red-500/80 hover:bg-red-500 text-white animate-pulse-red'
+                                                            </div>
+                                                            <div className="flex flex-col items-center gap-1">
+                                                                <Button 
+                                                                    variant="secondary" 
+                                                                    size="sm"
+                                                                    className={cn(
+                                                                        'w-16',
+                                                                        stock.sellPrice && stock.marketRate >= stock.sellPrice && 'bg-red-500/80 hover:bg-red-500 text-white animate-pulse-red'
+                                                                    )}
+                                                                >
+                                                                    Sell
+                                                                </Button>
+                                                                {stock.sellPrice && (
+                                                                    <span className="text-xs font-mono text-muted-foreground">{formatCurrency(stock.sellPrice)}</span>
                                                                 )}
-                                                            >
-                                                                Sell
-                                                            </Button>
+                                                            </div>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
