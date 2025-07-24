@@ -15,6 +15,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { format } from 'date-fns';
 
 
 const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
@@ -412,13 +413,14 @@ export const DashboardView = () => {
 
     return [...bucket.clients].sort((a, b) => {
         const { key, direction } = sortConfig;
-        if (a[key] < b[key]) {
-            return direction === 'asc' ? -1 : 1;
+        let compare = 0;
+        if (key === 'clientName') {
+            compare = a.clientName.localeCompare(b.clientName);
+        } else if (a.value instanceof Date && b.value instanceof Date) {
+            compare = a.value.getTime() - b.value.getTime();
         }
-        if (a[key] > b[key]) {
-            return direction === 'asc' ? 1 : -1;
-        }
-        return 0;
+        
+        return direction === 'asc' ? compare : -compare;
     });
   }, [selectedExpiryBucket, yearsToExpiryBuckets, sortConfig]);
 
@@ -536,14 +538,16 @@ export const DashboardView = () => {
                                 <TableHeader className="sticky top-0 bg-muted/80 backdrop-blur-sm">
                                     <TableRow>
                                         <SortableHeader tkey="clientName" label="Client Name" />
-                                        <SortableHeader tkey="value" label="Value" className="text-right" />
+                                        <SortableHeader tkey="value" label="Expiry Date" className="text-right" />
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                    {sortedBucketClients.map((client, index) => (
                                        <TableRow key={index} className="hover:bg-background/50">
                                            <TableCell className="p-2 text-sm">{client.clientName}</TableCell>
-                                           <TableCell className="p-2 text-sm text-right font-mono">{formatCurrency(client.value)}</TableCell>
+                                           <TableCell className="p-2 text-sm text-right font-mono">
+                                             {client.value instanceof Date ? format(client.value, 'dd-MMM-yyyy') : 'N/A'}
+                                           </TableCell>
                                        </TableRow>
                                    ))}
                                 </TableBody>

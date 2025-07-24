@@ -140,7 +140,7 @@ export interface LargestPortfolio {
 
 export interface BucketClient {
     clientName: string;
-    value: number;
+    value: Date;
 }
 
 
@@ -567,7 +567,7 @@ export class ExcelDataProcessor {
   
     const { headers, data } = clientData;
     const clientNameIndex = 2; // Column C
-    const expiryDateIndex = 20; // Column U
+    const expiryDateIndex = 4; // Column E
     const aumIndex = 23; // Column X (Present value is AUM)
   
     if (headers.length <= Math.max(expiryDateIndex, aumIndex, clientNameIndex)) {
@@ -600,7 +600,7 @@ export class ExcelDataProcessor {
       if (bucketKey) {
         buckets[bucketKey].value += aum;
         buckets[bucketKey].count++;
-        buckets[bucketKey].clients.push({ clientName, value: aum });
+        buckets[bucketKey].clients.push({ clientName, value: expiryDate });
       }
     });
   
