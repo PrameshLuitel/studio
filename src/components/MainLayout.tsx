@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useContext, useState } from 'react';
+import React, { useContext } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { DashboardView } from './views/DashboardView';
 import { ClientDataView } from './views/ClientDataView';
@@ -16,17 +16,12 @@ import {
   BarChart,
   MessageCircle,
   UploadCloud,
-  User,
-  LogOut,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
 import { Label } from './ui/label';
 import { FileUpload } from './FileUpload';
-import { LoginPage } from './LoginPage';
-import { FileUploadDialog } from './FileUploadDialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -60,35 +55,14 @@ export const MainLayout = () => {
       top20Weight, 
       excelProcessor,
       resetApp,
-      isAuthenticated,
-      setIsAuthenticated
   } = useContext(AppContext);
   
-  const [isLoginOpen, setLoginOpen] = useState(false);
-  const [isUploadOpen, setUploadOpen] = useState(false);
-
-  const handleLoginSuccess = () => {
-    setLoginOpen(false);
-    setUploadOpen(true);
-  };
-
-  const handleUploadSuccess = () => {
-    setUploadOpen(false);
-    // The main page will reload the public file, so we just reset the app state
-    resetApp(true);
-    window.location.reload(); // Force reload to fetch the new central file
-  };
-
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
-
   const renderView = () => {
     if (!excelProcessor) {
         return (
              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                 <h1 className="text-5xl font-headline font-bold text-primary mb-2">Portfolio Pulse</h1>
-                <p className="max-w-xl">No central portfolio is available. Admins can log in to upload one. Otherwise, you can upload a local file for analysis.</p>
+                <p className="max-w-xl">Upload your local portfolio file to begin analysis.</p>
                 <div className="max-w-2xl w-full mt-8">
                     <FileUpload />
                 </div>
@@ -152,14 +126,14 @@ export const MainLayout = () => {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => resetApp(isAuthenticated)}
+                      onClick={() => resetApp()}
                       className="text-primary/70 hover:bg-primary/10 hover:text-primary"
                     >
                       <UploadCloud className="h-5 w-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="right">
-                    <p>Upload Local File</p>
+                    <p>Upload New File</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -184,34 +158,10 @@ export const MainLayout = () => {
                       </div>
                   </div>
               )}
-               {isAuthenticated ? (
-                  <Button variant="ghost" size="sm" onClick={handleLogout}><LogOut className="mr-2"/> Logout</Button>
-                ) : (
-                  <Button variant="outline" size="sm" onClick={() => setLoginOpen(true)}><User className="mr-2"/> Admin Login</Button>
-               )}
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-6">{renderView()}</div>
       </main>
-
-      <Dialog open={isLoginOpen} onOpenChange={setLoginOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Admin Login</DialogTitle>
-          </DialogHeader>
-          <LoginPage onLoginSuccess={handleLoginSuccess} />
-        </DialogContent>
-      </Dialog>
-      
-      <Dialog open={isUploadOpen} onOpenChange={setUploadOpen}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Upload New Central Portfolio</DialogTitle>
-            </DialogHeader>
-            <FileUploadDialog onUploadSuccess={handleUploadSuccess} />
-        </DialogContent>
-      </Dialog>
-
     </div>
   );
 };

@@ -31,7 +31,7 @@ export default function RootLayout({
           created by Pramesh Luitel
         </div>
         <Toaster />
-        <Script src="https://apis.google.com/js/api.js" async defer />
+        
       </body>
     </html>
   );
