@@ -18,7 +18,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 
 const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
 
-const DataCard = ({ title, value, icon: Icon, description }: { title: string; value: string; icon: React.ElementType; description: string; }) => (
+const DataCard = ({ title, value, icon: Icon, description, descriptionClassName }: { title: string; value: string; icon: React.ElementType; description: string; descriptionClassName?: string }) => (
     <Card className="glassmorphic">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium font-body text-foreground/80">{title}</CardTitle>
@@ -26,7 +26,7 @@ const DataCard = ({ title, value, icon: Icon, description }: { title: string; va
         </CardHeader>
         <CardContent>
             <div className="text-2xl font-bold font-headline text-primary">{value}</div>
-            <p className="text-xs text-muted-foreground">{description}</p>
+            <p className={cn("text-xs text-muted-foreground", descriptionClassName)}>{description}</p>
         </CardContent>
     </Card>
 );
@@ -354,7 +354,8 @@ export const DashboardView = () => {
       equityToCashRatioStatsLoss,
       topGainers,
       topLosers,
-      largestPortfolios
+      largestPortfolios,
+      totalPortfolioGainPercentage,
     } = useMemo(() => {
     const data = dashboardData;
     const yearsToExpiryBuckets = data.yearsToExpiryBuckets 
@@ -379,6 +380,7 @@ export const DashboardView = () => {
         topGainers: data.topGainers || [],
         topLosers: data.topLosers || [],
         largestPortfolios: data.largestPortfolios || [],
+        totalPortfolioGainPercentage: data.totalPortfolioGainPercentage || 0,
     };
   }, [dashboardData]);
   
@@ -399,7 +401,13 @@ export const DashboardView = () => {
   return (
     <div className="grid gap-6 animate-in fade-in-50">
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <DataCard title="Total AUM" value={formatCurrency(summaryStats.totalAUM || 0)} icon={DollarSign} description="Total Assets Under Management" />
+        <DataCard
+            title="Total AUM"
+            value={formatCurrency(summaryStats.totalAUM || 0)}
+            icon={DollarSign}
+            description={`Total portfolio gain: ${(totalPortfolioGainPercentage * 100).toFixed(2)}%`}
+            descriptionClassName={totalPortfolioGainPercentage >= 0 ? 'text-green-500' : 'text-red-500'}
+        />
         <Card className="glassmorphic">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium font-body text-foreground/80">Client Gain/Loss</CardTitle>

@@ -143,6 +143,7 @@ export interface LargestPortfolio {
 export interface ProcessedData {
   totalPMSClients: number;
   totalAUM: number;
+  totalPortfolioGainPercentage: number;
   clientGainLoss: {
     gain: number;
     loss: number;
@@ -243,6 +244,11 @@ export class ExcelDataProcessor {
     const clientData = this.processClientDataSheet();
     const alertData = this.processAlertSheet();
     const stockSummaryData = this.processStockData(alertData);
+    const totalAUM = this.calculateTotalAUM(summaryData);
+    const totalInitialInvestment = summaryData.reduce((sum, client) => sum + (client.initialInvestment || 0), 0);
+    const totalPortfolioGainPercentage = totalInitialInvestment > 0 
+        ? (totalAUM - totalInitialInvestment) / totalInitialInvestment 
+        : 0;
 
     const { sectorAllocationGain, sectorAllocationLoss } = this.calculateSectorAllocationsByGainLoss();
     const { assetAllocationGain, assetAllocationLoss } = this.calculateAssetAllocationByGainLoss();
@@ -257,7 +263,8 @@ export class ExcelDataProcessor {
 
     return {
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
-      totalAUM: this.calculateTotalAUM(summaryData),
+      totalAUM: totalAUM,
+      totalPortfolioGainPercentage: totalPortfolioGainPercentage,
       clientGainLoss: this.calculateClientGainLoss(summaryData),
       yearsToExpiryBuckets: this.calculateYearsToExpiryBuckets(clientData),
       assetAllocation: this.calculateAssetAllocation(),
