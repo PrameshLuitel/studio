@@ -4,7 +4,7 @@
 import React, { useContext, useMemo, useState, useCallback } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy, X, ChevronsUpDown, ArrowDown, ArrowUp } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, PieChart as PieChartIcon, ArrowUpCircle, ArrowDownCircle, Banknote, TrendingDown, ShieldAlert, CalendarClock, ListTree, Info, Trophy, X, ChevronsUpDown, ArrowDown, ArrowUp, UploadCloud } from 'lucide-react';
 import { Bar, BarChart as RechartsBarChart, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, Sector } from 'recharts';
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
@@ -116,11 +116,10 @@ const LoadingSkeleton = () => (
 );
 
 const ErrorDisplay = () => (
-    <div className="flex items-center justify-center h-full">
-        <div className="text-center text-muted-foreground p-8 rounded-xl bg-muted/50 border border-dashed">
-            <h3 className="font-headline text-lg text-foreground">Could not process dashboard data.</h3>
-            <p className="mt-2 text-sm">Please ensure your uploaded file contains the required sheets and columns.</p>
-        </div>
+    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 animate-in fade-in-50">
+        <UploadCloud className="h-16 w-16 mb-4" />
+        <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
+        <p className="mt-2 text-sm">Please upload a portfolio file to begin analysis.</p>
     </div>
 );
 

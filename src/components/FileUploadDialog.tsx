@@ -2,48 +2,46 @@
 'use client';
 
 import React, { useContext, useState, useCallback } from 'react';
-import { AppContext } from '@/contexts/AppContext';
-import { ExcelDataProcessor, ExcelProcessingError } from '@/lib/data-processor';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, FileText, Loader2 } from 'lucide-react';
+import { UploadCloud, FileText, Loader2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes } from "firebase/storage";
 
-export const FileUpload = () => {
-  const { setExcelProcessor, setFileName, setIsLoading } = useContext(AppContext);
+interface FileUploadDialogProps {
+  onUploadSuccess: () => void;
+}
+
+export const FileUploadDialog = ({ onUploadSuccess }: FileUploadDialogProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const processFile = useCallback(async (file: File) => {
-    setIsLoading(true);
     setIsProcessing(true);
     try {
-        const processor = new ExcelDataProcessor();
-        await processor.loadExcelFile(file);
-        setExcelProcessor(processor);
-        setFileName(file.name);
+        const storageRef = ref(storage, 'portfolio/portfolio.xlsx');
+        await uploadBytes(storageRef, file);
+        
         toast({
-            title: 'Processing Successful',
-            description: `${file.name} has been loaded and analyzed.`,
+            title: 'Upload Successful',
+            description: `${file.name} has been set as the new central portfolio.`,
         });
+        onUploadSuccess();
     } catch (error) {
-        console.error("Processing error:", error);
-        const description = error instanceof ExcelProcessingError
-            ? error.message
-            : 'An error occurred during file processing.';
+        console.error("Upload error:", error);
         toast({
             variant: 'destructive',
-            title: 'Error',
-            description,
+            title: 'Upload Error',
+            description: 'Could not upload file to central storage.',
         });
     } finally {
-        setIsLoading(false);
         setIsProcessing(false);
         setUploadedFile(null);
     }
-  }, [setExcelProcessor, setFileName, setIsLoading, toast]);
+  }, [toast, onUploadSuccess]);
 
   const handleFile = useCallback(async (file: File | null) => {
     if (!file) return;
@@ -93,7 +91,7 @@ export const FileUpload = () => {
 
   return (
     <label
-      htmlFor="file-upload-local"
+      htmlFor="file-upload-central"
       onDrop={onDrop}
       onDragOver={onDragOver}
       onDragEnter={onDragEnter}
@@ -104,7 +102,7 @@ export const FileUpload = () => {
       )}
     >
       <input
-        id="file-upload-local"
+        id="file-upload-central"
         type="file"
         accept=".xlsx"
         className="hidden"
@@ -114,14 +112,14 @@ export const FileUpload = () => {
       {isProcessing ? (
           <div className="flex flex-col items-center gap-4 text-primary">
             <Loader2 className="h-12 w-12 animate-spin" />
-            <p className="text-lg font-headline">Analyzing portfolio...</p>
+            <p className="text-lg font-headline">Uploading...</p>
           </div>
       ) : uploadedFile ? (
          <div className="flex flex-col items-center gap-4">
           <FileText className="h-16 w-16 text-accent" />
           <p className="text-lg font-medium text-foreground">{uploadedFile.name}</p>
           <div className="flex gap-4 mt-4">
-            <Button onClick={handleProcessFile} size="lg">Analyze Local File</Button>
+            <Button onClick={handleProcessFile} size="lg"><Upload className="mr-2"/> Upload and Analyze</Button>
             <Button variant="outline" onClick={(e) => { e.preventDefault(); setUploadedFile(null); }}>Choose another file</Button>
           </div>
          </div>

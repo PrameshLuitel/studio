@@ -23,7 +23,7 @@ export const EpsView = () => {
         <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 animate-in fade-in-50">
             <UploadCloud className="h-16 w-16 mb-4" />
             <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
-            <p className="mt-2 text-sm">Please log in to upload a portfolio file.</p>
+            <p className="mt-2 text-sm">Please upload a portfolio file to begin analysis.</p>
         </div>
     );
   }

@@ -43,34 +43,27 @@ export const LoginPage = ({ onLoginSuccess }: LoginPageProps) => {
   };
 
   return (
-    <div className="w-full">
-      <Card className="glassmorphic border-none shadow-none">
-        <CardHeader className="text-center px-2">
-          <CardTitle className="text-2xl font-headline text-primary">Admin Access</CardTitle>
-          <CardDescription>Enter the password to upload or update the portfolio file.</CardDescription>
-        </CardHeader>
-        <CardContent className="px-2">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="relative">
-              <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="password"
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
-                disabled={isLoading}
-              />
-            </div>
-            {error && <p className="text-sm text-destructive text-center">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Login
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="w-full pt-4">
+        <CardDescription className="text-center mb-4">Enter the password to upload or update the central portfolio file.</CardDescription>
+        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="relative">
+            <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+            id="password"
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="pl-10"
+            disabled={isLoading}
+            />
+        </div>
+        {error && <p className="text-sm text-destructive text-center">{error}</p>}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Login
+        </Button>
+        </form>
     </div>
   );
 };

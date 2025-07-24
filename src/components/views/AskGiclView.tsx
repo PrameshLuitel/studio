@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect, useContext } from 'react';
 import { AppContext } from '@/contexts/AppContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, User, Bot, Loader2, Info } from 'lucide-react';
+import { Send, User, Bot, Loader2, Info, UploadCloud } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,8 @@ export const AskGiclView = () => {
   useEffect(() => {
     if (excelProcessor) {
         processedData.current = excelProcessor.getProcessedData();
+    } else {
+        processedData.current = null;
     }
   }, [excelProcessor]);
 
@@ -204,6 +206,16 @@ export const AskGiclView = () => {
         setIsLoading(false);
     }, 500);
   };
+
+  if (!excelProcessor) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 animate-in fade-in-50">
+            <UploadCloud className="h-16 w-16 mb-4" />
+            <h3 className="font-headline text-lg text-foreground">No Data Loaded</h3>
+            <p className="mt-2 text-sm">Please upload a portfolio file to begin analysis.</p>
+        </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col animate-in fade-in-50">
