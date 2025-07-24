@@ -30,7 +30,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [excelProcessor, setExcelProcessor] = useState<ExcelDataProcessor | null>(null);
   const [activeView, setActiveView] = useState('dashboard');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
   const [top5Weight, setTop5Weight] = useState(0);
   const [top10Weight, setTop10Weight] = useState(0);
   const [top15Weight, setTop15Weight] = useState(0);
@@ -40,7 +40,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setFileName(null);
     setExcelProcessor(null);
     setActiveView('dashboard');
-    setIsLoading(false);
+    setIsLoading(false); // When resetting, we are no longer in a loading state
     setTop5Weight(0);
     setTop10Weight(0);
     setTop15Weight(0);

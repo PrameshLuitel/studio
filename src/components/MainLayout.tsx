@@ -16,6 +16,7 @@ import {
   BarChart,
   MessageCircle,
   UploadCloud,
+  Loader2,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -55,9 +56,19 @@ export const MainLayout = () => {
       top20Weight, 
       excelProcessor,
       resetApp,
+      isLoading,
   } = useContext(AppContext);
   
   const renderView = () => {
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
+                <Loader2 className="h-16 w-16 mb-4 animate-spin text-primary" />
+                <h1 className="text-2xl font-headline font-bold text-primary mb-2">Loading Central Portfolio</h1>
+                <p className="max-w-xl">Attempting to fetch the latest data...</p>
+            </div>
+        );
+    }
     if (!excelProcessor) {
         return (
              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
