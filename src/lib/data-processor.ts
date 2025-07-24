@@ -567,7 +567,7 @@ export class ExcelDataProcessor {
   
     const { headers, data } = clientData;
     const clientNameIndex = 2; // Column C
-    const expiryDateIndex = 4; // Column E
+    const expiryDateIndex = 20; // Column U
     const aumIndex = 23; // Column X (Present value is AUM)
   
     if (headers.length <= Math.max(expiryDateIndex, aumIndex, clientNameIndex)) {
