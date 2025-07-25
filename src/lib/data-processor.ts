@@ -309,14 +309,23 @@ export class ExcelDataProcessor {
       return value;
     }
     if (typeof value === 'string') {
-      const parts = value.split('/');
+      const parts = value.split(/[/ .-]+/); // Handles dd/mm/yyyy and dd.mm.yyyy etc.
       if (parts.length === 3) {
-        // Assuming mm/dd/yyyy format
-        const month = parseInt(parts[0], 10) - 1;
-        const day = parseInt(parts[1], 10);
-        const year = parseInt(parts[2], 10);
+        // Attempt to handle ambiguous formats; assuming day-month-year for non-US context
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        let year = parseInt(parts[2], 10);
+        
+        if (year < 100) { // Handle 2-digit years
+          year += 2000;
+        }
+
         if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-          return new Date(year, month, day);
+          const date = new Date(year, month, day);
+          // Simple validation to check if parts were not out of bounds
+          if (date.getFullYear() === year && date.getMonth() === month && date.getDate() === day) {
+              return date;
+          }
         }
       }
     }
