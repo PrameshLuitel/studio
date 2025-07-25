@@ -377,13 +377,21 @@ export class ExcelDataProcessor {
     if (sheetData.length < 2) return [];
 
     const headers = sheetData[1] as string[]; // Headers from Row 2
-    const lastRow = sheetData[sheetData.length - 1];
+    
+    // Find the "Grand Total" row instead of assuming it's the last one
+    const grandTotalRow = sheetData.find(row => row[0] && String(row[0]).trim() === 'Grand Total');
+    
+    if (!grandTotalRow) {
+        console.warn('"Grand Total" row not found in Sector Holding Summary.');
+        return [];
+    }
+
     const sectorData: SectorHoldingData[] = [];
 
     // Columns C to P correspond to indices 2 to 15
     for (let i = 2; i <= 15; i++) {
       const sector = headers[i];
-      const allocation = this.parseNumber(lastRow[i]);
+      const allocation = this.parseNumber(grandTotalRow[i]);
       if (sector) {
         sectorData.push({ sector, allocation });
       }
