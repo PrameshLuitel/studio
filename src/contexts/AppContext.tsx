@@ -1,10 +1,13 @@
 
+
 'use client';
 
 import React, { createContext, useState, ReactNode } from 'react';
 import type { ExcelDataProcessor } from '@/lib/data-processor';
 
 interface AppContextType {
+  dataDate: Date | null;
+  setDataDate: (date: Date | null) => void;
   fileName: string | null;
   setFileName: (name: string | null) => void;
   excelProcessor: ExcelDataProcessor | null;
@@ -27,6 +30,7 @@ interface AppContextType {
 export const AppContext = createContext<AppContextType>({} as AppContextType);
 
 export const AppProvider = ({ children }: { children: ReactNode }) => {
+  const [dataDate, setDataDate] = useState<Date | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [excelProcessor, setExcelProcessor] = useState<ExcelDataProcessor | null>(null);
   const [activeView, setActiveView] = useState('dashboard');
@@ -37,6 +41,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [top20Weight, setTop20Weight] = useState(0);
   
   const resetApp = () => {
+    setDataDate(null);
     setFileName(null);
     setExcelProcessor(null);
     setActiveView('dashboard');
@@ -50,6 +55,8 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AppContext.Provider
       value={{
+        dataDate,
+        setDataDate,
         fileName,
         setFileName,
         excelProcessor,

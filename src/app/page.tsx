@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 const GOOGLE_SHEETS_URL = 'https://docs.google.com/spreadsheets/d/1GQFZhuoh8UQl1BrNCCbSyu8ZESHgJPXR/export?format=xlsx';
 
 export default function Home() {
-  const { setExcelProcessor, setFileName, setIsLoading, excelProcessor } = useContext(AppContext);
+  const { setExcelProcessor, setFileName, setIsLoading, excelProcessor, setDataDate } = useContext(AppContext);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -33,6 +33,11 @@ export default function Home() {
 
         const processor = new ExcelDataProcessor();
         await processor.loadExcelFile(file);
+        
+        const processedData = processor.getProcessedData();
+        if (processedData) {
+            setDataDate(processedData.dataDate);
+        }
 
         setExcelProcessor(processor);
         setFileName('Central Portfolio');
@@ -59,6 +64,7 @@ export default function Home() {
         // Ensure we don't keep stale data if loading fails
         setExcelProcessor(null);
         setFileName(null);
+        setDataDate(null);
       } finally {
         setIsLoading(false);
       }

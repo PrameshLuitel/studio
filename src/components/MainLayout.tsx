@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useContext } from 'react';
@@ -17,12 +18,14 @@ import {
   MessageCircle,
   UploadCloud,
   Loader2,
+  CalendarDays,
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { Separator } from './ui/separator';
 import { Label } from './ui/label';
 import { FileUpload } from './FileUpload';
+import { format } from 'date-fns';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -57,6 +60,7 @@ export const MainLayout = () => {
       excelProcessor,
       resetApp,
       isLoading,
+      dataDate,
   } = useContext(AppContext);
   
   const renderView = () => {
@@ -157,7 +161,13 @@ export const MainLayout = () => {
             <h1 className="text-xl font-bold capitalize text-primary">{activeView.replace('-', ' ')}</h1>
             {fileName && <p className="text-xs text-muted-foreground">Analyzing: {fileName}</p>}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+              {dataDate && (
+                <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                  <CalendarDays className="h-4 w-4" />
+                  <span>Data as of {format(dataDate, 'dd MMM, yyyy')}</span>
+                </div>
+              )}
               {activeView === 'stock-data' && excelProcessor && (
                    <div className="flex items-center gap-4">
                       <Label className="font-semibold text-sm text-muted-foreground">Weight:</Label>

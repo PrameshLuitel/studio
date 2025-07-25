@@ -146,6 +146,7 @@ export interface BucketClient {
 
 // Processed data interfaces
 export interface ProcessedData {
+  dataDate: Date | null;
   totalPMSClients: number;
   totalAUM: number;
   totalPortfolioGainPercentage: number;
@@ -247,7 +248,7 @@ export class ExcelDataProcessor {
     const epsData = this.processEPSSheet();
     const epsSheetData = this.processEPSSheetRaw();
     const clientData = this.processClientDataSheet();
-    const alertData = this.processAlertSheet();
+    const { alertData, dataDate } = this.processAlertSheet();
     const stockSummaryData = this.processStockData(alertData);
     const totalAUM = this.calculateTotalAUM(summaryData);
     const totalInitialInvestment = summaryData.reduce((sum, client) => sum + (client.initialInvestment || 0), 0);
@@ -267,6 +268,7 @@ export class ExcelDataProcessor {
     const largestPortfolios = this.calculateLargestPortfolios(summaryData);
 
     return {
+      dataDate,
       totalPMSClients: this.calculateTotalPMSClients(summaryData),
       totalAUM: totalAUM,
       totalPortfolioGainPercentage: totalPortfolioGainPercentage,
@@ -425,11 +427,14 @@ export class ExcelDataProcessor {
       };
   }
   
-  private processAlertSheet(): AlertData[] {
+  private processAlertSheet(): { alertData: AlertData[], dataDate: Date | null } {
       const sheetData = this.getSheetData('Alert');
-      if (sheetData.length < 1) return [];
+      
+      const dataDate = sheetData.length > 1 ? this.parseDate(sheetData[1][4]) : null;
 
-      return sheetData.slice(1).map(row => {
+      if (sheetData.length < 1) return { alertData: [], dataDate };
+
+      const alertData = sheetData.slice(1).map(row => {
           if (!row || !row[0]) return null;
           return {
               stockName: String(row[0]), // Column A: Name
@@ -437,6 +442,8 @@ export class ExcelDataProcessor {
               sellPrice: this.parseNumber(row[3]), // Column D: Sell
           }
       }).filter(Boolean) as AlertData[];
+
+      return { alertData, dataDate: dataDate || null };
   }
 
   private processStockData(alertData: AlertData[]): StockSummaryData[] {
