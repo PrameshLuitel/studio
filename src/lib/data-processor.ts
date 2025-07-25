@@ -378,11 +378,11 @@ export class ExcelDataProcessor {
 
     const headers = sheetData[1] as string[]; // Headers from Row 2
     
-    // Find the "Grand Total" row instead of assuming it's the last one
-    const grandTotalRow = sheetData.find(row => row[0] && String(row[0]).trim() === 'Grand Total');
-    
+    const grandTotalRowIndex = sheetData.map(row => String(row[1] || '').trim()).lastIndexOf('Total');
+    const grandTotalRow = grandTotalRowIndex !== -1 ? sheetData[grandTotalRowIndex] : null;
+
     if (!grandTotalRow) {
-        console.warn('"Grand Total" row not found in Sector Holding Summary.');
+        console.warn('"Total" row not found in Sector Holding Summary in Column B.');
         return [];
     }
 
