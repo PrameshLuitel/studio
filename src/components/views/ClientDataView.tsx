@@ -562,7 +562,7 @@ export const ClientDataView = () => {
                                                     {client.clientId}
                                                 </TableCell>
                                                 <TableCell className="text-right font-mono">{client.initialInvestment ? formatCurrency(client.initialInvestment) : 'N/A'}</TableCell>
-                                                <TableCell className="text-right font-mono">{formatCurrency(client.totalValue)}</TableCell>
+                                                <TableCell className="text-right font-mono">{client.totalValueFromQ ? formatCurrency(client.totalValueFromQ) : 'N/A'}</TableCell>
                                                 <TableCell className="text-right font-mono">{typeof client.equityValue === 'number' ? `${client.equityValue.toFixed(2)}%` : 'N/A'}</TableCell>
                                                 <TableCell className={cn(
                                                     "text-right font-mono",
@@ -609,3 +609,4 @@ export const ClientDataView = () => {
     </div>
   );
 };
+

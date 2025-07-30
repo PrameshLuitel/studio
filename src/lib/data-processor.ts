@@ -9,6 +9,7 @@ export interface SummaryData {
   clientId: string;
   initialInvestment?: number;
   totalValue: number;
+  totalValueFromQ?: number; // New field for column Q data
   equityValue?: number;
   gainLossPercentage: number;
   gainLossValue: number;
@@ -305,8 +306,14 @@ export class ExcelDataProcessor {
    * Utility to parse dates that might be strings (e.g., "mm/dd/yyyy") or Date objects
    */
   private parseDate(value: any): Date | undefined {
+    if (!value) return undefined;
     if (value instanceof Date) {
       return value;
+    }
+    // Handle Excel's numeric date format
+    if (typeof value === 'number') {
+      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+      return new Date(excelEpoch.getTime() + value * 24 * 60 * 60 * 1000);
     }
     if (typeof value === 'string') {
       const parts = value.split(/[/ .-]+/); // Handles dd/mm/yyyy and dd.mm.yyyy etc.
@@ -340,6 +347,7 @@ export class ExcelDataProcessor {
     return jsonData.slice(2).map((row: any) => {
       if (!row || row.length === 0 || !row[2]) return null;
       const totalValue = this.parseNumber(row[23]); // Column X
+      const totalValueFromQ = this.parseNumber(row[16]); // Column Q
       const initialInvestment = this.parseNumber(row[22]); // Column W
       const portfolioGainLoss = this.parseNumber(row[17]); // RAW value from Column R
       const gainLossPercentage = initialInvestment > 0 ? (totalValue - initialInvestment) / initialInvestment : 0;
@@ -370,6 +378,7 @@ export class ExcelDataProcessor {
         clientId: String(row[2]), // Client Name is in Column C
         initialInvestment: initialInvestment,
         totalValue: totalValue,
+        totalValueFromQ: totalValueFromQ,
         equityValue: equityPercentage,
         gainLossPercentage: gainLossPercentage, 
         gainLossValue: totalValue - initialInvestment,
