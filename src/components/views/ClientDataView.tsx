@@ -268,7 +268,7 @@ const ClientDetailsComponent: React.FC<ClientDetailsViewProps> = ({ details }) =
                             <ul className="space-y-1 p-1">
                                 {legendItems.map((item, index) => (
                                     <li 
-                                        key={item.name} 
+                                        key={`${item.name}-${index}`} 
                                         className={cn("flex items-center p-1.5 rounded-md transition-all duration-200", activeIndex === sectorData.findIndex(d => d.name === item.name) ? 'bg-muted/80 text-primary font-bold' : '')}
                                         onMouseEnter={() => handlePieEnter(null, sectorData.findIndex(d => d.name === item.name))}
                                         onMouseLeave={onPieLeave}
@@ -609,4 +609,5 @@ export const ClientDataView = () => {
     </div>
   );
 };
+
 
